@@ -1,6 +1,6 @@
 {
   "name": "webrtc-streaming-core",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "typescript": "^4.9.4",
     "webrtc-streaming-core": "^1.0.0"
   }
 }
