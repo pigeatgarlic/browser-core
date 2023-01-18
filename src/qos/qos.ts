@@ -156,6 +156,7 @@ export class Adaptive {
     filterVideo(report : RTCStatsReport) : VideoMetrics {
 
         let ret = null;
+
         report.forEach((val,key) => {
             if (val["type"] == "inbound-rtp" &&
                 val["kind"] == "video") 
