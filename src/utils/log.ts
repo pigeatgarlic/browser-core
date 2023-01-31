@@ -99,6 +99,8 @@ class Logger {
         this.logs.push(data);
     }
 
+    
+
     BroadcastEvent(event: ConnectionEvent) {
         this.failNotifiers.forEach(x => {
             x(GetEventMessage(event));
@@ -131,8 +133,9 @@ export function AddNotifier(notifier: (message :string) => (void)){
 
 
 export function Log(level : LogLevel, message: string) {
-    let logger = getLoggerSingleton()
-    logger.filterEvent(JSON.stringify(level));
+    // let logger = getLoggerSingleton()
+    // logger.filterEvent(JSON.stringify(level));
+    console.log(`${GetLogLevelString(level)}: ${message}`)
 }
 
 export function LogConnectionEvent(a : ConnectionEvent) {

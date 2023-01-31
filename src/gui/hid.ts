@@ -37,6 +37,8 @@ export class HID {
     private prev_sliders : Map<number,number>;
     private prev_axis    : Map<number,number>;
 
+    private onGoingTouchs: Map<number,Touch>
+
     private shortcuts: Array<Shortcut>
 
     private relativeMouse : boolean
@@ -53,6 +55,7 @@ export class HID {
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
+        this.onGoingTouchs = new Map<number,Touch>();
 
 
         this.video = videoElement;
@@ -88,7 +91,10 @@ export class HID {
         this.video.addEventListener('mouseleave',     this.mouseLeaveEvent.bind(this));
         this.video.addEventListener('mouseenter',     this.mouseEnterEvent.bind(this));
 
-
+        this.video.addEventListener('touchstart',     this.handleStart.bind(this));
+        this.video.addEventListener('touchend',       this.handleEnd.bind(this));
+        this.video.addEventListener('touchcancel',    this.handleCancel.bind(this));
+        this.video.addEventListener('touchmove',      this.handleMove.bind(this));
 
 
         this.shortcuts = new Array<Shortcut>();
@@ -323,4 +329,91 @@ export class HID {
             this.Screen.ClientLeft = virtualLeft
         }
     }
+
+
+    copyTouch(touch: Touch): Touch {
+        return {
+            clientX: touch.clientX,
+            clientY: touch.clientY,
+            force: touch.force,
+            identifier: touch.identifier,
+            pageX: touch.pageX,
+            pageY: touch.pageY,
+            radiusX: touch.radiusX,
+            radiusY: touch.radiusY,
+            rotationAngle: touch.rotationAngle,
+            screenX: touch.screenX,
+            screenY: touch.screenY,
+            target: touch.target
+        }
+    }
+
+    handleStart(evt: TouchEvent) {
+        evt.preventDefault();
+        Log(LogLevel.Debug,'touchstart.');
+        this.ResetVideo();
+
+        const touches = evt.changedTouches;
+        for (let i = 0; i < touches.length; i++) {
+            Log(LogLevel.Debug,`touchstart: ${i}.`);
+            this.onGoingTouchs.set(touches[i].identifier, this.copyTouch(touches[i]));
+        }
+    }
+
+    handleMove(evt: TouchEvent) {
+        evt.preventDefault();
+
+
+        const touches = evt.touches;
+        for (let i = 0; i < touches.length; i++) {
+            const curr_touch = touches[i]
+            const identifier = curr_touch.identifier;
+
+            const prev_touch = this.onGoingTouchs.get(identifier);
+
+            if (prev_touch == null) {
+                Log(LogLevel.Error,`cannot find touch identifier ${identifier}`);
+                continue;
+            }
+
+            const diff = {
+                movementX : Math.round(curr_touch.clientX - prev_touch.clientX),
+                movementY : Math.round(curr_touch.clientY - prev_touch.clientY)
+            }
+
+            // one finger only
+            if (identifier == 0) {
+                let code = EventCode.MouseMoveRel
+                this.SendFunc((new HIDMsg(code,{
+                    dX: diff.movementX,
+                    dY: diff.movementY,
+                })).ToString());
+            }
+
+            this.onGoingTouchs.set(identifier, this.copyTouch(curr_touch));  // swap in the new touch record
+        }
+    }
+
+
+    handleEnd(evt: TouchEvent) {
+        evt.preventDefault();
+        Log(LogLevel.Debug,'touchend.');
+
+        const touches = evt.changedTouches;
+        for (let i = 0; i < touches.length; i++) {
+            let idx = this.onGoingTouchs.get(touches[i].identifier);
+        }
+    }
+
+    handleCancel(evt: TouchEvent) {
+        evt.preventDefault();
+        
+        Log(LogLevel.Debug ,'touchcancel.');
+        const touches = evt.changedTouches;
+
+        for (let i = 0; i < touches.length; i++) {
+            this.onGoingTouchs.delete(touches[i].identifier);  
+        }
+    }
+
 }
