@@ -3,6 +3,74 @@ import { EventCode } from "../models/keys.model";
 import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
 
 
+class TouchData implements Touch {
+    constructor(initial: Touch) {
+        this.clientX        = initial.clientX
+        this.clientY        = initial.clientY
+        this.force          = initial.force
+        this.identifier     = initial.identifier
+        this.pageX          = initial.pageX
+        this.pageY          = initial.pageY
+        this.radiusX        = initial.radiusX
+        this.radiusY        = initial.radiusY
+        this.rotationAngle  = initial.rotationAngle
+        this.screenX        = initial.screenX
+        this.screenY        = initial.screenY
+        this.target         = initial.target
+
+        this.doMove = false
+        this.holdTimeout = 0;
+        this.leftMouseDown = true;
+        this.touchStart = {
+            clientX        : initial.clientX,
+            clientY        : initial.clientY,
+            force          : initial.force,
+            identifier     : initial.identifier,
+            pageX          : initial.pageX,
+            pageY          : initial.pageY,
+            radiusX        : initial.radiusX,
+            radiusY        : initial.radiusY,
+            rotationAngle  : initial.rotationAngle,
+            screenX        : initial.screenX,
+            screenY        : initial.screenY,
+            target         : initial.target
+        }
+    }
+
+    copyFromTouch(touch: Touch) {
+        this.clientX        = touch.clientX
+        this.clientY        = touch.clientY
+        this.force          = touch.force
+        this.identifier     = touch.identifier
+        this.pageX          = touch.pageX
+        this.pageY          = touch.pageY
+        this.radiusX        = touch.radiusX
+        this.radiusY        = touch.radiusY
+        this.rotationAngle  = touch.rotationAngle
+        this.screenX        = touch.screenX
+        this.screenY        = touch.screenY
+        this.target         = touch.target
+    }
+
+    public clientX: number;
+    public clientY: number;
+    public force: number;
+    public identifier: number;
+    public pageX: number;
+    public pageY: number;
+    public radiusX: number;
+    public radiusY: number;
+    public rotationAngle: number;
+    public screenX: number;
+    public screenY: number;
+    public target: EventTarget; // neglect
+
+    // custom data
+    public readonly touchStart: Touch; 
+    public doMove: boolean;
+    public holdTimeout: number;
+    public leftMouseDown: boolean;
+}
 
 
 class Screen {
@@ -37,7 +105,7 @@ export class HID {
     private prev_sliders : Map<number,number>;
     private prev_axis    : Map<number,number>;
 
-    private onGoingTouchs: Map<number,Touch>
+    private onGoingTouchs: Map<number,TouchData>
 
     private shortcuts: Array<Shortcut>
 
@@ -55,7 +123,7 @@ export class HID {
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
-        this.onGoingTouchs = new Map<number,Touch>();
+        this.onGoingTouchs = new Map<number,TouchData>();
 
 
         this.video = videoElement;
@@ -331,23 +399,6 @@ export class HID {
     }
 
 
-    copyTouch(touch: Touch): Touch {
-        return {
-            clientX: touch.clientX,
-            clientY: touch.clientY,
-            force: touch.force,
-            identifier: touch.identifier,
-            pageX: touch.pageX,
-            pageY: touch.pageY,
-            radiusX: touch.radiusX,
-            radiusY: touch.radiusY,
-            rotationAngle: touch.rotationAngle,
-            screenX: touch.screenX,
-            screenY: touch.screenY,
-            target: touch.target
-        }
-    }
-
     handleStart(evt: TouchEvent) {
         evt.preventDefault();
         Log(LogLevel.Debug,'touchstart.');
@@ -356,8 +407,18 @@ export class HID {
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
             Log(LogLevel.Debug,`touchstart: ${i}.`);
-            this.onGoingTouchs.set(touches[i].identifier, this.copyTouch(touches[i]));
+            let touch = new TouchData(touches[i])
+            // hold for left click
+            touch.holdTimeout = setTimeout(()=>{
+                touch.leftMouseDown = true;
+                this.SendFunc((new HIDMsg(EventCode.MouseDown,{
+                    button: '0'
+                })).ToString());
+            },300)
+
+            this.onGoingTouchs.set(touches[i].identifier, touch);
         }
+
     }
 
     handleMove(evt: TouchEvent) {
@@ -370,6 +431,10 @@ export class HID {
             const identifier = curr_touch.identifier;
 
             const prev_touch = this.onGoingTouchs.get(identifier);
+            if (prev_touch.holdTimeout != 0) {
+                clearTimeout(prev_touch.holdTimeout);
+                prev_touch.holdTimeout = 0
+            }
 
             if (prev_touch == null) {
                 Log(LogLevel.Error,`cannot find touch identifier ${identifier}`);
@@ -390,8 +455,11 @@ export class HID {
                 })).ToString());
             }
 
-            this.onGoingTouchs.set(identifier, this.copyTouch(curr_touch));  // swap in the new touch record
+            prev_touch.copyFromTouch(curr_touch)
         }
+
+
+        this.handle_pinch_zoom()
     }
 
 
@@ -401,7 +469,14 @@ export class HID {
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            let idx = this.onGoingTouchs.get(touches[i].identifier);
+            const touch = this.onGoingTouchs.get(touches[i].identifier);
+            if (touch.leftMouseDown) {
+                this.SendFunc((new HIDMsg(EventCode.MouseUp,{
+                    button: '0'
+                })).ToString());
+            }
+
+            this.onGoingTouchs.delete(touches[i].identifier);
         }
     }
 
@@ -412,8 +487,50 @@ export class HID {
         const touches = evt.changedTouches;
 
         for (let i = 0; i < touches.length; i++) {
+            const touch = this.onGoingTouchs.get(touches[i].identifier);
+            if (touch.leftMouseDown) {
+                this.SendFunc((new HIDMsg(EventCode.MouseUp,{
+                    button: '0'
+                })).ToString());
+            }
+
             this.onGoingTouchs.delete(touches[i].identifier);  
         }
     }
 
+
+    handle_pinch_zoom() {
+        if (this.onGoingTouchs.size === 2) {
+            const firstFinger  = this.onGoingTouchs.get(0);
+            const secondFinger = this.onGoingTouchs.get(1);
+
+            // Calculate the difference between the start and move coordinates
+            const move = {
+                first  : firstFinger.clientX  - firstFinger.touchStart.clientX,
+                second : secondFinger.clientX - secondFinger.touchStart.clientX
+            }
+            const distance = {
+                now    : firstFinger.clientX  - secondFinger.clientX,
+                prev   : firstFinger.touchStart.clientX - secondFinger.touchStart.clientX
+            }
+
+            // This threshold is device dependent as well as application specific
+            const PINCH_THRESHOLD = this.video.clientWidth / 10;
+
+            // zoom
+            if((Math.abs(move.first)  >  PINCH_THRESHOLD) && 
+               (Math.abs(move.second) >  PINCH_THRESHOLD)) 
+            {
+                // zoom in
+                if(Math.abs(distance.now) > Math.abs(distance.prev) && !this.isFullscreen()) {
+                    this.video.parentElement.requestFullscreen();
+                } 
+
+                // zoom out
+                if(Math.abs(distance.now) < Math.abs(distance.prev) &&  this.isFullscreen()) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+    }
 }
