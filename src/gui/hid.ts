@@ -3,6 +3,9 @@ import { EventCode } from "../models/keys.model";
 import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
 
 
+const thresholdTime = 300;
+const thresholdDistance = 10;
+
 class TouchData implements Touch {
     constructor(initial: Touch) {
         this.clientX        = initial.clientX
@@ -21,6 +24,7 @@ class TouchData implements Touch {
         this.doMove = false
         this.holdTimeout = 0;
         this.leftMouseDown = true;
+        this.startTime = new Date()
         this.touchStart = {
             clientX        : initial.clientX,
             clientY        : initial.clientY,
@@ -70,6 +74,7 @@ class TouchData implements Touch {
     public doMove: boolean;
     public holdTimeout: number;
     public leftMouseDown: boolean;
+    public startTime: Date;
 }
 
 
@@ -462,6 +467,41 @@ export class HID {
         this.handle_pinch_zoom()
     }
 
+    handle_swipe(touch: TouchData) {
+        const now = new Date().getTime();
+
+		const deltaTime = now           - touch.startTime.getTime();
+		const deltaX    = touch.clientX - touch.touchStart.clientX;
+		const deltaY    = touch.clientY - touch.touchStart.clientY;
+
+		/* work out what the movement was */
+		if (deltaTime > thresholdTime) {
+			/* gesture too slow */
+			return;
+		} else {
+			if ((deltaX > thresholdDistance)&&(Math.abs(deltaY) < thresholdDistance)) {
+				// o.innerHTML = 'swipe right';
+			} else if ((-deltaX > thresholdDistance)&&(Math.abs(deltaY) < thresholdDistance)) {
+				// o.innerHTML = 'swipe left';
+			} else if ((deltaY > thresholdDistance)&&(Math.abs(deltaX) < thresholdDistance)) {
+				// o.innerHTML = 'swipe down';
+                for (let index = 0; index < 20; index++) {
+                    this.SendFunc((new HIDMsg(EventCode.MouseWheel,{
+                        deltaY: 120
+                    })).ToString());
+                }
+			} else if ((-deltaY > thresholdDistance)&&(Math.abs(deltaX) < thresholdDistance)) {
+				// o.innerHTML = 'swipe up';
+                for (let index = 0; index < 20; index++) {
+                    this.SendFunc((new HIDMsg(EventCode.MouseWheel,{
+                        deltaY: -120
+                    })).ToString());
+                }
+			} else {
+				// o.innerHTML = '';
+			}
+		}
+    }
 
     handleEnd(evt: TouchEvent) {
         evt.preventDefault();
@@ -476,6 +516,7 @@ export class HID {
                 })).ToString());
             }
 
+            this.handle_swipe(touch);
             this.onGoingTouchs.delete(touches[i].identifier);
         }
     }
