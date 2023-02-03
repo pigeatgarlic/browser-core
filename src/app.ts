@@ -13,7 +13,7 @@ export class WebRTCClient  {
     audio : any
 
     webrtc : WebRTC
-    hid : HID
+    hid : HID | null
     signaling : SignallingClient
     datachannels : Map<string,DataChannel>;
     pipelines: Map<string,Pipeline>
@@ -93,11 +93,11 @@ export class WebRTCClient  {
         if(!a.channel)
             return;
 
-        this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
-            Log(LogLevel.Debug,`message from data channel ${a.channel.label}: ${data}`);
-        }));
 
         if(a.channel.label == "hid") {
+            this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
+                this.hid.handleIncomingData(data);
+            }));
             this.hid = new HID((this.video.current as HTMLVideoElement),(data: string) => {
                 Log(LogLevel.Debug,data)
                 let channel = this.datachannels.get("hid")
@@ -106,6 +106,10 @@ export class WebRTCClient  {
                 }
                 channel.sendMessage(data);
             }, this.ResetVideo.bind(this) );
+
+        } else {
+            this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
+            }));
         }
     }
 

@@ -1,33 +1,33 @@
 export class DataChannel
 {
-    HID: RTCDataChannel | null;
+    private channel: RTCDataChannel | null;
 
     constructor(chan: RTCDataChannel,
                 handler: ((data: string) => (void))) {
-        this.HID = chan;
-        this.HID.onmessage = ((ev: MessageEvent) => {
+        this.channel = chan;
+        this.channel.onmessage = ((ev: MessageEvent) => {
             if (ev.data === "ping") {
-                this.HID?.send("ping");
+                this.channel?.send("ping");
                 return;
             }
             handler(ev.data);
         })
 
-        this.HID.onerror = (() => {
+        this.channel.onerror = (() => {
 
         })
 
-        this.HID.onclose = (() => {
+        this.channel.onclose = (() => {
 
         })
     }
 
     public sendMessage (message : string) {
-        if (this.HID == null) {
+        if (this.channel == null) {
             return;
         }
 
-        this.HID.send(message);
+        this.channel.send(message);
     }
 }
 

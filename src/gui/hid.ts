@@ -1,6 +1,7 @@
 import { ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "../utils/log";
 import { EventCode } from "../models/keys.model";
 import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
+import { getOS } from "../utils/platform";
 
 
 const thresholdTime = 300;
@@ -157,6 +158,13 @@ export class HID {
 
         window.addEventListener("gamepadconnected",     this.connectGamepad.bind(this));
         window.addEventListener("gamepaddisconnected",  this.disconnectGamepad.bind(this));
+        if (getOS() == "Android") {
+            this.SendFunc((new HIDMsg(EventCode.GamepadConnect,{
+                gamepad_id: "0",
+            }).ToString()))
+        }
+
+
 
         /**
          * mouse lock event
@@ -213,6 +221,22 @@ export class HID {
         }
     };
 
+    handleIncomingData(data: string) {
+        const fields = data.split("|")
+        switch (fields.at(0)) {
+            case 'grum':
+                // window.navigator.vibrate()
+                // TODO native rumble
+                // navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
+                //     if (gamepad == null) 
+                //         return;
+                // })
+                break;
+            default:
+                break;
+        }
+
+    }
     runButton() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
             if (gamepad == null) 
