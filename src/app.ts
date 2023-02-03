@@ -98,7 +98,7 @@ export class WebRTCClient  {
             this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
                 this.hid.handleIncomingData(data);
             }));
-            this.hid = new HID((this.video.current as HTMLVideoElement),(data: string) => {
+            this.hid = new HID((this.video.current as HTMLVideoElement),async (data: string) => {
                 Log(LogLevel.Debug,data)
                 let channel = this.datachannels.get("hid")
                 if (channel == null) {

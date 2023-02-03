@@ -120,12 +120,12 @@ export class HID {
 
 
     private video: HTMLVideoElement
-    private SendFunc: ((data: string) => (void))
-    private ResetVideo: (() => (void))
+    private SendFunc: ((data: string) => Promise<void>)
+    private ResetVideo: (() => Promise<void>)
 
     constructor(videoElement: HTMLVideoElement, 
-                Sendfunc: ((data:string)=>(void)),
-                ResetVideo: (() => (void))){
+                Sendfunc: ((data:string)=>Promise<void>),
+                ResetVideo: (() => Promise<void>)){
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
@@ -430,12 +430,11 @@ export class HID {
 
     handleStart(evt: TouchEvent) {
         evt.preventDefault();
-        Log(LogLevel.Debug,'touchstart.');
         this.ResetVideo();
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            Log(LogLevel.Debug,`touchstart: ${i}.`);
+            console.log(`touchstart: ${}`);
             let touch = new TouchData(touches[i])
             // hold for left click
             touch.holdTimeout = setTimeout(()=>{
@@ -491,7 +490,7 @@ export class HID {
         this.handle_pinch_zoom()
     }
 
-    handle_swipe(touch: TouchData) {
+    private async handle_swipe(touch: TouchData) : Promise<void>{
         const now = new Date().getTime();
 
 		const deltaTime = now           - touch.startTime.getTime();
@@ -529,7 +528,7 @@ export class HID {
 
     handleEnd(evt: TouchEvent) {
         evt.preventDefault();
-        Log(LogLevel.Debug,'touchend.');
+        console.log('touchend.');
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
@@ -564,7 +563,7 @@ export class HID {
     }
 
 
-    handle_pinch_zoom() {
+    private async handle_pinch_zoom() : Promise<void>{
         if (this.onGoingTouchs.size === 2) {
             const firstFinger  = this.onGoingTouchs.get(0);
             const secondFinger = this.onGoingTouchs.get(1);
