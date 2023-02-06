@@ -310,12 +310,10 @@ export class HID {
     mouseEnterEvent(event: MouseEvent) {
         Log(LogLevel.Debug,"Mouse enter")
         this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
-        this.ResetVideo();
     }
     mouseLeaveEvent(event: MouseEvent) {
         Log(LogLevel.Debug,"Mouse leave")
         this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
-        this.ResetVideo();
     }
     keydown(event: KeyboardEvent) {
         event.preventDefault();
@@ -430,11 +428,9 @@ export class HID {
 
     handleStart(evt: TouchEvent) {
         evt.preventDefault();
-        this.ResetVideo();
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            console.log(`touchstart: ${}`);
             let touch = new TouchData(touches[i])
             // hold for left click
             touch.holdTimeout = setTimeout(()=>{

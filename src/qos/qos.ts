@@ -239,7 +239,7 @@ export class Adaptive {
     {
         var statsLoop = async () => {        
             await this.getConnectionStats(conn);
-            setTimeout(statsLoop, 1000);
+            setTimeout(statsLoop, 300);
         };
 
         statsLoop();
