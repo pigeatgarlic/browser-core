@@ -38,16 +38,28 @@ export class WebRTC
     private onConnectionStateChange(eve: Event)
     {
         Log(LogLevel.Infor,`state change to ${JSON.stringify(eve)}`)
-        switch (eve.type) {
+        switch ((eve.target as RTCPeerConnection).connectionState) { // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
+            case "new":
+                LogConnectionEvent(ConnectionEvent.WebRTCConnectionChecking)
+                Log(LogLevel.Infor,"webrtc connection established");
+                break;
+            case "connecting":
+                LogConnectionEvent(ConnectionEvent.WebRTCConnectionChecking)
+                Log(LogLevel.Infor,"webrtc connection established");
+                break;
             case "connected":
                 LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking)
                 Log(LogLevel.Infor,"webrtc connection established");
+                break;
+            case "closed":
+                LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
+                Log(LogLevel.Error,"webrtc connection establish failed");
                 break;
             case "failed":
                 LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
                 Log(LogLevel.Error,"webrtc connection establish failed");
                 break;
-            case "closed":
+            case "disconnected":
                 LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
                 Log(LogLevel.Error,"webrtc connection establish failed");
                 break;
