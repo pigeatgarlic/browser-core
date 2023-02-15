@@ -356,7 +356,7 @@ export class HID {
     mouseWheel(event: WheelEvent){
         let code = EventCode.MouseWheel
         this.SendFunc((new HIDMsg(code,{
-            deltaY: Math.round(event.deltaY),
+            deltaY: -Math.round(event.deltaY),
         })).ToString());
     }
     mouseButtonMovement(event: MouseEvent){
