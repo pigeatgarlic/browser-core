@@ -27,7 +27,6 @@ export enum EventCode{
 
 export enum ShortcutCode{
     Fullscreen,
-    PointerLock
 }
 export enum KeyCode{
     Shift = 0,

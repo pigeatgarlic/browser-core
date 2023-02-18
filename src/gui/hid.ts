@@ -180,13 +180,19 @@ export class HID {
 
         this.shortcuts = new Array<Shortcut>();
         this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.F],(()=> { this.video.parentElement.requestFullscreen(); })))
-        this.shortcuts.push(new Shortcut(ShortcutCode.PointerLock,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.P],this.lockPointer.bind(this)))
 
         setInterval(() => this.runButton(), 1);
         setInterval(() => this.runAxis(), 1);
         setInterval(() => this.runSlider(), 1);
         setInterval(() => {
-            this.relativeMouse = !(document.pointerLockElement == null);
+            const havingPtrLock = document.pointerLockElement != null
+            this.relativeMouse = havingPtrLock;
+
+            if (this.isFullscreen() && !havingPtrLock) {
+                this.video.requestPointerLock();
+            } else if (!this.isFullscreen() && havingPtrLock) {
+                document.exitPointerLock();
+            }
         }, 100);
     }
 
@@ -195,15 +201,6 @@ export class HID {
     };
 
 
-    public lockPointer() : void {
-        if(!document.pointerLockElement) {
-            this.SendFunc((new HIDMsg(EventCode.RelativeMouseOn,{ }).ToString()))
-            this.video.requestPointerLock();
-        } else {
-            this.SendFunc((new HIDMsg(EventCode.RelativeMouseOff,{ }).ToString()))
-            document.exitPointerLock();
-        }
-    }
 
     connectGamepad (event: GamepadEvent) : void {
         if (event.gamepad.mapping === "standard") {
@@ -326,13 +323,6 @@ export class HID {
                 disable_send = true;
         })
 
-        if((event.key == "Esc" || event.key == "Escape") && this.isFullscreen()) {
-            this.shortcuts.forEach((element: Shortcut) => {
-                if (element.code == ShortcutCode.PointerLock) {
-                    element.ManualTrigger();
-                }
-            })
-        }
 
 
         if (disable_send) 
