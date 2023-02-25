@@ -1,9 +1,15 @@
 
 
-type Platform = "Mac OS" | "iOS" | "Windows" | "Linux" | "Android" | "unknown"
+type OS = "Mac OS" | "iOS" | "Windows" | "Linux" | "Android" | "unknown"
+type Platform = 'desktop' | 'mobile'
 
-export function getOS() : Platform {
-    let OSName : Platform = "unknown";
+export function getPlatform() : Platform {
+    let os = getOS()
+    return (os == 'Android' || os == 'iOS') ? 'mobile' :  'desktop' 
+}
+
+export function getOS() : OS {
+    let OSName : OS = "unknown";
 
     if (navigator.userAgent.indexOf("Win") != -1) OSName = "Windows";
     if (navigator.userAgent.indexOf("Mac") != -1) OSName = "Mac OS";

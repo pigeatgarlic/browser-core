@@ -1,22 +1,26 @@
 import { DataChannel } from "./datachannel/datachannel";
-import { HID } from "./gui/hid";
+import { HID } from "./hid/hid"
 import { AddNotifier, ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "./utils/log";
 import { DeviceSelection, DeviceSelectionResult } from "./models/devices.model";
 import { WebRTC } from "./webrtc";
 import { SignallingClient } from "./signaling/websocket";
 import { Pipeline } from "./pipeline/pipeline";
+import { getOS, getPlatform } from "./utils/platform";
 
 
 
 export class WebRTCClient  {
-    video : any
-    audio : any
 
-    webrtc : WebRTC
     public hid : HID | null
-    signaling : SignallingClient
-    datachannels : Map<string,DataChannel>;
-    pipelines: Map<string,Pipeline>
+    private readonly platform : 'desktop' | 'mobile'
+
+    private video : HTMLVideoElement
+    private audio : HTMLAudioElement
+    private webrtc : WebRTC
+    private signaling : SignallingClient
+    private datachannels : Map<string,DataChannel>;
+
+    private pipelines: Map<string,Pipeline>
     
     DeviceSelection: (input: DeviceSelection) => Promise<DeviceSelectionResult>;
     alert : (input: string) => (void);
@@ -24,10 +28,11 @@ export class WebRTCClient  {
     started : boolean
 
     constructor(signalingURL : string,
-                vid : any,
-                audio: any,
+                vid : HTMLVideoElement,
+                audio: HTMLAudioElement,
                 token : string,
-                DeviceSelection : (n: DeviceSelection) => Promise<DeviceSelectionResult>) {
+                DeviceSelection : (n: DeviceSelection) => Promise<DeviceSelectionResult>,
+                platform: 'mobile' | 'desktop' | null) {
 
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
         Log(LogLevel.Infor,`Session token: ${token}`);
@@ -37,6 +42,7 @@ export class WebRTCClient  {
         this.video = vid;
         this.audio = audio;
         this.pipelines = new Map<string,Pipeline>();
+        this.platform = platform != null ? platform : getPlatform()
         
 
         this.DeviceSelection = DeviceSelection;
@@ -59,11 +65,11 @@ export class WebRTCClient  {
         if (evt.track.kind == "audio")
         {
             LogConnectionEvent(ConnectionEvent.ReceivedAudioStream);
-            (this.audio.current as HTMLAudioElement).srcObject = evt.streams[0]
+            (this.audio as HTMLAudioElement).srcObject = evt.streams[0]
         } else if (evt.track.kind == "video") {
             this.ResetVideo();
             LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
-            (this.video.current as HTMLVideoElement).srcObject = evt.streams[0]
+            (this.video as HTMLVideoElement).srcObject = evt.streams[0]
             // let pipeline = new Pipeline('h264'); // TODO
             // pipeline.updateSource(evt.streams[0])
             // pipeline.updateTransform(new WebGLTransform());
@@ -98,7 +104,10 @@ export class WebRTCClient  {
             this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
                 this.hid.handleIncomingData(data);
             }));
-            this.hid = new HID((this.video.current as HTMLVideoElement),async (data: string) => {
+            this.hid = new HID(
+                    this.platform,
+                    this.video,
+            async (data: string) => {
                 Log(LogLevel.Debug,data)
                 let channel = this.datachannels.get("hid")
                 if (channel == null) {
