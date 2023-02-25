@@ -13,7 +13,7 @@ export class WebRTCClient  {
     audio : any
 
     webrtc : WebRTC
-    hid : HID | null
+    public hid : HID | null
     signaling : SignallingClient
     datachannels : Map<string,DataChannel>;
     pipelines: Map<string,Pipeline>
@@ -64,7 +64,7 @@ export class WebRTCClient  {
             this.ResetVideo();
             LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
             (this.video.current as HTMLVideoElement).srcObject = evt.streams[0]
-            // let pipeline = new Pipeline('h264');
+            // let pipeline = new Pipeline('h264'); // TODO
             // pipeline.updateSource(evt.streams[0])
             // pipeline.updateTransform(new WebGLTransform());
             // pipeline.updateSink(new VideoSink(this.video.current as HTMLVideoElement))
@@ -105,7 +105,7 @@ export class WebRTCClient  {
                     return;
                 }
                 channel.sendMessage(data);
-            }, this.ResetVideo.bind(this) );
+            });
 
         } else {
             this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
@@ -225,7 +225,7 @@ export class WebRTCClient  {
             bitrate: bitrate
         }))
     }
-    public ResetVideo () {
+    private ResetVideo () {
         const dcName = "manual";
         let channel = this.datachannels.get(dcName)
         if (channel == null) {

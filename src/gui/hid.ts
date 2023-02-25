@@ -7,6 +7,8 @@ import { getOS } from "../utils/platform";
 const thresholdTime = 300;
 const thresholdDistance = 10;
 
+export type AxisType = 'left' | 'right'
+
 class TouchData implements Touch {
     constructor(initial: Touch) {
         this.clientX        = initial.clientX
@@ -120,12 +122,10 @@ export class HID {
 
 
     private video: HTMLVideoElement
-    private SendFunc: ((data: string) => Promise<void>)
-    private ResetVideo: (() => Promise<void>)
+    public SendFunc: ((data: string) => Promise<void>)
 
     constructor(videoElement: HTMLVideoElement, 
-                Sendfunc: ((data:string)=>Promise<void>),
-                ResetVideo: (() => Promise<void>)){
+                Sendfunc: ((data: string)=>Promise<void>)){
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
@@ -134,7 +134,6 @@ export class HID {
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
-        this.ResetVideo = ResetVideo;
         this.Screen = new Screen();
 
         /**
@@ -145,10 +144,10 @@ export class HID {
         /**
          * mouse event
          */
-        this.video.addEventListener('wheel',          this.mouseWheel.bind(this));
-        this.video.addEventListener('mousemove',      this.mouseButtonMovement.bind(this));
-        this.video.addEventListener('mousedown',      this.mouseButtonDown.bind(this));
-        this.video.addEventListener('mouseup',        this.mouseButtonUp.bind(this));
+        document.addEventListener('wheel',          this.mouseWheel.bind(this));
+        document.addEventListener('mousemove',      this.mouseButtonMovement.bind(this));
+        document.addEventListener('mousedown',      this.mouseButtonDown.bind(this));
+        document.addEventListener('mouseup',        this.mouseButtonUp.bind(this));
         
         /**
          * keyboard event
@@ -158,10 +157,15 @@ export class HID {
 
         window.addEventListener("gamepadconnected",     this.connectGamepad.bind(this));
         window.addEventListener("gamepaddisconnected",  this.disconnectGamepad.bind(this));
-        if (getOS() == "Android") {
+        if (getOS() == "Android" || getOS() == "iOS") {
             this.SendFunc((new HIDMsg(EventCode.GamepadConnect,{
                 gamepad_id: "0",
             }).ToString()))
+        } else {
+            document.addEventListener('touchstart',     this.handleStart.bind(this));
+            document.addEventListener('touchend',       this.handleEnd.bind(this));
+            document.addEventListener('touchcancel',    this.handleCancel.bind(this));
+            document.addEventListener('touchmove',      this.handleMove.bind(this));
         }
 
 
@@ -169,13 +173,9 @@ export class HID {
         /**
          * mouse lock event
          */
-        this.video.addEventListener('mouseleave',     this.mouseLeaveEvent.bind(this));
-        this.video.addEventListener('mouseenter',     this.mouseEnterEvent.bind(this));
+        document.addEventListener('mouseleave',     this.mouseLeaveEvent.bind(this));
+        document.addEventListener('mouseenter',     this.mouseEnterEvent.bind(this));
 
-        this.video.addEventListener('touchstart',     this.handleStart.bind(this));
-        this.video.addEventListener('touchend',       this.handleEnd.bind(this));
-        this.video.addEventListener('touchcancel',    this.handleCancel.bind(this));
-        this.video.addEventListener('touchmove',      this.handleMove.bind(this));
 
 
         this.shortcuts = new Array<Shortcut>();
@@ -196,13 +196,13 @@ export class HID {
         }, 100);
     }
 
-    private isFullscreen(): boolean { 
+    public isFullscreen(): boolean { 
         return document.fullscreenElement != null;
     };
 
 
 
-    connectGamepad (event: GamepadEvent) : void {
+    private connectGamepad (event: GamepadEvent) : void {
         if (event.gamepad.mapping === "standard") {
             this.SendFunc((new HIDMsg(EventCode.GamepadConnect,{
                 gamepad_id: event.gamepad.index,
@@ -210,7 +210,7 @@ export class HID {
         } 
     };
 
-    disconnectGamepad (event: GamepadEvent) : void {
+    private disconnectGamepad (event: GamepadEvent) : void {
         if (event.gamepad.mapping === "standard") {
             this.SendFunc((new HIDMsg(EventCode.GamepadDisconnect,{
                 gamepad_id: event.gamepad.index,
@@ -218,7 +218,7 @@ export class HID {
         }
     };
 
-    handleIncomingData(data: string) {
+    public handleIncomingData(data: string) {
         const fields = data.split("|")
         switch (fields.at(0)) {
             case 'grum':
@@ -234,7 +234,7 @@ export class HID {
         }
 
     }
-    runButton() : void {
+    private runButton() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
             if (gamepad == null) 
                 return;
@@ -258,7 +258,7 @@ export class HID {
             })
         })
     };
-    runSlider() : void {
+    private runSlider() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
             if (gamepad == null) 
                 return;
@@ -282,7 +282,7 @@ export class HID {
             })
         })
     };
-    runAxis() : void {
+    private runAxis() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
             if (gamepad == null) 
                 return;
@@ -303,16 +303,64 @@ export class HID {
     };
 
 
+    public VirtualGamepadButtonSlider(released: boolean, index: number) {
+        if (index == 6 || index == 7) { // slider
+            this.SendFunc((new HIDMsg(EventCode.GamepadSlide, {
+                gamepad_id: 0,
+                index: index,
+                val: !released ? 1 : 0
+            }).ToString()))
+            return;
+        }
+        this.SendFunc((new HIDMsg(released ?  EventCode.GamepadButtonUp : EventCode.GamepadButtonDown,{ 
+            gamepad_id: 0,
+            index: index
+        }).ToString()))
+    }
 
-    mouseEnterEvent(event: MouseEvent) {
+    public VirtualGamepadAxis(x :number, y: number, type: AxisType) {
+        let axisx, axisy : number
+        switch (type) {
+            case 'left':
+                axisx = 0
+                axisy = 1
+                break;
+            case 'right':
+                axisx = 2
+                axisy = 3
+                break;
+        }
+
+        this.SendFunc((new HIDMsg(EventCode.GamepadAxis,{ 
+            gamepad_id: 0,
+            index: axisx,
+            val: x 
+        }).ToString()))
+        this.SendFunc((new HIDMsg(EventCode.GamepadAxis,{ 
+            gamepad_id: 0,
+            index: axisy,
+            val: y
+        }).ToString()))
+    }
+
+
+
+
+
+
+
+
+
+
+    private mouseEnterEvent(event: MouseEvent) {
         Log(LogLevel.Debug,"Mouse enter")
         this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
     }
-    mouseLeaveEvent(event: MouseEvent) {
+    private mouseLeaveEvent(event: MouseEvent) {
         Log(LogLevel.Debug,"Mouse leave")
         this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
     }
-    keydown(event: KeyboardEvent) {
+    private keydown(event: KeyboardEvent) {
         event.preventDefault();
 
         let disable_send = false;
@@ -335,7 +383,7 @@ export class HID {
             key: jsKey,
         })).ToString());
     }
-    keyup(event: KeyboardEvent) {
+    private keyup(event: KeyboardEvent) {
         let jsKey = event.key;
         let code = EventCode.KeyUp;
         this.SendFunc((new HIDMsg(code,{
@@ -343,13 +391,13 @@ export class HID {
         })).ToString());
         event.preventDefault();
     }
-    mouseWheel(event: WheelEvent){
+    private mouseWheel(event: WheelEvent){
         let code = EventCode.MouseWheel
         this.SendFunc((new HIDMsg(code,{
             deltaY: -Math.round(event.deltaY),
         })).ToString());
     }
-    mouseButtonMovement(event: MouseEvent){
+    private mouseButtonMovement(event: MouseEvent){
         this.elementConfig(this.video)
 
         if (!this.relativeMouse) {
@@ -368,13 +416,13 @@ export class HID {
             })).ToString());
         }
     }
-    mouseButtonDown(event: MouseEvent){
+    private mouseButtonDown(event: MouseEvent){
         let code = EventCode.MouseDown
         this.SendFunc((new HIDMsg(code,{
             button: event.button
         })).ToString());
     }
-    mouseButtonUp(event: MouseEvent){
+    private mouseButtonUp(event: MouseEvent){
         let code = EventCode.MouseUp
         this.SendFunc((new HIDMsg(code,{
             button: event.button
@@ -383,17 +431,17 @@ export class HID {
 
 
 
-    clientToServerY(clientY: number): number
+    private clientToServerY(clientY: number): number
     {
         return (clientY - this.Screen.ClientTop) / this.Screen.ClientHeight;
     }
 
-    clientToServerX(clientX: number): number 
+    private clientToServerX(clientX: number): number 
     {
         return (clientX - this.Screen.ClientLeft) / this.Screen.ClientWidth;
     }
 
-    elementConfig(VideoElement: HTMLVideoElement) 
+    private elementConfig(VideoElement: HTMLVideoElement) 
     {
         this.Screen.ClientWidth  =  VideoElement.offsetWidth;
         this.Screen.ClientHeight =  VideoElement.offsetHeight;
@@ -416,26 +464,7 @@ export class HID {
     }
 
 
-    handleStart(evt: TouchEvent) {
-        evt.preventDefault();
-
-        const touches = evt.changedTouches;
-        for (let i = 0; i < touches.length; i++) {
-            let touch = new TouchData(touches[i])
-            // hold for left click
-            touch.holdTimeout = setTimeout(()=>{
-                touch.leftMouseDown = true;
-                this.SendFunc((new HIDMsg(EventCode.MouseDown,{
-                    button: '0'
-                })).ToString());
-            },300)
-
-            this.onGoingTouchs.set(touches[i].identifier, touch);
-        }
-
-    }
-
-    handleMove(evt: TouchEvent) {
+    private handleMove(evt: TouchEvent) {
         evt.preventDefault();
 
 
@@ -512,7 +541,26 @@ export class HID {
 		}
     }
 
-    handleEnd(evt: TouchEvent) {
+
+
+    private handleStart(evt: TouchEvent) {
+        evt.preventDefault();
+
+        const touches = evt.changedTouches;
+        for (let i = 0; i < touches.length; i++) {
+            let touch = new TouchData(touches[i])
+            // hold for left click
+            touch.holdTimeout = setTimeout(()=>{
+                touch.leftMouseDown = true;
+                this.SendFunc((new HIDMsg(EventCode.MouseDown,{
+                    button: '0'
+                })).ToString());
+            },300)
+
+            this.onGoingTouchs.set(touches[i].identifier, touch);
+        }
+    }
+    private handleEnd(evt: TouchEvent) {
         evt.preventDefault();
         console.log('touchend.');
 
@@ -530,7 +578,7 @@ export class HID {
         }
     }
 
-    handleCancel(evt: TouchEvent) {
+    private handleCancel(evt: TouchEvent) {
         evt.preventDefault();
         
         Log(LogLevel.Debug ,'touchcancel.');
@@ -573,7 +621,7 @@ export class HID {
             {
                 // zoom in
                 if(Math.abs(distance.now) > Math.abs(distance.prev) && !this.isFullscreen()) {
-                    this.video.parentElement.requestFullscreen();
+                    document.documentElement.requestFullscreen();
                 } 
 
                 // zoom out
