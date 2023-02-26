@@ -276,10 +276,16 @@ export class HID {
             deltaY: -Math.round(event.deltaY),
         })).ToString());
     }
+    public mouseMoveRel(event: {movementX: number, movementY: number}){
+        let code = EventCode.MouseMoveRel
+        this.SendFunc((new HIDMsg(code,{
+            dX: event.movementX,
+            dY: event.movementY,
+        })).ToString());
+    }
     private mouseButtonMovement(event: MouseEvent){
-        this.elementConfig(this.video)
-
         if (!this.relativeMouse) {
+            this.elementConfig(this.video)
             let code = EventCode.MouseMoveAbs
             let mousePosition_X = this.clientToServerX(event.clientX);
             let mousePosition_Y = this.clientToServerY(event.clientY);
