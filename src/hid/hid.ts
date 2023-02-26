@@ -194,11 +194,11 @@ export class HID {
             this.SendFunc((new HIDMsg(EventCode.GamepadSlide, {
                 gamepad_id: 0,
                 index: index,
-                val: isDown ? 1 : 0
+                val: !isDown ? 0 : 1
             }).ToString()))
             return;
         }
-        this.SendFunc((new HIDMsg(isDown ?  EventCode.GamepadButtonDown : EventCode.GamepadButtonUp ,{ 
+        this.SendFunc((new HIDMsg(!isDown ?  EventCode.GamepadButtonDown : EventCode.GamepadButtonUp ,{ 
             gamepad_id: 0,
             index: index
         }).ToString()))
