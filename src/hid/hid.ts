@@ -19,6 +19,10 @@ export class HID {
     private shortcuts: Array<Shortcut>
 
     private relativeMouse : boolean
+
+    public disableKeyboard : boolean
+    public disableMouse    : boolean
+
     private Screen : Screen;
     private video: HTMLVideoElement
 
@@ -31,6 +35,9 @@ export class HID {
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
+
+        this.disableKeyboard = false;
+        this.disableMouse = false;
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
@@ -252,7 +259,7 @@ export class HID {
 
 
 
-        if (disable_send) 
+        if (disable_send || this.disableKeyboard) 
             return;
 
 
@@ -263,12 +270,15 @@ export class HID {
         })).ToString());
     }
     private keyup(event: KeyboardEvent) {
+        event.preventDefault();
+        if (this.disableKeyboard) 
+            return;
+
         let jsKey = event.key;
         let code = EventCode.KeyUp;
         this.SendFunc((new HIDMsg(code,{
             key: jsKey,
         })).ToString());
-        event.preventDefault();
     }
     private mouseWheel(event: WheelEvent){
         let code = EventCode.MouseWheel
@@ -284,6 +294,9 @@ export class HID {
         })).ToString());
     }
     private mouseButtonMovement(event: MouseEvent){
+        if (this.disableMouse) 
+            return;
+
         if (!this.relativeMouse) {
             this.elementConfig(this.video)
             let code = EventCode.MouseMoveAbs
@@ -302,12 +315,25 @@ export class HID {
         }
     }
     private mouseButtonDown(event: MouseEvent){
+        if (this.disableMouse) 
+            return;
+
+        this.MouseButtonDown(event)
+    }
+    private mouseButtonUp(event: MouseEvent){
+        if (this.disableMouse) 
+            return;
+
+        this.MouseButtonUp(event)
+    }
+
+    public MouseButtonDown(event: {button: number}){
         let code = EventCode.MouseDown
         this.SendFunc((new HIDMsg(code,{
             button: event.button
         })).ToString());
     }
-    private mouseButtonUp(event: MouseEvent){
+    public MouseButtonUp(event: {button: number}){
         let code = EventCode.MouseUp
         this.SendFunc((new HIDMsg(code,{
             button: event.button
