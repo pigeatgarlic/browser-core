@@ -90,9 +90,6 @@ export class DesktopTouch {
 
             prev_touch.copyFromTouch(curr_touch)
         }
-
-
-        this.handle_pinch_zoom()
     }
 
     private async handle_swipe(touch: TouchData) : Promise<void>{
@@ -121,9 +118,11 @@ export class DesktopTouch {
 			} else if ((-deltaY > thresholdDistance)&&(Math.abs(deltaX) < thresholdDistance)) {
 				// o.innerHTML = 'swipe up';
                 for (let index = 0; index < 20; index++) {
-                    this.SendFunc((new HIDMsg(EventCode.MouseWheel,{
-                        deltaY: -120
-                    })).ToString());
+                    setTimeout(() => {
+                        this.SendFunc((new HIDMsg(EventCode.MouseWheel,{
+                            deltaY: -120
+                        })).ToString());
+                    }, index * 30)
                 }
 			} else {
 				// o.innerHTML = '';
@@ -152,7 +151,6 @@ export class DesktopTouch {
     }
     private handleEnd(evt: TouchEvent) {
         evt.preventDefault();
-        console.log('touchend.');
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
@@ -183,42 +181,6 @@ export class DesktopTouch {
             }
 
             this.onGoingTouchs.delete(touches[i].identifier);  
-        }
-    }
-
-
-    private async handle_pinch_zoom() : Promise<void>{
-        if (this.onGoingTouchs.size === 2) {
-            const firstFinger  = this.onGoingTouchs.get(0);
-            const secondFinger = this.onGoingTouchs.get(1);
-
-            // Calculate the difference between the start and move coordinates
-            const move = {
-                first  : firstFinger.clientX  - firstFinger.touchStart.clientX,
-                second : secondFinger.clientX - secondFinger.touchStart.clientX
-            }
-            const distance = {
-                now    : firstFinger.clientX  - secondFinger.clientX,
-                prev   : firstFinger.touchStart.clientX - secondFinger.touchStart.clientX
-            }
-
-            // This threshold is device dependent as well as application specific
-            const PINCH_THRESHOLD = document.documentElement.clientWidth / 10;
-
-            // zoom
-            if((Math.abs(move.first)  >  PINCH_THRESHOLD) && 
-               (Math.abs(move.second) >  PINCH_THRESHOLD)) 
-            {
-                // zoom in
-                if(Math.abs(distance.now) > Math.abs(distance.prev) && !isFullscreen()) {
-                    document.documentElement.requestFullscreen();
-                } 
-
-                // zoom out
-                if(Math.abs(distance.now) < Math.abs(distance.prev) &&  isFullscreen()) {
-                    document.exitFullscreen();
-                }
-            }
         }
     }
 }

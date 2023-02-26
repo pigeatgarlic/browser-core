@@ -1,7 +1,7 @@
 
 
-type OS = "Mac OS" | "iOS" | "Windows" | "Linux" | "Android" | "unknown"
-type Platform = 'desktop' | 'mobile'
+export type OS = "Mac OS" | "iOS" | "Windows" | "Linux" | "Android" | "unknown"
+export type Platform = 'desktop' | 'mobile'
 
 export function getPlatform() : Platform {
     let os = getOS()

@@ -1,6 +1,6 @@
 import { EventCode, HIDMsg } from "../models/keys.model";
 import { isFullscreen } from "../utils/screen";
-import { TouchData } from "../models/hid.model";
+import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
 
 export class MobileTouch {
     private onGoingTouchs: Map<number,TouchData>
@@ -35,6 +35,45 @@ export class MobileTouch {
         }
     }
 
+    private async handle_swipe(touch: TouchData) : Promise<void>{
+        const now = new Date().getTime();
+
+		const deltaTime = now           - touch.startTime.getTime();
+		const deltaX    = touch.clientX - touch.touchStart.clientX;
+		const deltaY    = touch.clientY - touch.touchStart.clientY;
+
+		/* work out what the movement was */
+		if (deltaTime > thresholdTime) {
+			/* gesture too slow */
+			return;
+		} else {
+			if ((deltaX > thresholdDistance)&&(Math.abs(deltaY) < thresholdDistance)) {
+				// o.innerHTML = 'swipe right';
+			} else if ((-deltaX > thresholdDistance)&&(Math.abs(deltaY) < thresholdDistance)) {
+				// o.innerHTML = 'swipe left';
+			} else if ((deltaY > thresholdDistance)&&(Math.abs(deltaX) < thresholdDistance)) {
+				// o.innerHTML = 'swipe down';
+                for (let index = 0; index < 20; index++) {
+                    this.SendFunc((new HIDMsg(EventCode.MouseWheel,{
+                        deltaY: 120
+                    })).ToString());
+                }
+			} else if ((-deltaY > thresholdDistance)&&(Math.abs(deltaX) < thresholdDistance)) {
+				// o.innerHTML = 'swipe up';
+                for (let index = 0; index < 20; index++) {
+                    setTimeout(() => {
+                        this.SendFunc((new HIDMsg(EventCode.MouseWheel,{
+                            deltaY: -120
+                        })).ToString());
+                    }, index * 30)
+                }
+			} else {
+				// o.innerHTML = '';
+			}
+		}
+    }
+
+
     private handleStart = (evt: TouchEvent) => {
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
@@ -44,6 +83,7 @@ export class MobileTouch {
     private handleEnd = (evt: TouchEvent) => {
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
+            this.handle_swipe( this.onGoingTouchs.get(touches[i].identifier));
             this.onGoingTouchs.delete(touches[i].identifier);
         }
     };
