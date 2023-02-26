@@ -189,16 +189,16 @@ export class HID {
 
 
 
-    public VirtualGamepadButtonSlider(released: boolean, index: number) {
+    public VirtualGamepadButtonSlider(isDown: boolean, index: number) {
         if (index == 6 || index == 7) { // slider
             this.SendFunc((new HIDMsg(EventCode.GamepadSlide, {
                 gamepad_id: 0,
                 index: index,
-                val: !released ? 1 : 0
+                val: isDown ? 1 : 0
             }).ToString()))
             return;
         }
-        this.SendFunc((new HIDMsg(released ?  EventCode.GamepadButtonUp : EventCode.GamepadButtonDown,{ 
+        this.SendFunc((new HIDMsg(isDown ?  EventCode.GamepadButtonDown : EventCode.GamepadButtonUp ,{ 
             gamepad_id: 0,
             index: index
         }).ToString()))
