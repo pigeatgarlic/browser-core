@@ -1,6 +1,6 @@
 {
   "name": "webrtc-streaming-core",
-  "version": "1.1.30",
+  "version": "1.1.32",
   "description": "",
   "main": "dist/app.js",
   "author": "",

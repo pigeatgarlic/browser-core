@@ -47,7 +47,9 @@ export enum ConnectionEvent {
     GamepadDisconnected,
 }
 
-function GetEventMessage(event: ConnectionEvent): string {
+
+export type EventMessage = 'ApplicationStarted' | 'WebSocketConnecting' | 'WebSocketConnected' | 'WebSocketDisconnected' | 'WaitingAvailableDevice' | 'WaitingAvailableDeviceSelection' | 'ExchangingSignalingMessage' | 'WebRTCConnectionChecking' | 'WebRTCConnectionDoneChecking' | 'WebRTCConnectionClosed' | 'ReceivedVideoStream' | 'ReceivedAudioStream' | 'ReceivedDatachannel' | 'GamepadConnected' | 'GamepadDisconnected' 
+function GetEventMessage(event: ConnectionEvent): EventMessage {
     switch (event) {
     case ConnectionEvent.ApplicationStarted:
         return "ApplicationStarted"
@@ -76,9 +78,9 @@ function GetEventMessage(event: ConnectionEvent): string {
     case ConnectionEvent.WebRTCConnectionClosed:
         return "WebRTCConnectionClosed"
     case ConnectionEvent.GamepadConnected:
-        return "Gamepad connected"
+        return "GamepadConnected"
     case ConnectionEvent.GamepadDisconnected:
-        return "Gamepad disconnected"
+        return "GamepadDisconnected"
     }
 }
 
@@ -87,12 +89,12 @@ function GetEventMessage(event: ConnectionEvent): string {
 
 class Logger {
     logs: Array<string>
-    failNotifiers: Array<((message: string) => (void))>
+    Notifiers: Array<((message: EventMessage) => (void))>
 
 
     constructor() {
         this.logs = new Array<string>();
-        this.failNotifiers = new Array<((message: string) => (void))>();
+        this.Notifiers = new Array<((message: string) => (void))>();
     }
 
     filterEvent(data: string){
@@ -102,13 +104,13 @@ class Logger {
     
 
     BroadcastEvent(event: ConnectionEvent) {
-        this.failNotifiers.forEach(x => {
+        this.Notifiers.forEach(x => {
             x(GetEventMessage(event));
         })
     }
 
-    AddNotifier(notifier: ((message :string) => (void))) {
-        this.failNotifiers.push(notifier);
+    AddNotifier(notifier: ((message :EventMessage) => (void))) {
+        this.Notifiers.push(notifier);
     }
 }
 
@@ -125,7 +127,7 @@ function getLoggerSingleton(): Logger{
 
 
 
-export function AddNotifier(notifier: (message :string) => (void)){
+export function AddNotifier(notifier: (message :EventMessage) => (void)){
     let logger = getLoggerSingleton()
     logger.AddNotifier(notifier);
 }

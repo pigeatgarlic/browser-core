@@ -22,6 +22,9 @@ export class HID {
 
     public disableKeyboard : boolean
     public disableMouse    : boolean
+    public disableTouch (val: boolean) {
+        this.platform.disable = val;
+    }
 
     private Screen : Screen;
     private video: HTMLVideoElement

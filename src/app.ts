@@ -1,6 +1,6 @@
 import { DataChannel } from "./datachannel/datachannel";
 import { HID } from "./hid/hid"
-import { AddNotifier, ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "./utils/log";
+import { AddNotifier, ConnectionEvent, EventMessage, Log, LogConnectionEvent, LogLevel } from "./utils/log";
 import { DeviceSelection, DeviceSelectionResult } from "./models/devices.model";
 import { WebRTC } from "./webrtc";
 import { SignallingClient } from "./signaling/websocket";
@@ -23,7 +23,6 @@ export class WebRTCClient  {
     private pipelines: Map<string,Pipeline>
     
     DeviceSelection: (input: DeviceSelection) => Promise<DeviceSelectionResult>;
-    alert : (input: string) => (void);
 
     started : boolean
 
@@ -169,7 +168,6 @@ export class WebRTCClient  {
             let preverro = pkt.get("Error") 
             if (preverro != null) {
                 Log(LogLevel.Error,preverro);
-                this.alert(preverro)
             }
 
             let webrtcConf = pkt.get("WebRTCConfig") 
@@ -199,14 +197,11 @@ export class WebRTCClient  {
     }
 
 
-    Notifier(notifier: (message :string) => (void)): WebRTCClient{
+    Notifier(notifier: (message :EventMessage) => (void)): WebRTCClient{
         AddNotifier(notifier);
         return this
     }
-    Alert(notifier: (message :string) => (void)): WebRTCClient{
-        this.alert = notifier;
-        return this
-    }
+
     public ChangeFramerate (framerate : number) {
         const dcName = "manual";
         let channel = this.datachannels.get(dcName)

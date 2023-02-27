@@ -7,9 +7,12 @@ export class DesktopTouch {
     private onGoingTouchs: Map<number,TouchData>
     public SendFunc: ((data: string) => Promise<void>)
 
+    public disable : boolean
+
     constructor(Sendfunc: ((data: string)=>Promise<void>)){
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
+        this.disable = false
 
         document.addEventListener('touchstart',     this.handleStart.bind(this));
         document.addEventListener('touchend',       this.handleEnd.bind(this));
@@ -56,6 +59,9 @@ export class DesktopTouch {
 
     private handleMove(evt: TouchEvent) {
         evt.preventDefault();
+        if (this.disable) 
+            return;
+
 
 
         const touches = evt.touches;
@@ -134,6 +140,9 @@ export class DesktopTouch {
 
     private handleStart(evt: TouchEvent) {
         evt.preventDefault();
+        if (this.disable) 
+            return;
+
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
@@ -151,6 +160,9 @@ export class DesktopTouch {
     }
     private handleEnd(evt: TouchEvent) {
         evt.preventDefault();
+        if (this.disable) 
+            return;
+
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
@@ -168,6 +180,9 @@ export class DesktopTouch {
 
     private handleCancel(evt: TouchEvent) {
         evt.preventDefault();
+        if (this.disable) 
+            return;
+
         
         Log(LogLevel.Debug ,'touchcancel.');
         const touches = evt.changedTouches;
