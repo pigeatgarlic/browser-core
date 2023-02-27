@@ -21,6 +21,9 @@ export class DesktopTouch {
 
         document.addEventListener("gamepadconnected",     this.connectGamepad.bind(this));
         document.addEventListener("gamepaddisconnected",  this.disconnectGamepad.bind(this));
+        this.SendFunc((new HIDMsg(EventCode.GamepadConnect,{
+            gamepad_id: "0",
+        }).ToString()))
     }
 
     public handleIncomingData(data: string) {
