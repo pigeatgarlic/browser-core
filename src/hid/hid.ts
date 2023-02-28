@@ -367,6 +367,7 @@ export class HID {
 
         let desiredRatio = this.Screen.StreamWidth / this.Screen.Streamheight;
         let HTMLVideoElementRatio = this.Screen.ClientWidth / this.Screen.ClientHeight;
+        let HTMLdocumentElementRatio = document.documentElement.scrollWidth / document.documentElement.scrollHeight;
 
         if (HTMLVideoElementRatio > desiredRatio) {
             let virtualWidth = this.Screen.ClientHeight * desiredRatio
@@ -374,7 +375,13 @@ export class HID {
 
             this.Screen.ClientWidth = virtualWidth
             this.Screen.ClientLeft = virtualLeft
+        } else if (HTMLdocumentElementRatio < desiredRatio) {
+            let virtualHeight = document.documentElement.offsetWidth / desiredRatio
+            let virtualTop    = ( this.Screen.ClientHeight - virtualHeight ) / 2;
+
+            this.Screen.ClientHeight =virtualHeight 
+            this.Screen.ClientTop = virtualTop 
         }
     }
-
+    
 }
