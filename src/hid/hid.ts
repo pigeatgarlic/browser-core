@@ -67,15 +67,6 @@ export class HID {
         document.addEventListener('keydown',        this.keydown.bind(this));
         document.addEventListener('keyup',          this.keyup.bind(this));
 
-
-        /**
-         * mouse lock event
-         */
-        document.addEventListener('mouseleave',     this.mouseLeaveEvent.bind(this));
-        document.addEventListener('mouseenter',     this.mouseEnterEvent.bind(this));
-
-
-
         /**
          * shortcuts stuff
          */
@@ -241,14 +232,10 @@ export class HID {
 
 
 
-    private mouseEnterEvent(event: MouseEvent) {
-        Log(LogLevel.Debug,"Mouse enter")
+    public ResetKeyStuck() {
         this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
     }
-    private mouseLeaveEvent(event: MouseEvent) {
-        Log(LogLevel.Debug,"Mouse leave")
-        this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
-    }
+
     private keydown(event: KeyboardEvent) {
         event.preventDefault();
 
