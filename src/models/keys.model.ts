@@ -23,6 +23,9 @@ export enum EventCode{
    
     RelativeMouseOff,
     RelativeMouseOn,
+
+    ClipboardSet,
+    ClipboardPaste,
 }
 
 export enum ShortcutCode{
@@ -130,6 +133,10 @@ export class HIDMsg {
             case EventCode.GamepadSlide:
                 return `gs|${this.data.get("gamepad_id")}|${this.data.get("index")}|${this.data.get("val")}`
 
+            case EventCode.ClipboardSet:
+                return `cs|${this.data.get("val")}`
+            case EventCode.ClipboardPaste:
+                return `cp`
             default:
             return ""
         }

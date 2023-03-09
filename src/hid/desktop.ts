@@ -7,7 +7,14 @@ export class DesktopTouch {
     private onGoingTouchs: Map<number,TouchData>
     public SendFunc: ((data: string) => Promise<void>)
 
-    public disable : boolean
+    private disable : boolean
+    public Toggle (disable: boolean) {
+        console.log(disable ? 'disable touch' : 'enable touch')
+        this.disable = disable
+        if (this.disable) 
+            this.onGoingTouchs = new Map<number,TouchData>();
+    }
+
 
     constructor(Sendfunc: ((data: string)=>Promise<void>)){
         this.onGoingTouchs = new Map<number,TouchData>()

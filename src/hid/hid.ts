@@ -20,10 +20,17 @@ export class HID {
 
     private relativeMouse : boolean
 
-    public disableKeyboard : boolean
-    public disableMouse    : boolean
-    public disableTouch (val: boolean) {
-        this.platform.disable = val;
+    private disableKeyboard : boolean
+    private disableMouse    : boolean
+
+    public DisableKeyboard (val: boolean) {
+        this.disableKeyboard = val
+    }
+    public DisableMouse (val: boolean) {
+        this.disableMouse = val
+    }
+    public DisableTouch (val: boolean) {
+        this.platform.Toggle(val);
     }
 
     private Screen : Screen;
@@ -97,6 +104,16 @@ export class HID {
 
 
 
+    public SetClipboard(val: string){
+        let code = EventCode.ClipboardSet
+        this.SendFunc((new HIDMsg(code,{
+            val: btoa(val)
+        })).ToString());
+    }
+    public PasteClipboard(){
+        let code = EventCode.ClipboardPaste
+        this.SendFunc((new HIDMsg(code,{})).ToString());
+    }
 
 
 

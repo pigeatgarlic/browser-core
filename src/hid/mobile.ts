@@ -5,7 +5,13 @@ import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model
 export class MobileTouch {
     private onGoingTouchs: Map<number,TouchData>
 
-    public disable : boolean
+    private disable : boolean
+    public Toggle (disable: boolean) {
+        console.log(disable ? 'disable touch' : 'enable touch')
+        this.disable = disable
+        if (this.disable) 
+            this.onGoingTouchs = new Map<number,TouchData>();
+    }
 
     public SendFunc: ((data: string) => Promise<void>)
     constructor(Sendfunc: ((data: string)=>Promise<void>)){
@@ -92,7 +98,8 @@ export class MobileTouch {
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            this.handle_swipe( this.onGoingTouchs.get(touches[i].identifier));
+            const touch = this.onGoingTouchs.get(touches[i].identifier);
+            touch != null ? this.handle_swipe(touch) : null;
             this.onGoingTouchs.delete(touches[i].identifier);
         }
     };
