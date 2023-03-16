@@ -4,7 +4,7 @@ import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
 import { getOS } from "../utils/platform";
 import { AxisType } from "../models/hid.model";
 import {Screen} from "../models/hid.model"
-import { isFullscreen } from "../utils/screen";
+import { isFullscreen, requestFullscreen } from "../utils/screen";
 import { MobileTouch } from "./mobile";
 import { DesktopTouch } from "./desktop";
 
@@ -78,7 +78,7 @@ export class HID {
          * shortcuts stuff
          */
         this.shortcuts = new Array<Shortcut>();
-        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.F],(()=> { this.video.parentElement.requestFullscreen(); })))
+        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.F],requestFullscreen))
 
         /**
          * gamepad stuff

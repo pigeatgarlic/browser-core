@@ -1,5 +1,5 @@
 import { EventCode, HIDMsg } from "../models/keys.model";
-import { isFullscreen } from "../utils/screen";
+import { isFullscreen, requestFullscreen } from "../utils/screen";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
 
 export class MobileTouch {
@@ -154,7 +154,7 @@ export class MobileTouch {
             !isFullscreen()
         ) {
             try {
-                await document.documentElement.requestFullscreen();
+                await requestFullscreen();
             } catch (e) {}
             return;
         }

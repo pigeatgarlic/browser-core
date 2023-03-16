@@ -1,3 +1,5 @@
+import { getBrowser } from "./platform";
+
 declare global {
     interface Document {
         mozCancelFullScreen?: () => Promise<void>;
@@ -14,23 +16,25 @@ declare global {
     }
 }
 export function isFullscreen(): boolean {
-    return (
-        (document.fullscreenElement && document.fullscreenElement !== null) ||
-        (document.webkitFullscreenElement && document.webkitFullscreenElement !== null) ||
-        (document.mozFullScreenElement && document.mozFullScreenElement !== null)
-    );
+    const browser = getBrowser()
+    if (browser == 'Safari') 
+        return document.webkitFullscreenElement !== null
+    
+    if (browser == 'Firefox') 
+        return document.mozFullScreenElement !== null
+    
+
+    return document.fullscreenElement !== null
 }
 
-// if (document['requestFullScreen']) {
-//     // W3C API
-//     document['requestFullScreen']();
-// } else if (document['mozRequestFullScreen']) {
-//     // Mozilla current API
-//     document['mozRequestFullScreen']();
-// } else if (document['webkitRequestFullScreen']) {
-//     // Webkit current API
-//     document['webkitRequestFullScreen']();
-// } else if (document['webkitEnterFullScreen']) {
-//     // This is the IOS Mobile edge case
-//     document['webkitEnterFullScreen']();
-// }
+export function requestFullscreen(): Promise<void> {
+    const browser = getBrowser()
+    if (browser == 'Safari') 
+        return document.documentElement.webkitRequestFullscreen()
+    
+    if (browser == 'Firefox') 
+        return document.documentElement.msRequestFullscreen()
+    
+    return document.documentElement.requestFullscreen()
+}
+
