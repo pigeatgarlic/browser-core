@@ -13,8 +13,12 @@ export class MobileTouch {
             this.onGoingTouchs = new Map<number,TouchData>();
     }
 
+
+    private video : HTMLVideoElement;
     public SendFunc: ((data: string) => Promise<void>)
-    constructor(Sendfunc: ((data: string)=>Promise<void>)){
+    constructor(videoElement : HTMLVideoElement,
+                Sendfunc: ((data: string)=>Promise<void>)){
+        this.video = videoElement;
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
         this.disable = false;
@@ -153,9 +157,7 @@ export class MobileTouch {
             Math.abs(distance.now) > Math.abs(distance.prev) &&
             !isFullscreen()
         ) {
-            try {
-                await requestFullscreen();
-            } catch (e) {}
+            await requestFullscreen(this.video);
             return;
         }
 

@@ -1,7 +1,7 @@
 import { Log, LogLevel } from "../utils/log";
 import { EventCode } from "../models/keys.model";
 import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
-import { getOS } from "../utils/platform";
+import { getBrowser, getOS } from "../utils/platform";
 import { AxisType } from "../models/hid.model";
 import {Screen} from "../models/hid.model"
 import { isFullscreen, requestFullscreen } from "../utils/screen";
@@ -52,7 +52,7 @@ export class HID {
         this.video = videoElement;
         this.SendFunc = Sendfunc;
         this.Screen = new Screen();
-        this.platform = platform == 'desktop' ? new DesktopTouch(Sendfunc) : new MobileTouch(Sendfunc);
+        this.platform = platform == 'desktop' ? new DesktopTouch(Sendfunc) : new MobileTouch(videoElement,Sendfunc);
 
 
         /**
@@ -78,7 +78,8 @@ export class HID {
          * shortcuts stuff
          */
         this.shortcuts = new Array<Shortcut>();
-        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.F],requestFullscreen))
+        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.F],
+            () => {requestFullscreen(videoElement)}))
 
         /**
          * gamepad stuff
@@ -94,9 +95,9 @@ export class HID {
             const havingPtrLock = document.pointerLockElement != null
             this.relativeMouse = havingPtrLock;
 
-            if (isFullscreen() && !havingPtrLock) {
+            if ((isFullscreen() && !havingPtrLock ) && getBrowser() != 'Safari') {
                 this.video.requestPointerLock();
-            } else if (!isFullscreen() && havingPtrLock) {
+            } else if ((!isFullscreen() && havingPtrLock) && getBrowser() != 'Safari') {
                 document.exitPointerLock();
             }
         }, 100);

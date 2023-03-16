@@ -20,20 +20,20 @@ export function isFullscreen(): boolean {
     if (browser == 'Safari') 
         return document.webkitFullscreenElement !== null
     
-    if (browser == 'Firefox') 
-        return document.mozFullScreenElement !== null
-    
+    // if (browser == 'Firefox') 
+    //     return document.mozFullScreenElement !== null
 
     return document.fullscreenElement !== null
 }
 
-export function requestFullscreen(): Promise<void> {
+export function requestFullscreen(VideoElement : HTMLVideoElement): Promise<void> {
     const browser = getBrowser()
+
     if (browser == 'Safari') 
-        return document.documentElement.webkitRequestFullscreen()
+        return VideoElement.webkitRequestFullscreen()
     
-    if (browser == 'Firefox') 
-        return document.documentElement.msRequestFullscreen()
+    // if (browser == 'Firefox') 
+    //     return document.documentElement.msRequestFullscreen()
     
     return document.documentElement.requestFullscreen()
 }
