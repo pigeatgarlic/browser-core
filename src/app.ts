@@ -103,17 +103,15 @@ export class WebRTCClient  {
             this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
                 this.hid.handleIncomingData(data);
             }));
-            this.hid = new HID(
-                    this.platform,
-                    this.video,
-            async (data: string) => {
-                Log(LogLevel.Debug,data)
-                let channel = this.datachannels.get("hid")
-                if (channel == null) {
-                    return;
-                }
-                channel.sendMessage(data);
-            });
+            this.hid = new HID( this.platform, this.video,
+                (data: string) => {
+                    Log(LogLevel.Debug,data)
+                    let channel = this.datachannels.get("hid")
+                    if (channel == null) {
+                        return;
+                    }
+                    channel.sendMessage(data);
+                });
 
         } else {
             this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {

@@ -36,12 +36,12 @@ export class HID {
     private Screen : Screen;
     private video: HTMLVideoElement
 
-    private SendFunc: ((data: string) => Promise<void>)
+    private SendFunc: ((data: string) => void)
     private platform : MobileTouch | DesktopTouch
 
     constructor(platform : 'mobile' | 'desktop',
                 videoElement: HTMLVideoElement, 
-                Sendfunc: ((data: string)=>Promise<void>)){
+                Sendfunc: ((data: string)=>void)){
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();

@@ -5,7 +5,7 @@ import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model
 
 export class DesktopTouch {
     private onGoingTouchs: Map<number,TouchData>
-    public SendFunc: ((data: string) => Promise<void>)
+    public SendFunc: ((data: string) => void)
 
     private disable : boolean
     public Toggle (disable: boolean) {
@@ -16,7 +16,7 @@ export class DesktopTouch {
     }
 
 
-    constructor(Sendfunc: ((data: string)=>Promise<void>)){
+    constructor(Sendfunc: ((data: string)=>void)){
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
         this.disable = false

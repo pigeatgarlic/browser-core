@@ -15,9 +15,9 @@ export class MobileTouch {
 
 
     private video : HTMLVideoElement;
-    public SendFunc: ((data: string) => Promise<void>)
+    public SendFunc: ((data: string) => void)
     constructor(videoElement : HTMLVideoElement,
-                Sendfunc: ((data: string)=>Promise<void>)){
+                Sendfunc: ((data: string)=>void)){
         this.video = videoElement;
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
