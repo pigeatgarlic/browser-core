@@ -1,6 +1,5 @@
 import { EventCode, HIDMsg } from "../models/keys.model";
 import { Log, LogLevel } from "../utils/log";
-import { isFullscreen } from "../utils/screen";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
 
 export class DesktopTouch {

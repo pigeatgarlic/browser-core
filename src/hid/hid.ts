@@ -95,9 +95,9 @@ export class HID {
             const havingPtrLock = document.pointerLockElement != null
             this.relativeMouse = havingPtrLock;
 
-            if ((isFullscreen() && !havingPtrLock ) && getBrowser() != 'Safari') {
+            if ((isFullscreen(this.video) && !havingPtrLock ) && getBrowser() != 'Safari') {
                 this.video.requestPointerLock();
-            } else if ((!isFullscreen() && havingPtrLock) && getBrowser() != 'Safari') {
+            } else if ((!isFullscreen(this.video) && havingPtrLock) && getBrowser() != 'Safari') {
                 document.exitPointerLock();
             }
         }, 100);

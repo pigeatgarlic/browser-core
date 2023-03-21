@@ -50,7 +50,6 @@ export class MobileTouch {
 
     private async handle_swipe(touch: TouchData) : Promise<void>{
         const now = new Date().getTime();
-
 		const deltaTime = now           - touch.startTime.getTime();
 		const deltaX    = touch.clientX - touch.touchStart.clientX;
 		const deltaY    = touch.clientY - touch.touchStart.clientY;
@@ -93,7 +92,8 @@ export class MobileTouch {
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            this.onGoingTouchs.set(touches[i].identifier, new TouchData(touches[i]));
+            this.onGoingTouchs.set(i, new TouchData(touches[i]));
+            //this.onGoingTouchs.set(touches[i].identifier, new TouchData(touches[i]));
         }
     };
     private handleEnd = (evt: TouchEvent) => {
@@ -102,9 +102,11 @@ export class MobileTouch {
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            const touch = this.onGoingTouchs.get(touches[i].identifier);
+            const touch = this.onGoingTouchs.get(i);
+            //const touch = this.onGoingTouchs.get(touches[i].identifier);
             touch != null ? this.handle_swipe(touch) : null;
-            this.onGoingTouchs.delete(touches[i].identifier);
+            this.onGoingTouchs.delete(i);
+            //this.onGoingTouchs.delete(touches[i].identifier);
         }
     };
 
@@ -114,10 +116,13 @@ export class MobileTouch {
 
         const touches = evt.touches;
         for (let i = 0; i < touches.length; i++) {
-            const touch = this.onGoingTouchs.get(touches[i].identifier);
+            //const touch = this.onGoingTouchs.get(touches[i].identifier);
+            const touch = this.onGoingTouchs.get(i);
+			if(!touch) return
             touch.clientX = touches[i].clientX;
             touch.clientY = touches[i].clientY;
-            this.onGoingTouchs.set(touches[i].identifier, touch);
+            this.onGoingTouchs.set(i, touch);
+            //this.onGoingTouchs.set(touches[i].identifier, touch);
         }
 
         if (this.onGoingTouchs.size != 2) {
@@ -155,8 +160,8 @@ export class MobileTouch {
         // zoom in
         if (
             Math.abs(distance.now) > Math.abs(distance.prev) &&
-            !isFullscreen()
-        ) {
+            !isFullscreen(this.video)
+        ) {	
             await requestFullscreen(this.video);
             return;
         }
@@ -164,10 +169,10 @@ export class MobileTouch {
         // zoom out
         if (
             Math.abs(distance.now) < Math.abs(distance.prev) &&
-            isFullscreen()
+            isFullscreen(this.video)
         ) {
-            try {
-                await document.exitFullscreen();
+			try {
+				await document.exitFullscreen();
             } catch (e) {}
             return;
         }
