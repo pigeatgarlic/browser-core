@@ -15,27 +15,32 @@ declare global {
         webkitRequestFullscreen?: () => Promise<void>;
     }
 }
+
+
 export function isFullscreen(video?: HTMLVideoElement): boolean {
     const browser = getBrowser()
-    if (browser == 'Safari') {
-		return video?.webkitDisplayingFullscreen
-	}
-    
+
+	// TODO return video?.webkitDisplayingFullscreen
+    if (browser == 'Safari') 
+        return false
+	
+    // TODO test on firefox
     // if (browser == 'Firefox') 
     //     return document.mozFullScreenElement !== null
 
     return document.fullscreenElement !== null
 }
 
+// TODO figure out on IOS safari
 export function requestFullscreen(video? : HTMLVideoElement): Promise<void> {
     const browser = getBrowser()
 
-    if (browser == 'Safari') {
-		if(!video) return
-		
-		return video.webkitRequestFullscreen() // or video.webkitEnterFullScreen()
-	}
+    // TODO figure out how to do this
+	// return video.webkitRequestFullscreen() // or video.webkitEnterFullScreen()
+    if (browser == 'Safari') 
+        return
     
+    // TODO test on firefox
     // if (browser == 'Firefox') 
     //     return document.documentElement.msRequestFullscreen()
     
