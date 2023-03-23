@@ -70,7 +70,7 @@ export class TouchData implements Touch {
     // custom data
     public readonly touchStart: Touch; 
     public doMove: boolean;
-    public holdTimeout: number;
+    public holdTimeout: any;
     public leftMouseDown: boolean;
     public startTime: Date;
 }
