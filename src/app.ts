@@ -6,48 +6,48 @@ import { WebRTC } from "./webrtc";
 import { SignallingClient } from "./signaling/websocket";
 import { Pipeline } from "./pipeline/pipeline";
 import { getOS, getPlatform } from "./utils/platform";
+import { SignalingMessage, SignalingType } from "./signaling/msg";
 
 
 
 export class WebRTCClient  {
-
     public hid : HID | null
     private readonly platform : 'desktop' | 'mobile'
 
     private video : HTMLVideoElement
     private audio : HTMLAudioElement
+
     private webrtc : WebRTC
+    private webrtcConfig : RTCConfiguration
     private signaling : SignallingClient
     private datachannels : Map<string,DataChannel>;
 
     private pipelines: Map<string,Pipeline>
-    
-    DeviceSelection: (input: DeviceSelection) => Promise<DeviceSelectionResult>;
-
     started : boolean
-
     constructor(signalingURL : string,
+                token : string,
+                webrtcConfig: RTCConfiguration,
                 vid : HTMLVideoElement,
                 audio: HTMLAudioElement,
-                token : string,
-                DeviceSelection : (n: DeviceSelection) => Promise<DeviceSelectionResult>,
-                platform: 'mobile' | 'desktop' | null) {
-
+                platform?: 'mobile' | 'desktop') {
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
         Log(LogLevel.Infor,`Session token: ${token}`);
 
         LogConnectionEvent(ConnectionEvent.ApplicationStarted)
+        this.webrtcConfig = webrtcConfig
         this.started = false;
         this.video = vid;
         this.audio = audio;
         this.pipelines = new Map<string,Pipeline>();
         this.platform = platform != null ? platform : getPlatform()
         
-
-        this.DeviceSelection = DeviceSelection;
-
         this.hid = null;
         this.datachannels = new Map<string,DataChannel>();
+
+        
+
+
+
         this.signaling = new SignallingClient(signalingURL,token,
                                  this.handleIncomingPacket.bind(this));
 
@@ -119,83 +119,34 @@ export class WebRTCClient  {
         }
     }
 
-    private async handleIncomingPacket(pkt : Map<string,string>)
+    private async handleIncomingPacket(pkt : SignalingMessage)
     {
-        var target = pkt.get("Target");
-        if(target == "SDP") {
-            LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
-            var sdp = pkt.get("SDP")
-            if(sdp === undefined) {
-                Log(LogLevel.Error,"missing sdp");
-                return;
-            }
-            var type = pkt.get("Type")
-            if(type == undefined) {
-                Log(LogLevel.Error,"missing sdp type");
-                return;
-            }
-
-            this.webrtc.onIncomingSDP({
-                sdp: sdp,
-                type: (type == "offer") ? "offer" : "answer"
-            })
-        } else if (target == "ICE") {
-            LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
-            var sdpmid = pkt.get("SDPMid")
-            if(sdpmid == undefined) {
-                Log(LogLevel.Error,"Missing sdp mid field");
-            }
-            var lineidx = pkt.get("SDPMLineIndex")
-            if(lineidx === undefined) {
-                Log(LogLevel.Error,"Missing sdp line index field");
-                return;
-            }
-            var can = pkt.get("Candidate")
-            if(can == undefined) {
-                Log(LogLevel.Error,"Missing sdp candidate field");
-                return;
-            }
-
-            this.webrtc.onIncomingICE({
-                candidate: can,
-                sdpMid: sdpmid,
-                sdpMLineIndex: Number.parseInt(lineidx)
-            })
-        } else if (target == "PREFLIGHT") { //TODO
-            LogConnectionEvent(ConnectionEvent.WaitingAvailableDeviceSelection)
-            let preverro = pkt.get("Error") 
-            if (preverro != null) {
-                Log(LogLevel.Error,preverro);
-            }
-
-            let webrtcConf = pkt.get("WebRTCConfig") 
-            if (webrtcConf != null) {
-                let config = JSON.parse(webrtcConf)
-                this.webrtc.SetupConnection(config)
-            }
-            
-
-            let devices = pkt.get("Devices")
-            if (devices == null) {
-                return;
-            }
-
-            let result = await this.DeviceSelection(new DeviceSelection(devices));
-            var dat = new Map<string,string>();
-
-            dat.set("type","answer");
-            dat.set("value",result.ToString())
-            this.signaling.SignallingSend("PREFLIGHT",dat)
-            LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
-        } else if (target == "START") {
-            var dat = new Map<string,string>();
-            this.signaling.SignallingSend("START",dat)
-            LogConnectionEvent(ConnectionEvent.WaitingAvailableDevice)
+        switch (pkt.type) {
+            case SignalingType.TYPE_SDP:
+                LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
+                this.webrtc.onIncomingSDP({
+                    sdp: pkt.Sdp.SDPData,
+                    type: pkt.Sdp.Type 
+                })
+                break;
+            case SignalingType.TYPE_ICE:
+                LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
+                this.webrtc.onIncomingICE({
+                    candidate: pkt.Ice.Candidate,
+                    sdpMid: pkt.Ice.SDPMid,
+                    sdpMLineIndex: pkt.Ice.SDPMLineIndex 
+                })
+            case SignalingType.START:
+                this.webrtc.SetupConnection(this.webrtcConfig)
+            case SignalingType.END:
+                this.signaling.Close()
+            default:
+                break;
         }
     }
 
 
-    Notifier(notifier: (message :EventMessage) => (void)): WebRTCClient{
+    public Notifier(notifier: (message :EventMessage) => (void)): WebRTCClient{
         AddNotifier(notifier);
         return this
     }

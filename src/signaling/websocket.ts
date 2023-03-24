@@ -1,16 +1,18 @@
 import { UserRequest, UserResponse } from "../models/signaling.model";
 import { ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "../utils/log";
+import {SignalingMessage} from "./msg"
+
+
 
 
 export class SignallingClient
 {
-    WebSocketConnection: WebSocket;
-    PacketHandler : ((Data : Map<string,string>) => (void));
-
+    private WebSocketConnection: WebSocket;
+    PacketHandler : (Data : SignalingMessage) => Promise<void>
 
     constructor (url : string,
                  token : string,
-                 PacketHandler : ((Data : Map<string,string>) => (void)))
+                 PacketHandler : ((Data : SignalingMessage) => Promise<void>))
     {
         this.PacketHandler = PacketHandler;
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
@@ -18,6 +20,10 @@ export class SignallingClient
         this.WebSocketConnection.onopen     = ((eve : Event) => { 
             this.onServerOpen(eve)
         });
+    }
+
+    public Close () {
+        this.WebSocketConnection.close()
     }
 
     /**
@@ -31,8 +37,8 @@ export class SignallingClient
             Log(LogLevel.Error,`websocket connection error : ${eve.type}`)
             this.onServerError()
         });
-        this.WebSocketConnection.onmessage  = ((eve : MessageEvent) => { 
-            this.onServerMessage(eve)
+        this.WebSocketConnection.onmessage  = (async (eve : MessageEvent) => { 
+            await this.onServerMessage(eve)
         });
 
         this.WebSocketConnection.onclose    = ((eve : Event) => { 
@@ -45,15 +51,10 @@ export class SignallingClient
      * @param {string} request_type 
      * @param {any} content 
      */
-    public SignallingSend(Target : string, 
-                          Data: Map<string,string>)
+    public SignallingSend(msg : SignalingMessage)
     {
-        var dat =  new UserRequest(0,
-                Target,
-                new Map<string,string>(),
-                Data).toString();
-        Log(LogLevel.Debug,`sending message : ${dat}`);
-        this.WebSocketConnection.send(dat);
+        Log(LogLevel.Debug,`sending message : ${msg}`);
+        this.WebSocketConnection.send(JSON.stringify(msg));
     }
 
     /**
@@ -72,16 +73,11 @@ export class SignallingClient
      * @param {Event} event 
      * @returns 
      */
-    private onServerMessage(event : any) 
+    private async onServerMessage(event : any) 
     {
-
         var msg = JSON.parse(event.data);
-        var response = new UserResponse(msg.id,
-                                        msg.error,
-                                        msg.data);
-
-        Log(LogLevel.Debug,`received signaling message: ${response.toString()}`);
-        this.PacketHandler(response.Data);
+        Log(LogLevel.Debug,`received signaling message: ${msg}`);
+        await this.PacketHandler(msg as SignalingMessage);
     }
 }
 

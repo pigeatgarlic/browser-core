@@ -1,5 +1,6 @@
 import { ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "./utils/log";
 import { Adaptive } from "./qos/qos";
+import { SignalingMessage, SignalingType } from "./signaling/msg";
 
 export class WebRTC 
 {
@@ -7,12 +8,12 @@ export class WebRTC
     Conn: RTCPeerConnection;
     Ads : Adaptive
 
-    private SignalingSendFunc : (Target : string, Data : Map<string,string>) => (void)
+    private SignalingSendFunc : (msg : SignalingMessage) => Promise<void>
     private MetricHandler     : (Target : string) => (void)
     private TrackHandler      : (a : RTCTrackEvent) => (any)
     private channelHandler    : (a : RTCDataChannelEvent) => (any)
 
-    constructor(sendFunc        : (Target : string, Data : Map<string,string>) => (void),
+    constructor(sendFunc        : (msg : SignalingMessage) => Promise<void>,
                 TrackHandler    : (a : RTCTrackEvent) => (any),
                 channelHandler  : (a : RTCDataChannelEvent) => (any),
                 metricHandler   : (a : string) => (void))
@@ -113,41 +114,39 @@ export class WebRTC
      * @param {RTCSessionDescriptionInit} local_sdp
      */
     private async onLocalDescription(desc : RTCSessionDescriptionInit) {
-        var Conn = this.Conn;
         await this.Conn.setLocalDescription(desc)
 
-        if (!Conn.localDescription)
+        if (!this.Conn.localDescription)
             return;
 
-        var init = Conn.localDescription;
-
-        var dat = new Map<string,string>();
-        dat.set("Type",init.type)
-        dat.set("SDP",init.sdp)
-        this.SignalingSendFunc("SDP",dat);
+        var init = this.Conn.localDescription;
+        this.SignalingSendFunc({
+            type: SignalingType.TYPE_SDP,
+            Sdp: {
+                Type: init.type,
+                SDPData: init.sdp
+            }
+        });
     }
     
     
     
     private onICECandidates(event : RTCPeerConnectionIceEvent)
     {
-        if (event.candidate == null) 
-        {
+        if (event.candidate == null) {
             Log(LogLevel.Infor,"ICE Candidate was null, done");
             return;
         }
 
         var init = event.candidate.toJSON()
-
-    
-        var dat = new Map<string,string>();
-        if (init.candidate) 
-            dat.set("Candidate",init.candidate)
-        if (init.sdpMid) 
-            dat.set("SDPMid",init.sdpMid)
-        if (init.sdpMLineIndex) 
-            dat.set("SDPMLineIndex",init.sdpMLineIndex.toString())
-        this.SignalingSendFunc("ICE",dat);
+        this.SignalingSendFunc({
+            type: SignalingType.TYPE_ICE,
+            Ice: {
+                SDPMid: init.sdpMid,
+                Candidate: init.candidate,
+                SDPMLineIndex: init.sdpMLineIndex
+            }
+        });
     }
 }
 
