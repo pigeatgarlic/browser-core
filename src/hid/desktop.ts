@@ -25,11 +25,8 @@ export class DesktopTouch {
         document.addEventListener('touchcancel',    this.handleCancel.bind(this));
         document.addEventListener('touchmove',      this.handleMove.bind(this));
 
-        document.addEventListener("gamepadconnected",     this.connectGamepad.bind(this));
-        document.addEventListener("gamepaddisconnected",  this.disconnectGamepad.bind(this));
-        this.SendFunc((new HIDMsg(EventCode.GamepadConnect,{
-            gamepad_id: "0",
-        }).ToString()))
+        window.addEventListener("gamepadconnected",     this.connectGamepad.bind(this));
+        window.addEventListener("gamepaddisconnected",  this.disconnectGamepad.bind(this));
     }
 
     public handleIncomingData(data: string) {
