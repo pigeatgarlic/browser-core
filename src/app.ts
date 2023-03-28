@@ -55,6 +55,7 @@ export class WebRTCClient  {
                                  this.handleIncomingTrack.bind(this),
                                  this.handleIncomingDataChannel.bind(this),
                                  this.handleWebRTCMetric.bind(this));
+
     }
 
     private handleIncomingTrack(evt: RTCTrackEvent): any
@@ -67,6 +68,9 @@ export class WebRTCClient  {
             (this.audio as HTMLAudioElement).srcObject = evt.streams[0]
         } else if (evt.track.kind == "video") {
             this.ResetVideo();
+            setTimeout(() => {
+                this.DoneHandshake();
+            },10000)
             LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
             (this.video as HTMLVideoElement).srcObject = evt.streams[0]
             // let pipeline = new Pipeline('h264'); // TODO
@@ -79,7 +83,7 @@ export class WebRTCClient  {
 
     private handleWebRTCMetric(a: string)
     {
-        Log(LogLevel.Infor,`metric : ${a}`)
+        Log(LogLevel.Debug,`metric : ${a}`)
 
         const dcName = "adaptive";
         let channel = this.datachannels.get(dcName)
@@ -103,20 +107,21 @@ export class WebRTCClient  {
             this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
                 this.hid.handleIncomingData(data);
             }));
-            this.hid = new HID( this.platform, this.video,
-                (data: string) => {
+
+            this.hid = new HID( this.platform, this.video, (data: string) => {
                     Log(LogLevel.Debug,data)
+
                     let channel = this.datachannels.get("hid")
-                    if (channel == null) {
+                    if (channel == null) 
                         return;
-                    }
+                    
                     channel.sendMessage(data);
                 });
-
-        } else {
-            this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
-            }));
+            return
         }
+
+        this.datachannels.set(a.channel.label,new DataChannel(a.channel,(data) => {
+        }));
     }
 
     private async handleIncomingPacket(pkt : SignalingMessage)
@@ -125,21 +130,24 @@ export class WebRTCClient  {
             case SignalingType.TYPE_SDP:
                 LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
                 this.webrtc.onIncomingSDP({
-                    sdp: pkt.Sdp.SDPData,
-                    type: pkt.Sdp.Type 
+                    sdp: pkt.sdp.SDPData,
+                    type: pkt.sdp.Type 
                 })
                 break;
             case SignalingType.TYPE_ICE:
                 LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
                 this.webrtc.onIncomingICE({
-                    candidate: pkt.Ice.Candidate,
-                    sdpMid: pkt.Ice.SDPMid,
-                    sdpMLineIndex: pkt.Ice.SDPMLineIndex 
+                    candidate: pkt.ice.Candidate,
+                    sdpMid: pkt.ice.SDPMid != undefined ? pkt.ice.SDPMid : "",
+                    sdpMLineIndex: pkt.ice.SDPMLineIndex != undefined ? pkt.ice.SDPMLineIndex : 0,
                 })
+                break;
             case SignalingType.START:
                 this.webrtc.SetupConnection(this.webrtcConfig)
+                break;
             case SignalingType.END:
                 this.signaling.Close()
+                break;
             default:
                 break;
         }
@@ -161,7 +169,7 @@ export class WebRTCClient  {
 
         channel.sendMessage(JSON.stringify({
             type: "framerate",
-            framerate: framerate
+            value: framerate
         }))
 
     }
@@ -175,10 +183,15 @@ export class WebRTCClient  {
 
         channel.sendMessage(JSON.stringify({
             type: "bitrate",
-            bitrate: bitrate
+            value: bitrate
         }))
     }
-    private ResetVideo () {
+    private DoneHandshake() {
+        this.signaling.SignallingSend({
+            type : SignalingType.END
+        })
+    }
+    public ResetVideo () {
         const dcName = "manual";
         let channel = this.datachannels.get(dcName)
         if (channel == null) {
@@ -188,7 +201,6 @@ export class WebRTCClient  {
 
         channel.sendMessage(JSON.stringify({
             type: "reset",
-            reset: 0,
         }))
     }
 }

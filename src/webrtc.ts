@@ -122,7 +122,7 @@ export class WebRTC
         var init = this.Conn.localDescription;
         this.SignalingSendFunc({
             type: SignalingType.TYPE_SDP,
-            Sdp: {
+            sdp: {
                 Type: init.type,
                 SDPData: init.sdp
             }
@@ -141,7 +141,7 @@ export class WebRTC
         var init = event.candidate.toJSON()
         this.SignalingSendFunc({
             type: SignalingType.TYPE_ICE,
-            Ice: {
+            ice: {
                 SDPMid: init.sdpMid,
                 Candidate: init.candidate,
                 SDPMLineIndex: init.sdpMLineIndex

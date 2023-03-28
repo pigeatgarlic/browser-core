@@ -53,8 +53,9 @@ export class SignallingClient
      */
     public SignallingSend(msg : SignalingMessage)
     {
-        Log(LogLevel.Debug,`sending message : ${msg}`);
-        this.WebSocketConnection.send(JSON.stringify(msg));
+        const data = JSON.stringify(msg)
+        Log(LogLevel.Debug,`sending message : ${data}`);
+        this.WebSocketConnection.send(data);
     }
 
     /**
@@ -76,7 +77,7 @@ export class SignallingClient
     private async onServerMessage(event : any) 
     {
         var msg = JSON.parse(event.data);
-        Log(LogLevel.Debug,`received signaling message: ${msg}`);
+        Log(LogLevel.Debug,`received signaling message: ${event.data}`);
         await this.PacketHandler(msg as SignalingMessage);
     }
 }

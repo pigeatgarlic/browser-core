@@ -1,8 +1,8 @@
 export enum SignalingType {
-    TYPE_SDP = 0,
-    TYPE_ICE,
-    START,
-    END,
+    TYPE_SDP = 1,
+    TYPE_ICE = 2,
+    START = 3,
+    END = 4,
 }
 
 export type ICE = {
@@ -17,10 +17,10 @@ export type SDP = {
 
 export type SignalingMessage = {
     type : SignalingType.TYPE_SDP
-    Sdp : SDP
+    sdp : SDP
 } | {
     type : SignalingType.TYPE_ICE
-    Ice : ICE
+    ice : ICE
 } | {
     type : SignalingType.END
 } | {
