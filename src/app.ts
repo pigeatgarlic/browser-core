@@ -68,9 +68,7 @@ export class WebRTCClient  {
             (this.audio as HTMLAudioElement).srcObject = evt.streams[0]
         } else if (evt.track.kind == "video") {
             this.ResetVideo();
-            setTimeout(() => {
-                this.DoneHandshake();
-            },10000)
+            setTimeout(() => { this.DoneHandshake(); },3000)
             LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
             (this.video as HTMLVideoElement).srcObject = evt.streams[0]
             // let pipeline = new Pipeline('h264'); // TODO
@@ -167,6 +165,7 @@ export class WebRTCClient  {
             return;
         }
 
+        console.log(framerate)
         channel.sendMessage(JSON.stringify({
             type: "framerate",
             value: framerate
