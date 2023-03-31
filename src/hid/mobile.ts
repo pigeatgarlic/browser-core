@@ -39,8 +39,6 @@ export class MobileTouch {
                 const index = Number(fields.at(1));
                 const sMag = Number(fields.at(2)) / 255;
                 const wMag = Number(fields.at(3)) / 255;
-                // window.navigator.vibrate()
-                // TODO native rumble
                 if (sMag > 0 || wMag > 0) {
                     navigator.getGamepads().forEach((gamepad: any) =>{
                         if (gamepad?.index === index)
