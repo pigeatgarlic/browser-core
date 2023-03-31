@@ -36,12 +36,20 @@ export class MobileTouch {
         const fields = data.split("|")
         switch (fields.at(0)) {
             case 'grum':
-                // window.navigator.vibrate()
-                // TODO native rumble
-                // navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-                //     if (gamepad == null) 
-                //         return;
-                // })
+                const index = Number(fields.at(1));
+                const sMag = Number(fields.at(2)) / 255;
+                const wMag = Number(fields.at(3)) / 255;
+                if (sMag > 0 || wMag > 0) {
+                    navigator.getGamepads().forEach((gamepad: any) =>{
+                        if (gamepad?.index === index)
+                        gamepad?.vibrationActuator?.playEffect?.("dual-rumble", {
+                            startDelay: 0,
+                            duration: 200,
+                            weakMagnitude: wMag,
+                            strongMagnitude: sMag,
+                        });
+                    })
+                }
                 break;
             default:
                 break;
