@@ -1,10 +1,12 @@
 import { EventCode, HIDMsg } from "../models/keys.model";
 import { isFullscreen, requestFullscreen } from "../utils/screen";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
+import { getOS, OS } from "../utils/platform";
 
 export class MobileTouch {
     private onGoingTouchs: Map<number,TouchData>
 
+	private os : OS
     private disable : boolean
     public Toggle (disable: boolean) {
         console.log(disable ? 'disable touch' : 'enable touch')
@@ -22,6 +24,7 @@ export class MobileTouch {
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
         this.disable = false;
+		this.os = getOS()
 
         document.addEventListener('touchstart',     this.handleStart.bind(this));
         document.addEventListener('touchend',       this.handleEnd.bind(this));
@@ -100,8 +103,9 @@ export class MobileTouch {
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            this.onGoingTouchs.set(i, new TouchData(touches[i]));
-            //this.onGoingTouchs.set(touches[i].identifier, new TouchData(touches[i]));
+			const key = this.os == 'Android' ? touches[i].identifier : i;
+			this.onGoingTouchs.set(key, new TouchData(touches[i]));
+
         }
     };
     private handleEnd = (evt: TouchEvent) => {
@@ -110,11 +114,10 @@ export class MobileTouch {
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-            const touch = this.onGoingTouchs.get(i);
-            //const touch = this.onGoingTouchs.get(touches[i].identifier);
+			const key = this.os == 'Android' ? touches[i].identifier : i;
+			const touch = this.onGoingTouchs.get(key);
             touch != null ? this.handle_swipe(touch) : null;
-            this.onGoingTouchs.delete(i);
-            //this.onGoingTouchs.delete(touches[i].identifier);
+            this.onGoingTouchs.delete(key);
         }
     };
 
@@ -124,13 +127,12 @@ export class MobileTouch {
 
         const touches = evt.touches;
         for (let i = 0; i < touches.length; i++) {
-            //const touch = this.onGoingTouchs.get(touches[i].identifier);
-            const touch = this.onGoingTouchs.get(i);
+			const key = this.os == 'Android' ? touches[i].identifier : i;
+            const touch = this.onGoingTouchs.get(key);
 			if(!touch) return
             touch.clientX = touches[i].clientX;
             touch.clientY = touches[i].clientY;
-            this.onGoingTouchs.set(i, touch);
-            //this.onGoingTouchs.set(touches[i].identifier, touch);
+            this.onGoingTouchs.set(key, touch);
         }
 
         if (this.onGoingTouchs.size != 2) {
