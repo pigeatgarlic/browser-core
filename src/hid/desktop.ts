@@ -25,23 +25,30 @@ export class DesktopTouch {
         document.addEventListener('touchcancel',    this.handleCancel.bind(this));
         document.addEventListener('touchmove',      this.handleMove.bind(this));
 
-        document.addEventListener("gamepadconnected",     this.connectGamepad.bind(this));
-        document.addEventListener("gamepaddisconnected",  this.disconnectGamepad.bind(this));
-        this.SendFunc((new HIDMsg(EventCode.GamepadConnect,{
-            gamepad_id: "0",
-        }).ToString()))
+        window.addEventListener("gamepadconnected",     this.connectGamepad.bind(this));
+        window.addEventListener("gamepaddisconnected",  this.disconnectGamepad.bind(this));
     }
 
     public handleIncomingData(data: string) {
         const fields = data.split("|")
         switch (fields.at(0)) {
             case 'grum':
+                const index = Number(fields.at(1));
+                const sMag = Number(fields.at(2)) / 255;
+                const wMag = Number(fields.at(3)) / 255;
                 // window.navigator.vibrate()
                 // TODO native rumble
-                // navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-                //     if (gamepad == null) 
-                //         return;
-                // })
+                if (sMag > 0 || wMag > 0) {
+                    navigator.getGamepads().forEach((gamepad: any) =>{
+                        if (gamepad?.index === index)
+                        gamepad?.vibrationActuator?.playEffect?.("dual-rumble", {
+                            startDelay: 0,
+                            duration: 200,
+                            weakMagnitude: wMag,
+                            strongMagnitude: sMag,
+                        });
+                    })
+                }
                 break;
             default:
                 break;

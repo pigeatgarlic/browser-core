@@ -128,7 +128,7 @@ export class HID {
 
     private runButton() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-            if (gamepad == null) 
+            if (gamepad == null || gamepad.mapping !== 'standard') 
                 return;
                 
             
@@ -152,7 +152,7 @@ export class HID {
     };
     private runSlider() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-            if (gamepad == null) 
+            if (gamepad == null || gamepad.mapping != 'standard') 
                 return;
 
             gamepad.buttons.forEach((button: GamepadButton,index: number) => {
@@ -176,7 +176,7 @@ export class HID {
     };
     private runAxis() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-            if (gamepad == null) 
+            if (gamepad == null || gamepad.mapping !== 'standard') 
                 return;
 
             gamepad.axes.forEach((value: number, index: number) => {
