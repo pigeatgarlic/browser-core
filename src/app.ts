@@ -78,11 +78,11 @@ export class WebRTCClient  {
             setTimeout(() => { this.DoneHandshake(); },3000)
             LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
             this.video.srcObject = evt.streams[0]
-            setInterval(async () => {  // user must interact with the document first, by then, audio can start to play. so we wait for use to interact
+            setInterval(async () => {  // user must interact with the document first, by then, video can start to play. so we wait for use to interact
                 try {
                     await this.video.play()
                 } catch (e) {
-                    console.log(`error playing audio ${JSON.stringify(e)}`)
+                    console.log(`error playing video ${JSON.stringify(e)}`)
                 }
             },1000)
             // let pipeline = new Pipeline('h264'); // TODO
