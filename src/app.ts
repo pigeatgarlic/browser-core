@@ -67,13 +67,24 @@ export class WebRTCClient  {
             LogConnectionEvent(ConnectionEvent.ReceivedAudioStream);
             this.audio.srcObject = evt.streams[0]
             setInterval(async () => {  // user must interact with the document first, by then, audio can start to play. so we wait for use to interact
-                await this.audio.play()
+                try {
+                    await this.audio.play()
+                } catch (e) {
+                    console.log(`error playing audio ${JSON.stringify(e)}`)
+                }
             },1000)
         } else if (evt.track.kind == "video") {
             this.ResetVideo();
             setTimeout(() => { this.DoneHandshake(); },3000)
             LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
             this.video.srcObject = evt.streams[0]
+            setInterval(async () => {  // user must interact with the document first, by then, audio can start to play. so we wait for use to interact
+                try {
+                    await this.video.play()
+                } catch (e) {
+                    console.log(`error playing audio ${JSON.stringify(e)}`)
+                }
+            },1000)
             // let pipeline = new Pipeline('h264'); // TODO
             // pipeline.updateSource(evt.streams[0])
             // pipeline.updateTransform(new WebGLTransform());
