@@ -204,6 +204,18 @@ export class WebRTCClient  {
             type : SignalingType.END
         })
     }
+    public ResetAudio () {
+        const dcName = "manual";
+        let channel = this.datachannels.get(dcName)
+        if (channel == null) {
+            Log(LogLevel.Warning,`attempting to send message while data channel ${dcName} is ready`);
+            return;
+        }
+
+        channel.sendMessage(JSON.stringify({
+            type: "audio-reset",
+        }))
+    }
     public ResetVideo () {
         const dcName = "manual";
         let channel = this.datachannels.get(dcName)
