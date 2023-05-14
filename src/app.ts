@@ -65,6 +65,7 @@ export class WebRTCClient  {
         if (evt.track.kind == "audio")
         {
             LogConnectionEvent(ConnectionEvent.ReceivedAudioStream);
+            this.audio.srcObject = null;
             this.audio.srcObject = evt.streams[0]
             setInterval(async () => {  // user must interact with the document first, by then, audio can start to play. so we wait for use to interact
                 try {
@@ -77,6 +78,16 @@ export class WebRTCClient  {
             this.ResetVideo();
             setTimeout(() => { this.DoneHandshake(); },3000)
             LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
+            // we should put an alert here to comply webkit policy
+            if (this.platform == 'mobile') {
+                let text = "Press a button!\nEither OK or Cancel.";
+                if (confirm(text) == true) {
+                    text = "You pressed OK!";
+                }
+            }
+
+
+            this.video.srcObject = null;
             this.video.srcObject = evt.streams[0]
             setInterval(async () => {  // user must interact with the document first, by then, video can start to play. so we wait for use to interact
                 try {
