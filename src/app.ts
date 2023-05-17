@@ -165,11 +165,6 @@ export class WebRTCClient  {
     }
 
 
-    public Notifier(notifier: (message :EventMessage) => (void)): WebRTCClient{
-        AddNotifier(notifier);
-        return this
-    }
-
     public ChangeFramerate (framerate : number) {
         const dcName = "manual";
         let channel = this.datachannels.get(dcName)
