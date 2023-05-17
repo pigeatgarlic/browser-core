@@ -33,7 +33,6 @@ export class WebRTCClient  {
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
         Log(LogLevel.Infor,`Session token: ${token}`);
 
-        LogConnectionEvent(ConnectionEvent.ApplicationStarted)
         this.webrtcConfig = webrtcConfig
         this.started = false;
         this.video = vid;
@@ -58,13 +57,13 @@ export class WebRTCClient  {
 
     }
 
-    private handleIncomingTrack(evt: RTCTrackEvent): any
+    private async handleIncomingTrack(evt: RTCTrackEvent) 
     {
         this.started = true;
         Log(LogLevel.Infor,`Incoming ${evt.track.kind} stream`);
         if (evt.track.kind == "audio")
         {
-            LogConnectionEvent(ConnectionEvent.ReceivedAudioStream);
+            await LogConnectionEvent(ConnectionEvent.ReceivedAudioStream);
             this.audio.srcObject = evt.streams[0]
             setInterval(async () => {  // user must interact with the document first, by then, audio can start to play. so we wait for use to interact
                 try {
@@ -76,7 +75,7 @@ export class WebRTCClient  {
         } else if (evt.track.kind == "video") {
             this.ResetVideo();
             setTimeout(() => { this.DoneHandshake(); },3000)
-            LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
+            await LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
             this.video.srcObject = evt.streams[0]
             setInterval(async () => {  // user must interact with the document first, by then, video can start to play. so we wait for use to interact
                 try {

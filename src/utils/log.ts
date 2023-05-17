@@ -89,12 +89,12 @@ function GetEventMessage(event: ConnectionEvent): EventMessage {
 
 class Logger {
     logs: Array<string>
-    Notifiers: Array<((message: EventMessage) => (void))>
+    Notifiers: Array<((message: EventMessage) => Promise<void>)>
 
 
     constructor() {
         this.logs = new Array<string>();
-        this.Notifiers = new Array<((message: string) => (void))>();
+        this.Notifiers = new Array<((message: string) => Promise<void>)>();
     }
 
     filterEvent(data: string){
@@ -103,13 +103,14 @@ class Logger {
 
     
 
-    BroadcastEvent(event: ConnectionEvent) {
-        this.Notifiers.forEach(x => {
-            x(GetEventMessage(event));
-        })
+    async BroadcastEvent(event: ConnectionEvent) {
+        for (let index = 0; index < this.Notifiers.length; index++) {
+            const x = this.Notifiers[index];
+            await x(GetEventMessage(event));
+        }
     }
 
-    AddNotifier(notifier: ((message :EventMessage) => (void))) {
+    AddNotifier(notifier: ((message :EventMessage) => Promise<void>)) {
         this.Notifiers.push(notifier);
     }
 }
@@ -127,7 +128,7 @@ function getLoggerSingleton(): Logger{
 
 
 
-export function AddNotifier(notifier: (message :EventMessage) => (void)){
+export function AddNotifier(notifier: (message :EventMessage) => Promise<void>){
     let logger = getLoggerSingleton()
     logger.AddNotifier(notifier);
 }
@@ -143,7 +144,7 @@ export function Log(level : LogLevel, message: string) {
     console.log(`${GetLogLevelString(level)}: ${message}`)
 }
 
-export function LogConnectionEvent(a : ConnectionEvent) {
+export async function LogConnectionEvent(a : ConnectionEvent) {
     let logger = getLoggerSingleton()
-    logger.BroadcastEvent(a);
+    await logger.BroadcastEvent(a);
 }
