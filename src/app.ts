@@ -64,7 +64,7 @@ export class WebRTCClient  {
         if (evt.track.kind == "audio")
         {
             await LogConnectionEvent(ConnectionEvent.ReceivedAudioStream);
-            this.audio.srcObject = evt.streams[0]
+            this.audio.srcObject = evt.streams.find(val => val.getAudioTracks().length > 0)
             setInterval(async () => {  // user must interact with the document first, by then, audio can start to play. so we wait for use to interact
                 try {
                     await this.audio.play()
@@ -76,7 +76,7 @@ export class WebRTCClient  {
             this.ResetVideo();
             setTimeout(() => { this.DoneHandshake(); },3000)
             await LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
-            this.video.srcObject = evt.streams[0]
+            this.video.srcObject = evt.streams.find(val => val.getVideoTracks().length > 0)
             setInterval(async () => {  // user must interact with the document first, by then, video can start to play. so we wait for use to interact
                 try {
                     await this.video.play()
