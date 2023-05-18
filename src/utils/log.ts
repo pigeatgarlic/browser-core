@@ -24,77 +24,41 @@ function GetLogLevelString(level: LogLevel): string {
 
 
 export enum ConnectionEvent {
-    ApplicationStarted,
+    ApplicationStarted                = "Application Started",
 
-    WebSocketConnecting,
-    WebSocketConnected,
-    WebSocketDisconnected,
+    WebSocketConnecting               = "WebSocket Connecting",
+    WebSocketConnected                = "WebSocket Connected",
+    WebSocketDisconnected             = "WebSocket Disconnected",
 
-    WaitingAvailableDevice,
-    WaitingAvailableDeviceSelection,
+    WaitingAvailableDevice            = "Waiting Available Device",
+    WaitingAvailableDeviceSelection   = "Waiting Available Device Selection",
 
-    ExchangingSignalingMessage,
+    ExchangingSignalingMessage        = "Exchanging Signaling Message",
 
-    WebRTCConnectionChecking,
-    WebRTCConnectionDoneChecking,
-    WebRTCConnectionClosed,
+    WebRTCConnectionChecking          = "WebRTC Connection Checking",
+    WebRTCConnectionDoneChecking      = "WebRTC Connection Done Checking",
+    WebRTCConnectionClosed            = "WebRTC Connection Closed",
 
-    ReceivedVideoStream,
-    ReceivedAudioStream,
-    ReceivedDatachannel,
+    ReceivedVideoStream               = "Received Video Stream",
+    ReceivedAudioStream               = "Received Audio Stream",
+    ReceivedDatachannel               = "Received Datachannel",
 
-    GamepadConnected,
-    GamepadDisconnected,
-}
-
-
-export type EventMessage = 'ApplicationStarted' | 'WebSocketConnecting' | 'WebSocketConnected' | 'WebSocketDisconnected' | 'WaitingAvailableDevice' | 'WaitingAvailableDeviceSelection' | 'ExchangingSignalingMessage' | 'WebRTCConnectionChecking' | 'WebRTCConnectionDoneChecking' | 'WebRTCConnectionClosed' | 'ReceivedVideoStream' | 'ReceivedAudioStream' | 'ReceivedDatachannel' | 'GamepadConnected' | 'GamepadDisconnected' 
-function GetEventMessage(event: ConnectionEvent): EventMessage {
-    switch (event) {
-    case ConnectionEvent.ApplicationStarted:
-        return "ApplicationStarted"
-    case ConnectionEvent.WebSocketConnecting:
-        return "WebSocketConnecting"
-    case ConnectionEvent.WebSocketConnected:
-        return "WebSocketConnected"
-    case ConnectionEvent.WebSocketDisconnected:
-        return "WebSocketDisconnected"
-    case ConnectionEvent.WaitingAvailableDevice:
-        return "WaitingAvailableDevice"
-    case ConnectionEvent.WaitingAvailableDeviceSelection:
-        return "WaitingAvailableDeviceSelection"
-    case ConnectionEvent.ExchangingSignalingMessage:
-        return "ExchangingSignalingMessage"
-    case ConnectionEvent.WebRTCConnectionChecking:
-        return "WebRTCConnectionChecking"
-    case ConnectionEvent.WebRTCConnectionDoneChecking:
-        return "WebRTCConnectionDoneChecking"
-    case ConnectionEvent.ReceivedVideoStream:
-        return "ReceivedVideoStream"
-    case ConnectionEvent.ReceivedAudioStream:
-        return "ReceivedAudioStream"
-    case ConnectionEvent.ReceivedDatachannel:
-        return "ReceivedDatachannel"
-    case ConnectionEvent.WebRTCConnectionClosed:
-        return "WebRTCConnectionClosed"
-    case ConnectionEvent.GamepadConnected:
-        return "GamepadConnected"
-    case ConnectionEvent.GamepadDisconnected:
-        return "GamepadDisconnected"
-    }
+    GamepadConnected                  = "Gamepad Connected",
+    GamepadDisconnected               = "Gamepad Disconnected",
 }
 
 
 
+type LogCallback = (message :ConnectionEvent, text?: string) => Promise<void>
 
 class Logger {
     logs: Array<string>
-    Notifiers: Array<((message: EventMessage) => Promise<void>)>
+    Notifiers: Array<LogCallback>
 
 
     constructor() {
         this.logs = new Array<string>();
-        this.Notifiers = new Array<((message: string) => Promise<void>)>();
+        this.Notifiers = new Array<LogCallback>();
     }
 
     filterEvent(data: string){
@@ -103,14 +67,14 @@ class Logger {
 
     
 
-    async BroadcastEvent(event: ConnectionEvent) {
+    async BroadcastEvent(event: ConnectionEvent, text?: string) {
         for (let index = 0; index < this.Notifiers.length; index++) {
             const x = this.Notifiers[index];
-            await x(GetEventMessage(event));
+            await x(event,text);
         }
     }
 
-    AddNotifier(notifier: ((message :EventMessage) => Promise<void>)) {
+    AddNotifier(notifier: ((message :string) => Promise<void>)) {
         this.Notifiers.push(notifier);
     }
 }
@@ -128,7 +92,7 @@ function getLoggerSingleton(): Logger{
 
 
 
-export function AddNotifier(notifier: (message :EventMessage) => Promise<void>){
+export function AddNotifier(notifier: LogCallback){
     let logger = getLoggerSingleton()
     logger.AddNotifier(notifier);
 }
@@ -136,15 +100,13 @@ export function AddNotifier(notifier: (message :EventMessage) => Promise<void>){
 
 
 export function Log(level : LogLevel, message: string) {
-    // let logger = getLoggerSingleton()
-    // logger.filterEvent(JSON.stringify(level));
     if (level == LogLevel.Debug) 
         return
         
     console.log(`${GetLogLevelString(level)}: ${message}`)
 }
 
-export async function LogConnectionEvent(a : ConnectionEvent) {
+export async function LogConnectionEvent(a : ConnectionEvent , text?: string) {
     let logger = getLoggerSingleton()
-    await logger.BroadcastEvent(a);
+    await logger.BroadcastEvent(a,text);
 }

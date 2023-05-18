@@ -1,6 +1,6 @@
 import { DataChannel } from "./datachannel/datachannel";
 import { HID } from "./hid/hid"
-import { AddNotifier, ConnectionEvent, EventMessage, Log, LogConnectionEvent, LogLevel } from "./utils/log";
+import { AddNotifier, ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "./utils/log";
 import { DeviceSelection, DeviceSelectionResult } from "./models/devices.model";
 import { WebRTC } from "./webrtc";
 import { SignallingClient } from "./signaling/websocket";
@@ -75,7 +75,7 @@ export class WebRTCClient  {
         } else if (evt.track.kind == "video") {
             this.ResetVideo();
             setTimeout(() => { this.DoneHandshake(); },3000)
-            await LogConnectionEvent(ConnectionEvent.ReceivedVideoStream);
+            await LogConnectionEvent(ConnectionEvent.ReceivedVideoStream, JSON.stringify(evt.streams.map(x => x.getTracks().map(x => x.label))));
             this.video.srcObject = evt.streams.find(val => val.getVideoTracks().length > 0)
             setInterval(async () => {  // user must interact with the document first, by then, video can start to play. so we wait for use to interact
                 try {
