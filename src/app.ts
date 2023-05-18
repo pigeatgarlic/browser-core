@@ -61,7 +61,7 @@ export class WebRTCClient  {
         await LogConnectionEvent(evt.track.kind == 'video' 
             ? ConnectionEvent.ReceivedVideoStream 
             : ConnectionEvent.ReceivedAudioStream, 
-            JSON.stringify(evt.streams.map(x => x.getTracks().map(x => x))));
+            JSON.stringify(evt.streams.map(x => x.getTracks().map(x => x.kind + x.label + x.id))));
 
         if (evt.track.kind == "video") 
             this.video.srcObject = evt.streams.find(val => val.getVideoTracks().length > 0)
