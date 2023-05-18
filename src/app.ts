@@ -23,7 +23,6 @@ export class WebRTCClient  {
     private datachannels : Map<string,DataChannel>;
 
     private pipelines: Map<string,Pipeline>
-    started : boolean
     constructor(signalingURL : string,
                 token : string,
                 webrtcConfig: RTCConfiguration,
@@ -34,7 +33,6 @@ export class WebRTCClient  {
         Log(LogLevel.Infor,`Session token: ${token}`);
 
         this.webrtcConfig = webrtcConfig
-        this.started = false;
         this.video = vid;
         this.audio = audio;
         this.pipelines = new Map<string,Pipeline>();
@@ -59,37 +57,32 @@ export class WebRTCClient  {
 
     private async handleIncomingTrack(evt: RTCTrackEvent) 
     {
-        this.started = true;
         Log(LogLevel.Infor,`Incoming ${evt.track.kind} stream`);
-        if (evt.track.kind == "audio")
-        {
-            await LogConnectionEvent(ConnectionEvent.ReceivedAudioStream);
-            this.audio.srcObject = evt.streams.find(val => val.getAudioTracks().length > 0)
-            setInterval(async () => {  // user must interact with the document first, by then, audio can start to play. so we wait for use to interact
-                try {
-                    await this.audio.play()
-                } catch (e) {
-                    console.log(`error playing audio ${JSON.stringify(e)}`)
-                }
-            },1000)
-        } else if (evt.track.kind == "video") {
-            this.ResetVideo();
-            setTimeout(() => { this.DoneHandshake(); },3000)
-            await LogConnectionEvent(ConnectionEvent.ReceivedVideoStream, JSON.stringify(evt.streams.map(x => x.getTracks().map(x => x.label))));
+        await LogConnectionEvent(evt.track.kind == 'video' 
+            ? ConnectionEvent.ReceivedVideoStream 
+            : ConnectionEvent.ReceivedAudioStream, 
+            JSON.stringify(evt.streams.map(x => x.getTracks().map(x => x))));
+
+        if (evt.track.kind == "video") 
             this.video.srcObject = evt.streams.find(val => val.getVideoTracks().length > 0)
-            setInterval(async () => {  // user must interact with the document first, by then, video can start to play. so we wait for use to interact
-                try {
-                    await this.video.play()
-                } catch (e) {
-                    console.log(`error playing video ${JSON.stringify(e)}`)
-                }
-            },1000)
+        else if (evt.track.kind == "audio") 
+            this.audio.srcObject = evt.streams.find(val => val.getAudioTracks().length > 0)
+
+        if (evt.track.kind == "video")  {
+            setTimeout(this.DoneHandshake,3000)
             // let pipeline = new Pipeline('h264'); // TODO
             // pipeline.updateSource(evt.streams[0])
             // pipeline.updateTransform(new WebGLTransform());
             // pipeline.updateSink(new VideoSink(this.video.current as HTMLVideoElement))
             // this.pipelines.set(evt.track.id,pipeline);
         }
+
+        // user must interact with the document first, by then, video can start to play. so we wait for use to interact
+        if (evt.track.kind == "audio") 
+            await this.audio.play()
+        else if (evt.track.kind == "video") 
+            await this.video.play()
+
     }
 
     private handleWebRTCMetric(a: string)
