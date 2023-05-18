@@ -8,7 +8,7 @@ export class UserResponse {
     {
         this.Id = id
         this.Error = error
-        var Data = new Map<string,string>();
+        const Data = new Map<string,string>();
         Object.keys(data).forEach(function(key) {
             Data.set(key,data[key]);
         });
@@ -16,7 +16,7 @@ export class UserResponse {
     }
 
     public toString(): string {
-        var ret = {
+        const ret = {
             id: this.Id,
             error: this.Error,
             data: {},
@@ -51,7 +51,7 @@ export class UserRequest {
     }
 
     public toString(): string {
-        var ret = {
+        const ret = {
             id: this.Id,
             target: this.Target,
             headers: {},

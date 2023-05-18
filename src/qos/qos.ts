@@ -1,25 +1,24 @@
 import { AudioMetrics, MetricCallback, NetworkMetrics, VideoMetrics } from "./models";
 
 export class Adaptive {
+    private networkMetricCallback : (data: NetworkMetrics) => void;
+    private audioMetricCallback   : (data: AudioMetrics) => void;
+    private videoMetricCallback   : (data: VideoMetrics) => void;
+
+    private conn : RTCPeerConnection
+    private loopNumber: number;
+
     constructor(conn: RTCPeerConnection,
                 callback : MetricCallback) {
 
         this.conn = conn;
-        this.running = true;
 
         this.networkMetricCallback = callback.networkMetricCallback ;
         this.audioMetricCallback   = callback.audioMetricCallback   ;
         this.videoMetricCallback   = callback.videoMetricCallback   ;
 
-        this.startCollectingStat(this.conn);
+        this.loopNumber = setInterval(this.getConnectionStats.bind(this),200)
     }
-
-    networkMetricCallback : (data: NetworkMetrics) => void;
-    audioMetricCallback   : (data: AudioMetrics) => void;
-    videoMetricCallback   : (data: VideoMetrics) => void;
-
-    conn : RTCPeerConnection
-    running : boolean
 
 
     filterNetwork(report : RTCStatsReport) : NetworkMetrics {
@@ -129,35 +128,25 @@ export class Adaptive {
 
 
 
-    async getConnectionStats(conn : RTCPeerConnection) 
+    private async getConnectionStats() 
     {
-        let result = await conn.getStats()
+        const result = await this.conn.getStats()
 
-        let network = this.filterNetwork(result);
+        const network = this.filterNetwork(result);
         if (network != null)  
             this.networkMetricCallback(network);
 
-        let audio   = this.filterAudio(result);
+        const audio   = this.filterAudio(result);
         if (audio != null) 
             this.audioMetricCallback(audio);
         
-        let video   = this.filterVideo(result);
+        const video   = this.filterVideo(result);
         if (video != null) 
             this.videoMetricCallback(video);
-        
     }
 
-    /**
-     * 
-     */
-    startCollectingStat(conn: RTCPeerConnection)
-    {
-        var statsLoop = async () => {        
-            await this.getConnectionStats(conn);
-            setTimeout(statsLoop, 300);
-        };
-
-        statsLoop();
+    public Close() {
+        clearInterval(this.loopNumber)
     }
 }
 

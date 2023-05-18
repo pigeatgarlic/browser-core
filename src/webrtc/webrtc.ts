@@ -110,8 +110,8 @@ export class WebRTC
      * @param {*} ice 
      */
     public async onIncomingICE(ice : RTCIceCandidateInit) {
-        var candidate = new RTCIceCandidate(ice);
         try{
+            const candidate = new RTCIceCandidate(ice);
             await this.Conn.addIceCandidate(candidate)
         } catch(error)  {
             Log(LogLevel.Error,error);
@@ -132,9 +132,8 @@ export class WebRTC
             return;
     
         try{
-            var Conn = this.Conn;
-            await Conn.setRemoteDescription(sdp)
-            var ans = await Conn.createAnswer()
+            await this.Conn.setRemoteDescription(sdp)
+            const ans = await this.Conn.createAnswer()
             await this.onLocalDescription(ans);
         } catch(error) {
             Log(LogLevel.Error,error);
@@ -153,7 +152,7 @@ export class WebRTC
         if (!this.Conn.localDescription)
             return;
 
-        var init = this.Conn.localDescription;
+        const init = this.Conn.localDescription;
         this.signaling.SignallingSend({
             type: SignalingType.TYPE_SDP,
             sdp: {
@@ -172,7 +171,7 @@ export class WebRTC
             return;
         }
 
-        var init = event.candidate.toJSON()
+        const init = event.candidate.toJSON()
         this.signaling.SignallingSend({
             type: SignalingType.TYPE_ICE,
             ice: {

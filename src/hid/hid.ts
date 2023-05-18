@@ -135,7 +135,7 @@ export class HID {
             gamepad.buttons.forEach((button: GamepadButton,index: number) => {
                 if (index == 6 || index == 7) { // slider
                 } else {
-                    var pressed = button.pressed
+                    const pressed = button.pressed
 
                     if(this.prev_buttons.get(index) == pressed)
                         return;
@@ -157,7 +157,7 @@ export class HID {
 
             gamepad.buttons.forEach((button: GamepadButton,index: number) => {
                 if (index == 6 || index == 7) { // slider
-                    var value = button.value
+                    const value = button.value
 
                     if(Math.abs(this.prev_sliders.get(index) - value) < 0.000001) 
                         return;

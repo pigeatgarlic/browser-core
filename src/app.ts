@@ -114,7 +114,7 @@ export class RemoteDesktopClient  {
 
         let handler = async (data) => { }
         const hidHandler = async (data : string) => {
-            this.hid?.handleIncomingData(data);
+            this.hid.handleIncomingData(data);
         }
 
         if (a.channel.label == 'hid' as ChannelName) 

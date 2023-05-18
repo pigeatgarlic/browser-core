@@ -62,11 +62,11 @@ export class Shortcut {
     }
 
     public HandleShortcut(event : KeyboardEvent) : Boolean {
-        var shift = this.keys.includes(KeyCode.Shift) === event.shiftKey;
-        var alt   = this.keys.includes(KeyCode.Alt)   === event.altKey;
-        var ctrl  = this.keys.includes(KeyCode.Ctrl)  === event.ctrlKey;
+        const shift = this.keys.includes(KeyCode.Shift) === event.shiftKey;
+        const alt   = this.keys.includes(KeyCode.Alt)   === event.altKey;
+        const ctrl  = this.keys.includes(KeyCode.Ctrl)  === event.ctrlKey;
 
-        var key = false;
+        let key = false;
         this.keys.forEach(element => {
             if(element === event.code) {
                 key = true; 

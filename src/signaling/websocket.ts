@@ -76,9 +76,8 @@ export class SignallingClient
      */
     private async onServerMessage(event : any) 
     {
-        var msg = JSON.parse(event.data);
         Log(LogLevel.Debug,`received signaling message: ${event.data}`);
-        await this.PacketHandler(msg as SignalingMessage);
+        await this.PacketHandler(JSON.parse(event.data) as SignalingMessage);
     }
 }
 
