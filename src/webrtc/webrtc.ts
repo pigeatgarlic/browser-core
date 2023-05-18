@@ -1,39 +1,74 @@
-import { ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "./utils/log";
-import { Adaptive } from "./qos/qos";
-import { SignalingMessage, SignalingType } from "./signaling/msg";
+import { ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "../utils/log";
+import { Adaptive } from "../qos/qos";
+import { SignalingMessage, SignalingType } from "../signaling/msg";
+import { SignallingClient } from "../signaling/websocket";
+import { MetricCallback } from "../qos/models";
 
 export class WebRTC 
 {
-    State: string;
     Conn: RTCPeerConnection;
-    Ads : Adaptive
+    private webrtcConfig : RTCConfiguration
+    private signaling : SignallingClient
+    private Ads : Adaptive
 
-    private SignalingSendFunc : (msg : SignalingMessage) => Promise<void>
-    private MetricHandler     : (Target : string) => (void)
+    private MetricHandler     : MetricCallback
     private TrackHandler      : (a : RTCTrackEvent) => (any)
     private channelHandler    : (a : RTCDataChannelEvent) => (any)
 
-    constructor(sendFunc        : (msg : SignalingMessage) => Promise<void>,
-                TrackHandler    : (a : RTCTrackEvent) => (any),
-                channelHandler  : (a : RTCDataChannelEvent) => (any),
-                metricHandler   : (a : string) => (void))
+    constructor(signalingURL    : string,
+                token           : string,
+                webrtcConfig    : RTCConfiguration,
+                TrackHandler    : (a : RTCTrackEvent) => Promise<void>,
+                channelHandler  : (a : RTCDataChannelEvent) => Promise<void>,
+                metricHandler   : MetricCallback)
     {
-        this.State = "Not setted up"
-        this.SignalingSendFunc = sendFunc;
         this.MetricHandler     = metricHandler;
         this.TrackHandler      = TrackHandler;
         this.channelHandler    = channelHandler; 
+        this.webrtcConfig      = webrtcConfig;
+
+        Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
+        this.signaling = new SignallingClient(signalingURL,token,
+                                 this.handleIncomingPacket.bind(this));
     }
 
+    private async handleIncomingPacket(pkt : SignalingMessage)
+    {
+        switch (pkt.type) {
+            case SignalingType.TYPE_SDP:
+                LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
+                this.onIncomingSDP({
+                    sdp: pkt.sdp.SDPData,
+                    type: pkt.sdp.Type 
+                })
+                break;
+            case SignalingType.TYPE_ICE:
+                LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage)
+                this.onIncomingICE({
+                    candidate: pkt.ice.Candidate,
+                    sdpMid: pkt.ice.SDPMid != undefined ? pkt.ice.SDPMid : "",
+                    sdpMLineIndex: pkt.ice.SDPMLineIndex != undefined ? pkt.ice.SDPMLineIndex : 0,
+                })
+                break;
+            case SignalingType.START:
+                this.SetupConnection(this.webrtcConfig)
+                break;
+            case SignalingType.END:
+                this.signaling.Close()
+                break;
+            default:
+                break;
+        }
+    }
 
     public SetupConnection(config : RTCConfiguration) {
-        this.Conn = new RTCPeerConnection(config);
-        this.Ads = new Adaptive(this.Conn,this.MetricHandler);
-        this.Conn.ondatachannel =               this.channelHandler.bind(this);    
-        this.Conn.ontrack =                     this.TrackHandler.bind(this);
-        this.Conn.onicecandidate =              this.onICECandidates.bind(this);
-        this.Conn.onconnectionstatechange =     this.onConnectionStateChange.bind(this);
-        this.State = "Not connected"
+        this.Conn                          = new RTCPeerConnection(config);
+        this.Ads                           = new Adaptive(this.Conn,this.MetricHandler);
+
+        this.Conn.ondatachannel            = this.channelHandler;    
+        this.Conn.ontrack                  = this.TrackHandler;
+        this.Conn.onicecandidate           = this.onICECandidates.bind(this);
+        this.Conn.onconnectionstatechange  = this.onConnectionStateChange.bind(this);
     }
 
     private onConnectionStateChange(eve: Event)
@@ -49,6 +84,7 @@ export class WebRTC
                 Log(LogLevel.Infor,"webrtc connection established");
                 break;
             case "connected":
+                setTimeout(this.DoneHandshake,5000)
                 LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking)
                 Log(LogLevel.Infor,"webrtc connection established");
                 break;
@@ -95,8 +131,6 @@ export class WebRTC
         if (sdp.type != "offer")
             return;
     
-        this.State = "Got SDP offer";        
-    
         try{
             var Conn = this.Conn;
             await Conn.setRemoteDescription(sdp)
@@ -120,7 +154,7 @@ export class WebRTC
             return;
 
         var init = this.Conn.localDescription;
-        this.SignalingSendFunc({
+        this.signaling.SignallingSend({
             type: SignalingType.TYPE_SDP,
             sdp: {
                 Type: init.type,
@@ -139,7 +173,7 @@ export class WebRTC
         }
 
         var init = event.candidate.toJSON()
-        this.SignalingSendFunc({
+        this.signaling.SignallingSend({
             type: SignalingType.TYPE_ICE,
             ice: {
                 SDPMid: init.sdpMid,
@@ -147,6 +181,12 @@ export class WebRTC
                 SDPMLineIndex: init.sdpMLineIndex
             }
         });
+    }
+
+    private DoneHandshake() {
+        this.signaling.SignallingSend({
+            type : SignalingType.END
+        })
     }
 }
 
