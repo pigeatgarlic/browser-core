@@ -16,7 +16,6 @@ export class WebRTC
     private channelHandler    : (a : RTCDataChannelEvent) => (any)
 
     constructor(signalingURL    : string,
-                token           : string,
                 webrtcConfig    : RTCConfiguration,
                 TrackHandler    : (a : RTCTrackEvent) => Promise<void>,
                 channelHandler  : (a : RTCDataChannelEvent) => Promise<void>,
@@ -28,7 +27,7 @@ export class WebRTC
         this.webrtcConfig      = webrtcConfig;
 
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
-        this.signaling = new SignallingClient(signalingURL,token,
+        this.signaling = new SignallingClient(signalingURL,
                                  this.handleIncomingPacket.bind(this));
     }
 

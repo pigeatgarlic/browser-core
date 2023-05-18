@@ -40,7 +40,7 @@ export class RemoteDesktopClient  {
             Log(LogLevel.Debug,data)
         });
 
-        this.audioConn       = new WebRTC(signalingConfig.audioURL,signalingConfig.token,webrtcConfig,
+        this.audioConn       = new WebRTC(signalingConfig.audioURL,webrtcConfig,
                                  this.handleIncomingTrack.bind(this),
                                  this.handleIncomingDataChannel.bind(this),{
                                     audioMetricCallback:    this.handleAudioMetric.bind(this),
@@ -48,14 +48,14 @@ export class RemoteDesktopClient  {
                                     networkMetricCallback:  async () => {}
                                  });
 
-        this.videoConn       = new WebRTC(signalingConfig.videoURL,signalingConfig.token,webrtcConfig,
+        this.videoConn       = new WebRTC(signalingConfig.videoURL,webrtcConfig,
                                  this.handleIncomingTrack.bind(this),
                                  this.handleIncomingDataChannel.bind(this),{
                                     audioMetricCallback:    async () => {},
                                     videoMetricCallback:    this.handleVideoMetric.bind(this),
                                     networkMetricCallback:  this.handleNetworkMetric.bind(this),
                                  });
-        this.dataConn        = new WebRTC(signalingConfig.dataURL,signalingConfig.token,webrtcConfig,
+        this.dataConn        = new WebRTC(signalingConfig.dataURL,webrtcConfig,
                                  this.handleIncomingTrack.bind(this),
                                  this.handleIncomingDataChannel.bind(this), {
                                     audioMetricCallback:    async () => {},

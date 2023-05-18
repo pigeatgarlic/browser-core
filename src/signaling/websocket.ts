@@ -11,12 +11,11 @@ export class SignallingClient
     PacketHandler : (Data : SignalingMessage) => Promise<void>
 
     constructor (url : string,
-                 token : string,
                  PacketHandler : ((Data : SignalingMessage) => Promise<void>))
     {
         this.PacketHandler = PacketHandler;
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
-        this.WebSocketConnection = new WebSocket(`${url}?token=${token}`);
+        this.WebSocketConnection = new WebSocket(url);
         this.WebSocketConnection.onopen     = ((eve : Event) => { 
             this.onServerOpen(eve)
         });
