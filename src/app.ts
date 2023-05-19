@@ -5,6 +5,7 @@ import { WebRTC } from "./webrtc/webrtc";
 import { Pipeline } from "./pipeline/pipeline";
 import { getPlatform } from "./utils/platform";
 import { AudioMetrics, NetworkMetrics, VideoMetrics } from "./qos/models";
+import { SignalingConfig } from "./signaling/config";
 
 type ChannelName = 'hid' | 'adaptive' | 'manual'
 
