@@ -200,7 +200,6 @@ export class DesktopTouch {
             return;
 
         
-        Log(LogLevel.Debug ,'touchcancel.');
         const touches = evt.changedTouches;
 
         for (let i = 0; i < touches.length; i++) {

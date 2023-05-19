@@ -37,7 +37,6 @@ export class RemoteDesktopClient  {
 
         this.hid = new HID( this.platform, this.video, (data: string) => {
             this.datachannels.get("hid")?.sendMessage(data);
-            Log(LogLevel.Debug,data)
         });
 
         this.audioConn       = new WebRTC(signalingConfig.audioURL,webrtcConfig,
@@ -53,7 +52,7 @@ export class RemoteDesktopClient  {
                                  this.handleIncomingDataChannel.bind(this),{
                                     audioMetricCallback:    async () => {},
                                     videoMetricCallback:    this.handleVideoMetric.bind(this),
-                                    networkMetricCallback:  this.handleNetworkMetric.bind(this),
+                                    networkMetricCallback:  async () => {},
                                  });
         this.dataConn        = new WebRTC(signalingConfig.dataURL,webrtcConfig,
                                  this.handleIncomingTrack.bind(this),
@@ -80,6 +79,7 @@ export class RemoteDesktopClient  {
             this.audio.srcObject = evt.streams.find(val => val.getAudioTracks().length > 0)
 
         if (evt.track.kind == "video")  {
+            this.ResetVideo() 
             // let pipeline = new Pipeline('h264'); // TODO
             // pipeline.updateSource(evt.streams[0])
             // pipeline.updateTransform(new WebGLTransform());
@@ -97,12 +97,15 @@ export class RemoteDesktopClient  {
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
         this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
+        Log(LogLevel.Debug,JSON.stringify(a))
     }
     private async handleVideoMetric(a: VideoMetrics): Promise<void> {
         this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
+        Log(LogLevel.Debug,JSON.stringify(a))
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
         this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
+        Log(LogLevel.Debug,JSON.stringify(a))
     }
 
     private handleIncomingDataChannel(a: RTCDataChannelEvent): Promise<void> {
@@ -154,6 +157,19 @@ export class RemoteDesktopClient  {
         channel.sendMessage(JSON.stringify({
             type: "bitrate",
             value: bitrate
+        }))
+    }
+
+    public ResetVideo () {
+        const dcName = "manual";
+        let channel = this.datachannels.get(dcName)
+        if (channel == undefined) {
+            Log(LogLevel.Warning,`attempting to send message while data channel ${dcName} is ready`);
+            return;
+        }
+
+        channel.sendMessage(JSON.stringify({
+            type: "reset",
         }))
     }
 

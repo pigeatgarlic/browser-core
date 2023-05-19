@@ -83,7 +83,7 @@ export class WebRTC
                 Log(LogLevel.Infor,"webrtc connection established");
                 break;
             case "connected":
-                setTimeout(this.DoneHandshake,5000)
+                setTimeout(this.DoneHandshake.bind(this),5000)
                 LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking)
                 Log(LogLevel.Infor,"webrtc connection established");
                 break;

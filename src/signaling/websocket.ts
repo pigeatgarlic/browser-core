@@ -7,12 +7,14 @@ import {SignalingMessage} from "./msg"
 
 export class SignallingClient
 {
+    private url : string
     private WebSocketConnection: WebSocket;
     PacketHandler : (Data : SignalingMessage) => Promise<void>
 
     constructor (url : string,
                  PacketHandler : ((Data : SignalingMessage) => Promise<void>))
     {
+        this.url =url
         this.PacketHandler = PacketHandler;
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
         this.WebSocketConnection = new WebSocket(url);
@@ -53,7 +55,7 @@ export class SignallingClient
     public SignallingSend(msg : SignalingMessage)
     {
         const data = JSON.stringify(msg)
-        Log(LogLevel.Debug,`sending message : ${data}`);
+        Log(LogLevel.Debug,`sending message (${this.url}) : ${data}`);
         this.WebSocketConnection.send(data);
     }
 
@@ -75,7 +77,7 @@ export class SignallingClient
      */
     private async onServerMessage(event : any) 
     {
-        Log(LogLevel.Debug,`received signaling message: ${event.data}`);
+        Log(LogLevel.Debug,`received signaling message (${this.url}): ${event.data}`);
         await this.PacketHandler(JSON.parse(event.data) as SignalingMessage);
     }
 }
