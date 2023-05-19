@@ -6,7 +6,7 @@ export class Adaptive {
     private videoMetricCallback   : (data: VideoMetrics) => void;
 
     private conn : RTCPeerConnection
-    private loopNumber: number;
+    private loopNumber: any;
 
     constructor(conn: RTCPeerConnection,
                 callback : MetricCallback) {
