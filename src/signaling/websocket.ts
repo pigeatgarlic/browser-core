@@ -7,50 +7,39 @@ import {SignalingMessage} from "./msg"
 
 export class SignallingClient
 {
-    private url : string
-    private WebSocketConnection: WebSocket;
-    PacketHandler : (Data : SignalingMessage) => Promise<void>
+    private url                    : string
+    private WebSocketConnection    : WebSocket | null;
+    private PacketHandler          : (Data : SignalingMessage) => Promise<void>
 
     constructor (url : string,
                  PacketHandler : ((Data : SignalingMessage) => Promise<void>))
     {
         this.url =url
         this.PacketHandler = PacketHandler;
+
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
-        this.WebSocketConnection = new WebSocket(url);
-        this.WebSocketConnection.onopen     = ((eve : Event) => { 
-            this.onServerOpen(eve)
-        });
+        this.WebSocketConnection            = new WebSocket(url);
+        this.WebSocketConnection.onopen     = this.onServerOpen.bind(this)
     }
 
     public Close () {
-        this.WebSocketConnection.close()
+        this.WebSocketConnection?.close()
     }
 
     /**
      * Fired whenever the signalling websocket is opened.
      * Sends the peer id to the signalling server.
      */
-    private onServerOpen(event : Event)
+    private onServerOpen()
     {
         LogConnectionEvent(ConnectionEvent.WebSocketConnected)
-        this.WebSocketConnection.onerror    = ((eve : Event) => { 
-            Log(LogLevel.Error,`websocket connection error : ${eve.type}`)
-            this.onServerError()
-        });
-        this.WebSocketConnection.onmessage  = (async (eve : MessageEvent) => { 
-            await this.onServerMessage(eve)
-        });
+        this.WebSocketConnection.onmessage  = this.onServerMessage.bind(this)
 
-        this.WebSocketConnection.onclose    = ((eve : Event) => { 
-            Log(LogLevel.Error,`websocket connection closed : ${eve.type}`)
-            this.onServerError()
-        });
+        this.WebSocketConnection.onerror    = this.onServerError.bind(this)
+        this.WebSocketConnection.onclose    = this.onServerError.bind(this)
     }
     /**
      * send messsage to signalling server
-     * @param {string} request_type 
-     * @param {any} content 
      */
     public SignallingSend(msg : SignalingMessage)
     {
@@ -66,13 +55,12 @@ export class SignallingClient
     private onServerError() 
     {
         Log(LogLevel.Warning,"websocket connection disconnected");
-        // LogConnectionEvent(ConnectionEvent.WebSocketDisconnected)
+        this.WebSocketConnection = null
     }
 
 
     /**
      * handle message from signalling server during connection handshake
-     * @param {Event} event 
      * @returns 
      */
     private async onServerMessage(event : any) 

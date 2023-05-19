@@ -40,28 +40,41 @@ export class RemoteDesktopClient  {
             this.datachannels.get("hid")?.sendMessage(data);
         });
 
-        this.audioConn       = new WebRTC(signalingConfig.audioURL,webrtcConfig,
-                                 this.handleIncomingTrack.bind(this),
-                                 this.handleIncomingDataChannel.bind(this),{
-                                    audioMetricCallback:    this.handleAudioMetric.bind(this),
-                                    videoMetricCallback:    async () => {},
-                                    networkMetricCallback:  async () => {}
-                                 });
+        const audioEstablishmentLoop = () => {
+            this.audioConn       = null
+            this.audioConn       = new WebRTC(signalingConfig.audioURL,webrtcConfig,
+                                    this.handleIncomingTrack.bind(this),
+                                    this.handleIncomingDataChannel.bind(this),
+                                    audioEstablishmentLoop,{
+                                        audioMetricCallback:    this.handleAudioMetric.bind(this),
+                                        videoMetricCallback:    async () => {},
+                                        networkMetricCallback:  async () => {}
+                                    });
+        }
 
-        this.videoConn       = new WebRTC(signalingConfig.videoURL,webrtcConfig,
-                                 this.handleIncomingTrack.bind(this),
-                                 this.handleIncomingDataChannel.bind(this),{
-                                    audioMetricCallback:    async () => {},
-                                    videoMetricCallback:    this.handleVideoMetric.bind(this),
-                                    networkMetricCallback:  async () => {},
-                                 });
-        this.dataConn        = new WebRTC(signalingConfig.dataURL,webrtcConfig,
-                                 this.handleIncomingTrack.bind(this),
-                                 this.handleIncomingDataChannel.bind(this), {
-                                    audioMetricCallback:    async () => {},
-                                    videoMetricCallback:    async () => {},
-                                    networkMetricCallback:  async () => {}
-                                 });
+        const videoEstablishmentLoop = () => {
+            this.videoConn       = null
+            this.videoConn       = new WebRTC(signalingConfig.videoURL,webrtcConfig,
+                                    this.handleIncomingTrack.bind(this),
+                                    this.handleIncomingDataChannel.bind(this),
+                                    videoEstablishmentLoop, {
+                                        audioMetricCallback:    async () => {},
+                                        videoMetricCallback:    this.handleVideoMetric.bind(this),
+                                        networkMetricCallback:  async () => {},
+                                    });
+
+        }
+        const dataEstablishmentLoop = () => {
+            this.dataConn        = null
+            this.dataConn        = new WebRTC(signalingConfig.dataURL,webrtcConfig,
+                                    this.handleIncomingTrack.bind(this),
+                                    this.handleIncomingDataChannel.bind(this), 
+                                    dataEstablishmentLoop,{
+                                        audioMetricCallback:    async () => {},
+                                        videoMetricCallback:    async () => {},
+                                        networkMetricCallback:  async () => {}
+                                    });
+        }
     }
 
     private async handleIncomingTrack(evt: RTCTrackEvent) : Promise<void>
@@ -74,10 +87,13 @@ export class RemoteDesktopClient  {
                 x.getTracks().map(x => `${x.label} ${x.id}`
             ))));
 
-        if (evt.track.kind == "video") 
+        if (evt.track.kind == "video") {
+            this.video.srcObject = null
             this.video.srcObject = evt.streams.find(val => val.getVideoTracks().length > 0)
-        else if (evt.track.kind == "audio") 
+        } else if (evt.track.kind == "audio") {
+            this.audio.srcObject = null
             this.audio.srcObject = evt.streams.find(val => val.getAudioTracks().length > 0)
+        }
 
         if (evt.track.kind == "video")  {
             this.ResetVideo() 
@@ -97,14 +113,26 @@ export class RemoteDesktopClient  {
     }
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
+        while (this.datachannels.get('adaptive') == undefined) { // don't discard packet if channel is not established yet
+		    await new Promise(r => setTimeout(r, 300));
+        }
+
         this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,JSON.stringify(a))
     }
     private async handleVideoMetric(a: VideoMetrics): Promise<void> {
+        while (this.datachannels.get('adaptive') == undefined) {
+		    await new Promise(r => setTimeout(r, 300));
+        }
+
         this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,JSON.stringify(a))
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
+        while (this.datachannels.get('adaptive') == undefined) {
+		    await new Promise(r => setTimeout(r, 300));
+        }
+        
         this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,JSON.stringify(a))
     }
@@ -132,57 +160,44 @@ export class RemoteDesktopClient  {
 
 
 
-    public ChangeFramerate (framerate : number) {
-        const dcName = "manual";
-        let channel = this.datachannels.get(dcName)
-        if (channel == undefined) {
-            Log(LogLevel.Warning,`attempting to send message while data channel ${dcName} is ready`);
-            return;
+    public async ChangeFramerate (framerate : number) {
+        while (this.datachannels.get('manual') == undefined) { // don't discard packet
+		    await new Promise(r => setTimeout(r, 300));
         }
 
-        console.log(framerate)
-        channel.sendMessage(JSON.stringify({
+        this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "framerate",
             value: framerate
         }))
 
     }
-    public ChangeBitrate (bitrate: number) {
-        const dcName = "manual";
-        let channel = this.datachannels.get(dcName)
-        if (channel == undefined) {
-            Log(LogLevel.Warning,`attempting to send message while data channel ${dcName} is ready`);
-            return;
+    public async ChangeBitrate (bitrate: number) {
+        while (this.datachannels.get('manual') == undefined) { // don't discard packet
+		    await new Promise(r => setTimeout(r, 300));
         }
 
-        channel.sendMessage(JSON.stringify({
+        this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "bitrate",
             value: bitrate
         }))
     }
 
-    public ResetVideo () {
-        const dcName = "manual";
-        let channel = this.datachannels.get(dcName)
-        if (channel == undefined) {
-            Log(LogLevel.Warning,`attempting to send message while data channel ${dcName} is ready`);
-            return;
+    public async ResetVideo () {
+        while (this.datachannels.get('manual') == undefined) { // don't discard packet
+		    await new Promise(r => setTimeout(r, 300));
         }
 
-        channel.sendMessage(JSON.stringify({
+        this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "reset",
         }))
     }
 
-    public ResetAudio () {
-        const dcName = "manual";
-        let channel = this.datachannels.get(dcName)
-        if (channel == undefined) {
-            Log(LogLevel.Warning,`attempting to send message while data channel ${dcName} is ready`);
-            return;
+    public async ResetAudio () {
+        while (this.datachannels.get('manual') == undefined) { // don't discard packet
+		    await new Promise(r => setTimeout(r, 300));
         }
 
-        channel.sendMessage(JSON.stringify({
+        this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "audio-reset",
         }))
     }

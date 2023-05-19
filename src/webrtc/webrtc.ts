@@ -6,21 +6,24 @@ import { MetricCallback } from "../qos/models";
 
 export class WebRTC 
 {
-    Conn: RTCPeerConnection;
-    private webrtcConfig : RTCConfiguration
-    private signaling : SignallingClient
-    private Ads : Adaptive
+    private Conn            : RTCPeerConnection;
+    private webrtcConfig    : RTCConfiguration
+    private signaling       : SignallingClient
+    private Ads             : Adaptive
 
     private MetricHandler     : MetricCallback
     private TrackHandler      : (a : RTCTrackEvent) => (any)
     private channelHandler    : (a : RTCDataChannelEvent) => (any)
+    private closeHandler      : () => void
 
     constructor(signalingURL    : string,
                 webrtcConfig    : RTCConfiguration,
                 TrackHandler    : (a : RTCTrackEvent) => Promise<void>,
                 channelHandler  : (a : RTCDataChannelEvent) => Promise<void>,
+                CloseHandler    : () => void,
                 metricHandler   : MetricCallback)
     {
+        this.closeHandler      = CloseHandler
         this.MetricHandler     = metricHandler;
         this.TrackHandler      = TrackHandler;
         this.channelHandler    = channelHandler; 
@@ -73,41 +76,46 @@ export class WebRTC
     private onConnectionStateChange(eve: Event)
     {
         Log(LogLevel.Infor,`state change to ${JSON.stringify(eve)}`)
-        switch ((eve.target as RTCPeerConnection).connectionState) { // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
+
+        const successHandler = () => {
+            this.DoneHandshake.bind(this)
+            LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking)
+            Log(LogLevel.Infor,"webrtc connection established");
+        }
+        const failHandler = () => {
+            this.Conn?.close()
+            this.Ads?.Close()
+            this.signaling?.Close()
+
+            this.closeHandler()
+
+            LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
+            Log(LogLevel.Error,"webrtc connection establish failed");
+        }
+
+        const connectingHandler = () => {
+            LogConnectionEvent(ConnectionEvent.WebRTCConnectionChecking)
+            Log(LogLevel.Infor,"webrtc connection checking");
+        }
+
+        switch ((eve.target as RTCPeerConnection).connectionState as RTCPeerConnectionState) { // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
             case "new":
-                LogConnectionEvent(ConnectionEvent.WebRTCConnectionChecking)
-                Log(LogLevel.Infor,"webrtc connection established");
-                break;
             case "connecting":
-                LogConnectionEvent(ConnectionEvent.WebRTCConnectionChecking)
-                Log(LogLevel.Infor,"webrtc connection established");
+                connectingHandler()
                 break;
             case "connected":
-                setTimeout(this.DoneHandshake.bind(this),5000)
-                LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking)
-                Log(LogLevel.Infor,"webrtc connection established");
+                successHandler()
                 break;
             case "closed":
-                LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
-                Log(LogLevel.Error,"webrtc connection establish failed");
-                break;
             case "failed":
-                LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
-                Log(LogLevel.Error,"webrtc connection establish failed");
-                break;
             case "disconnected":
-                LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
-                Log(LogLevel.Error,"webrtc connection establish failed");
+                failHandler()
                 break;
             default:
                 break;
         }
     }
 
-    /**
-     * 
-     * @param {*} ice 
-     */
     public async onIncomingICE(ice : RTCIceCandidateInit) {
         try{
             const candidate = new RTCIceCandidate(ice);
@@ -118,13 +126,7 @@ export class WebRTC
     }
     
     
-    /**
-     * Handles incoming SDP from signalling server.
-     * Sets the remote description on the peer connection,
-     * creates an answer with a local description and sends that to the peer.
-     *
-     * @param {RTCSessionDescriptionInit} sdp
-     */
+
     public async onIncomingSDP(sdp : RTCSessionDescriptionInit) 
     {
         if (sdp.type != "offer")
@@ -140,11 +142,6 @@ export class WebRTC
     }
     
     
-    /**
-     * Handles local description creation from createAnswer.
-     *
-     * @param {RTCSessionDescriptionInit} local_sdp
-     */
     private async onLocalDescription(desc : RTCSessionDescriptionInit) {
         await this.Conn.setLocalDescription(desc)
 

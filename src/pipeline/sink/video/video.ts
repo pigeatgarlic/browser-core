@@ -23,7 +23,6 @@ export class VideoSink implements MediaStreamSink{ // eslint-disable-line no-unu
 
     /**
      * Sets the path to this object from the debug global var.
-     * @param {string} path
      */
     setDebugPath(path: string) {
         this.debugPath_ = path;
