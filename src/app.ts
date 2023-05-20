@@ -121,24 +121,24 @@ export class RemoteDesktopClient  {
 		    await new Promise(r => setTimeout(r, 300));
         }
 
-        this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
-        Log(LogLevel.Debug,JSON.stringify(a))
+        this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
+        Log(LogLevel.Debug,`sending ${a.type} metric`)
     }
     private async handleVideoMetric(a: VideoMetrics): Promise<void> {
         while (this.datachannels.get('adaptive') == undefined) {
 		    await new Promise(r => setTimeout(r, 300));
         }
 
-        this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
-        Log(LogLevel.Debug,JSON.stringify(a))
+        this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
+        Log(LogLevel.Debug,`sending ${a.type} metric`)
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
         while (this.datachannels.get('adaptive') == undefined) {
 		    await new Promise(r => setTimeout(r, 300));
         }
         
-        this.datachannels.get('adaptive')?.sendMessage(JSON.stringify(a));
-        Log(LogLevel.Debug,JSON.stringify(a))
+        this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
+        Log(LogLevel.Debug,`sending ${a.type} metric`)
     }
 
     private handleIncomingDataChannel(a: RTCDataChannelEvent): Promise<void> {
@@ -174,6 +174,7 @@ export class RemoteDesktopClient  {
             value: framerate
         }))
 
+        Log(LogLevel.Debug,`changing framerate to ${framerate}`)
     }
     public async ChangeBitrate (bitrate: number) {
         while (this.datachannels.get('manual') == undefined) { // don't discard packet
@@ -184,6 +185,8 @@ export class RemoteDesktopClient  {
             type: "bitrate",
             value: bitrate
         }))
+
+        Log(LogLevel.Debug,`changing bitrate to ${bitrate}`)
     }
 
     public async ResetVideo () {
@@ -194,6 +197,8 @@ export class RemoteDesktopClient  {
         this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "reset",
         }))
+
+        Log(LogLevel.Debug,`gen I frame`)
     }
 
     public async ResetAudio () {
@@ -204,5 +209,7 @@ export class RemoteDesktopClient  {
         this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "audio-reset",
         }))
+
+        Log(LogLevel.Debug,`reset audio pipeline`)
     }
 }
