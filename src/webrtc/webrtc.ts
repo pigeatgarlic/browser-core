@@ -104,7 +104,7 @@ export class WebRTC
                 connectingHandler()
                 break;
             case "connected":
-                successHandler()
+                setTimeout(successHandler,2000)
                 break;
             case "closed":
             case "failed":
