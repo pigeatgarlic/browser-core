@@ -35,6 +35,11 @@ export class RemoteDesktopClient  {
         
         this.hid = null;
         this.datachannels = new Map<ChannelName,DataChannel>();
+        this.datachannels.set('manual',   new DataChannel())
+        this.datachannels.set('adaptive', new DataChannel())
+        this.datachannels.set('hid',      new DataChannel(async (data : string) => {
+            this.hid.handleIncomingData(data);
+        }))
 
         this.hid = new HID( this.platform, this.video, (data: string) => {
             this.datachannels.get("hid")?.sendMessage(data);
@@ -79,6 +84,13 @@ export class RemoteDesktopClient  {
         audioEstablishmentLoop()
         videoEstablishmentLoop()
         dataEstablishmentLoop()
+    }
+
+    private async handleIncomingDataChannel(a: RTCDataChannelEvent): Promise<void> {
+        LogConnectionEvent(ConnectionEvent.ReceivedDatachannel, a.channel.label)
+        Log(LogLevel.Infor,`incoming data channel: ${a.channel.label}`)
+
+        this.datachannels.get( a.channel.label as ChannelName).SetSender(a.channel);
     }
 
     private async handleIncomingTrack(evt: RTCTrackEvent) : Promise<void>
@@ -141,26 +153,6 @@ export class RemoteDesktopClient  {
         Log(LogLevel.Debug,`sending ${a.type} metric`)
     }
 
-    private handleIncomingDataChannel(a: RTCDataChannelEvent): Promise<void> {
-        if(a.channel?.label == undefined)
-            return;
-
-        LogConnectionEvent(ConnectionEvent.ReceivedDatachannel, a.channel.label)
-        Log(LogLevel.Infor,`incoming data channel: ${a.channel.label}`)
-
-        let handler = async (data) => { }
-        const hidHandler = async (data : string) => {
-            this.hid.handleIncomingData(data);
-        }
-
-        if (a.channel.label == 'hid' as ChannelName) 
-            handler = hidHandler
-            
-        this.datachannels.set( 
-            a.channel.label as ChannelName, 
-            new DataChannel(a.channel,handler)
-        );
-    }
 
 
 
