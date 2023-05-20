@@ -8,10 +8,20 @@ export class DataChannel
         this.handler = handler ?? (() => {})
     }
 
-    public sendMessage (message : string) {
-        this.channel.forEach(chan => {
-            chan.send(message);
-        })
+    public async sendMessage (message : string) {
+        let sent = false
+        while (!sent) {
+            this.channel.forEach(chan => {
+                if (sent || chan.readyState != 'open') 
+                    return
+                    
+                
+                chan.send(message);
+                sent = true
+            })
+
+		    await new Promise(r => setTimeout(r, 100));
+        }
     }
 
     public SetSender(chan: RTCDataChannel) {

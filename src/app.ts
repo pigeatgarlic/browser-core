@@ -42,7 +42,7 @@ export class RemoteDesktopClient  {
         }))
 
         this.hid = new HID( this.platform, this.video, (data: string) => {
-            this.datachannels.get("hid")?.sendMessage(data);
+            this.datachannels.get("hid").sendMessage(data);
         });
 
         const audioEstablishmentLoop = () => {
@@ -129,27 +129,15 @@ export class RemoteDesktopClient  {
     }
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
-        while (this.datachannels.get('adaptive') == undefined) { // don't discard packet if channel is not established yet
-		    await new Promise(r => setTimeout(r, 300));
-        }
-
-        this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
+        await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
     }
     private async handleVideoMetric(a: VideoMetrics): Promise<void> {
-        while (this.datachannels.get('adaptive') == undefined) {
-		    await new Promise(r => setTimeout(r, 300));
-        }
-
-        this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
+        await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
-        while (this.datachannels.get('adaptive') == undefined) {
-		    await new Promise(r => setTimeout(r, 300));
-        }
-        
-        this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
+        await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
     }
 
@@ -157,11 +145,7 @@ export class RemoteDesktopClient  {
 
 
     public async ChangeFramerate (framerate : number) {
-        while (this.datachannels.get('manual') == undefined) { // don't discard packet
-		    await new Promise(r => setTimeout(r, 300));
-        }
-
-        this.datachannels.get('manual').sendMessage(JSON.stringify({
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "framerate",
             value: framerate
         }))
@@ -169,11 +153,7 @@ export class RemoteDesktopClient  {
         Log(LogLevel.Debug,`changing framerate to ${framerate}`)
     }
     public async ChangeBitrate (bitrate: number) {
-        while (this.datachannels.get('manual') == undefined) { // don't discard packet
-		    await new Promise(r => setTimeout(r, 300));
-        }
-
-        this.datachannels.get('manual').sendMessage(JSON.stringify({
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "bitrate",
             value: bitrate
         }))
@@ -182,11 +162,7 @@ export class RemoteDesktopClient  {
     }
 
     public async ResetVideo () {
-        while (this.datachannels.get('manual') == undefined) { // don't discard packet
-		    await new Promise(r => setTimeout(r, 300));
-        }
-
-        this.datachannels.get('manual').sendMessage(JSON.stringify({
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "reset",
         }))
 
@@ -194,11 +170,7 @@ export class RemoteDesktopClient  {
     }
 
     public async ResetAudio () {
-        while (this.datachannels.get('manual') == undefined) { // don't discard packet
-		    await new Promise(r => setTimeout(r, 300));
-        }
-
-        this.datachannels.get('manual').sendMessage(JSON.stringify({
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "audio-reset",
         }))
 
