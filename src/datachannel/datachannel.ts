@@ -16,12 +16,15 @@ export class DataChannel
 
     public SetSender(chan: RTCDataChannel) {
         const id = Date.now()
-        this.channel.set(id,chan)
 
         const close = () => {
             this.channel.delete(id)
         }
+        const open = () => {
+            this.channel.set(id,chan)
+        }
 
+        chan.onopen    = open .bind(this)
         chan.onerror   = close.bind(this)
         chan.onclosing = close.bind(this)
         chan.onclosing = close.bind(this)
