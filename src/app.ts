@@ -75,6 +75,10 @@ export class RemoteDesktopClient  {
                                         networkMetricCallback:  async () => {}
                                     });
         }
+
+        audioEstablishmentLoop()
+        videoEstablishmentLoop()
+        dataEstablishmentLoop()
     }
 
     private async handleIncomingTrack(evt: RTCTrackEvent) : Promise<void>
