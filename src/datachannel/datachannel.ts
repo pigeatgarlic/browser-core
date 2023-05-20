@@ -27,7 +27,7 @@ export class DataChannel
         chan.onopen    = open .bind(this)
         chan.onerror   = close.bind(this)
         chan.onclosing = close.bind(this)
-        chan.onclosing = close.bind(this)
+        chan.onclose   = close.bind(this)
         chan.onmessage = ((ev: MessageEvent) => {
             this.handler(ev.data);
         }).bind(this)
