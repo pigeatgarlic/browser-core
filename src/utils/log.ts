@@ -49,7 +49,7 @@ export enum ConnectionEvent {
 
 
 
-type LogCallback = (message :ConnectionEvent, text?: string) => Promise<void>
+type LogCallback = (message :ConnectionEvent, text?: string,source? :string) => Promise<void>
 
 class Logger {
     logs: Array<string>
@@ -67,10 +67,10 @@ class Logger {
 
     
 
-    async BroadcastEvent(event: ConnectionEvent, text?: string) {
+    async BroadcastEvent(event: ConnectionEvent, text?: string, source?: string) {
         for (let index = 0; index < this.Notifiers.length; index++) {
             const x = this.Notifiers[index];
-            await x(event,text);
+            await x(event,text,source);
         }
     }
 
@@ -103,7 +103,7 @@ export function Log(level : LogLevel, message: string) {
     console.log(`${GetLogLevelString(level)}: ${message}`)
 }
 
-export async function LogConnectionEvent(a : ConnectionEvent , text?: string) {
+export async function LogConnectionEvent(a : ConnectionEvent , text?: string, source? : string) {
     let logger = getLoggerSingleton()
-    await logger.BroadcastEvent(a,text);
+    await logger.BroadcastEvent(a,text,source);
 }

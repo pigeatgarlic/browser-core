@@ -11,6 +11,8 @@ export class WebRTC
     private signaling       : SignallingClient
     private Ads             : Adaptive
 
+    private data            : any
+
     private MetricHandler     : MetricCallback
     private TrackHandler      : (a : RTCTrackEvent) => (any)
     private channelHandler    : (a : RTCDataChannelEvent) => (any)
@@ -21,13 +23,15 @@ export class WebRTC
                 TrackHandler    : (a : RTCTrackEvent) => Promise<void>,
                 channelHandler  : (a : RTCDataChannelEvent) => Promise<void>,
                 CloseHandler    : () => void,
-                metricHandler   : MetricCallback)
+                metricHandler   : MetricCallback,
+                data?: any)
     {
         this.closeHandler      = CloseHandler
         this.MetricHandler     = metricHandler;
         this.TrackHandler      = TrackHandler;
         this.channelHandler    = channelHandler; 
         this.webrtcConfig      = webrtcConfig;
+        this.data              = data
 
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
         this.signaling = new SignallingClient(signalingURL,
@@ -75,11 +79,9 @@ export class WebRTC
 
     private onConnectionStateChange(eve: Event)
     {
-        Log(LogLevel.Infor,`state change to ${JSON.stringify(eve)}`)
-
         const successHandler = () => {
-            this.DoneHandshake.bind(this)
-            LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking)
+            this.DoneHandshake()
+            LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking,"done",this.data as string)
             Log(LogLevel.Infor,"webrtc connection established");
         }
         const failHandler = () => {
@@ -89,12 +91,12 @@ export class WebRTC
 
             this.closeHandler()
 
-            LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed)
+            LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
             Log(LogLevel.Error,"webrtc connection establish failed");
         }
 
         const connectingHandler = () => {
-            LogConnectionEvent(ConnectionEvent.WebRTCConnectionChecking)
+            LogConnectionEvent(ConnectionEvent.WebRTCConnectionChecking,"connecting",this.data as string)
             Log(LogLevel.Infor,"webrtc connection checking");
         }
 

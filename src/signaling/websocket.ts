@@ -36,7 +36,7 @@ export class SignallingClient
         this.WebSocketConnection.onmessage  = this.onServerMessage.bind(this)
 
         this.WebSocketConnection.onerror    = this.onServerError.bind(this)
-        this.WebSocketConnection.onclose    = this.onServerError.bind(this)
+        this.WebSocketConnection.onclose    = this.onServerClose.bind(this)
     }
     /**
      * send messsage to signalling server
@@ -48,13 +48,14 @@ export class SignallingClient
         this.WebSocketConnection.send(data);
     }
 
-    /**
-     * Fired whenever the signalling websocket emits and error.
-     * Reconnects after 3 seconds.
-     */
-    private onServerError() 
+    private onServerClose(ev: CloseEvent) 
     {
-        Log(LogLevel.Warning,"websocket connection disconnected");
+        Log(LogLevel.Warning,"websocket connection disconnected " +ev.wasClean);
+        this.WebSocketConnection = null
+    }
+    private onServerError(ev : Event) 
+    {
+        Log(LogLevel.Warning,"websocket connection error");
         this.WebSocketConnection = null
     }
 
