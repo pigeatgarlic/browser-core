@@ -100,6 +100,10 @@ export function AddNotifier(notifier: LogCallback){
 
 
 export function Log(level : LogLevel, message: string) {
+    if (level == LogLevel.Debug) 
+        return
+        
+    
     console.log(`${GetLogLevelString(level)}: ${message}`)
 }
 
