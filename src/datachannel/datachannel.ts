@@ -10,7 +10,7 @@ export class DataChannel
 
     public async sendMessage (message : string) {
         let sent = false
-        while (!sent) {
+        while (true) {
             this.channel.forEach(chan => {
                 if (sent || chan.readyState != 'open') 
                     return
@@ -20,7 +20,10 @@ export class DataChannel
                 sent = true
             })
 
-		    await new Promise(r => setTimeout(r, 100));
+            if (sent) 
+                return    
+            else
+		        await new Promise(r => setTimeout(r, 10));
         }
     }
 
