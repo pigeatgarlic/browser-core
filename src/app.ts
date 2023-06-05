@@ -9,6 +9,29 @@ import { SignalingConfig } from "./signaling/config";
 
 type ChannelName = 'hid' | 'adaptive' | 'manual'
 
+
+export type Metrics = {
+	type                              : 'VIDEO'
+	timestamp                         : number
+    decodedFps                        : number
+	receivedFps                       : number
+	videoBandwidthConsumption         : number
+	decodeTimePerFrame                : number
+	videoPacketsLostpercent           : number
+	videoJitter                       : number
+	videoJitterBufferDelay            : number
+} | {
+	type                             : 'AUDIO'
+	timestamp                        : string
+	audioBandwidthConsumption        : number 
+} | {
+    type                             : 'NETWORK'
+	timestamp                        : number
+	totalBandwidthConsumption        : number
+	RTT                              : number
+	availableIncomingBandwidth       : number
+}
+
 export class RemoteDesktopClient  {
     private readonly platform : 'desktop' | 'mobile'
 
@@ -22,6 +45,7 @@ export class RemoteDesktopClient  {
     private videoConn  : WebRTC
     private audioConn  : WebRTC
 
+    public HandleMetrics : (metrics: Metrics) => Promise<void>
     constructor(signalingConfig : SignalingConfig,
                 webrtcConfig    : RTCConfiguration,
                 vid : HTMLVideoElement,
@@ -32,11 +56,14 @@ export class RemoteDesktopClient  {
         this.audio = audio;
         this.pipelines = new Map<string,Pipeline>();
         this.platform = platform != null ? platform : getPlatform()
+        this.HandleMetrics = async () => {}
         
         this.hid = null;
         this.datachannels = new Map<ChannelName,DataChannel>();
         this.datachannels.set('manual',   new DataChannel())
-        this.datachannels.set('adaptive', new DataChannel())
+        this.datachannels.set('adaptive', new DataChannel(async (data : string) => {
+            this.HandleMetrics(JSON.parse(data) as Metrics)
+        }))
         this.datachannels.set('hid',      new DataChannel(async (data : string) => {
             this.hid.handleIncomingData(data);
         }))
