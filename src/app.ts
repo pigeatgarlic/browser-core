@@ -12,24 +12,12 @@ type ChannelName = 'hid' | 'adaptive' | 'manual'
 
 export type Metrics = {
 	type                              : 'VIDEO'
-	timestamp                         : number
-    decodedFps                        : number
-	receivedFps                       : number
-	videoBandwidthConsumption         : number
-	decodeTimePerFrame                : number
-	videoPacketsLostpercent           : number
-	videoJitter                       : number
-	videoJitterBufferDelay            : number
+    receivefps                        : number[]
+    decodefps                         : number[]
 } | {
 	type                             : 'AUDIO'
-	timestamp                        : string
-	audioBandwidthConsumption        : number 
 } | {
     type                             : 'NETWORK'
-	timestamp                        : number
-	totalBandwidthConsumption        : number
-	RTT                              : number
-	availableIncomingBandwidth       : number
 }
 
 export class RemoteDesktopClient  {
