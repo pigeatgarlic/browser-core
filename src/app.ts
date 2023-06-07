@@ -14,6 +14,9 @@ export type Metrics = {
 	type                              : 'VIDEO'
     receivefps                        : number[]
     decodefps                         : number[]
+    packetloss                        : number[]     
+    bandwidth                         : number[]     
+    buffer                            : number[] 
 } | {
 	type                             : 'AUDIO'
 } | {
