@@ -21,6 +21,8 @@ export type Metrics = {
 	type                             : 'AUDIO'
 } | {
     type                             : 'NETWORK'
+} | {
+    type                             : 'FRAME_LOSS'
 }
 
 export class RemoteDesktopClient  {
