@@ -43,7 +43,8 @@ export class RemoteDesktopClient  {
                 webrtcConfig    : RTCConfiguration,
                 vid : HTMLVideoElement,
                 audio: HTMLAudioElement,
-                platform?: 'mobile' | 'desktop') {
+                platform?: 'mobile' | 'desktop',
+                no_video?: boolean) {
 
         this.video = vid;
         this.audio = audio;
@@ -102,6 +103,10 @@ export class RemoteDesktopClient  {
         }
 
         audioEstablishmentLoop()
+        if (no_video) 
+            return
+            
+        
         videoEstablishmentLoop()
     }
 
