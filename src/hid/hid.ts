@@ -95,6 +95,10 @@ export class HID {
             const havingPtrLock = document.pointerLockElement != null
             this.relativeMouse = havingPtrLock;
 
+            this.video.style.objectFit = isFullscreen(this.video) || getBrowser() == 'Safari'
+                ?  "fill"
+                :  "contain"
+
             if ((isFullscreen(this.video) && !havingPtrLock ) && getBrowser() != 'Safari') {
                 this.video.requestPointerLock();
             } else if ((!isFullscreen(this.video) && havingPtrLock) && getBrowser() != 'Safari') {
