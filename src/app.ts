@@ -75,7 +75,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  async () => {}
-                                    },"audio");
+                                    },false,"audio");
         }
 
         const videoEstablishmentLoop = () => {
@@ -87,7 +87,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    this.handleVideoMetric.bind(this),
                                         networkMetricCallback:  async () => {},
-                                    },"video");
+                                    },false,"video");
 
         }
         const dataEstablishmentLoop = () => {
@@ -99,16 +99,18 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  async () => {}
-                                    });
+                                    },true,"mic");
         }
 
         audioEstablishmentLoop()
+        dataEstablishmentLoop()
         if (no_video) 
             return
             
-        
         videoEstablishmentLoop()
     }
+
+
 
     private async handleIncomingDataChannel(a: RTCDataChannelEvent): Promise<void> {
         LogConnectionEvent(ConnectionEvent.ReceivedDatachannel, a.channel.label)
