@@ -132,7 +132,7 @@ export class HID {
 
     private runButton() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-            if (gamepad == null || gamepad.mapping !== 'standard') 
+            if (gamepad == null) 
                 return;
                 
             
@@ -180,7 +180,7 @@ export class HID {
     };
     private runAxis() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-            if (gamepad == null || gamepad.mapping !== 'standard') 
+            if (gamepad == null) 
                 return;
 
             gamepad.axes.forEach((value: number, index: number) => {
