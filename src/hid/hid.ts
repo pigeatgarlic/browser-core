@@ -156,7 +156,7 @@ export class HID {
     };
     private runSlider() : void {
         navigator.getGamepads().forEach((gamepad: Gamepad,gamepad_id: number) =>{
-            if (gamepad == null || gamepad.mapping != 'standard') 
+            if (gamepad == null) 
                 return;
 
             gamepad.buttons.forEach((button: GamepadButton,index: number) => {
