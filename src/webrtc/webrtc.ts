@@ -120,14 +120,11 @@ export class WebRTC
 
         transceiver.setCodecPreferences([selected]);
         console.log('Preferred video codec', selected);
-        await new Promise(r => setTimeout(r, 5000))
     }
 
     private onConnectionStateChange(eve: Event)
     {
         const successHandler = async () => {
-            if (this.microphone) 
-                await this.AcquireMicrophone()
             
             this.DoneHandshake()
             LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking,"done",this.data as string)
@@ -185,6 +182,9 @@ export class WebRTC
     
         try{
             await this.Conn.setRemoteDescription(sdp)
+            if (this.microphone) 
+                await this.AcquireMicrophone()
+
             const ans = await this.Conn.createAnswer()
             await this.onLocalDescription(ans);
         } catch(error) {
