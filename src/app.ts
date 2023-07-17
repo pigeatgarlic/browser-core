@@ -75,7 +75,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  async () => {}
-                                    },false,"audio");
+                                    },true,"audio");
         }
 
         const videoEstablishmentLoop = () => {
@@ -90,23 +90,10 @@ export class RemoteDesktopClient  {
                                     },false,"video");
 
         }
-        const dataEstablishmentLoop = () => {
-            this.dataConn        = null
-            this.dataConn        = new WebRTC(signalingConfig.dataURL,webrtcConfig,
-                                    this.handleIncomingTrack.bind(this),
-                                    this.handleIncomingDataChannel.bind(this), 
-                                    dataEstablishmentLoop,{
-                                        audioMetricCallback:    async () => {},
-                                        videoMetricCallback:    async () => {},
-                                        networkMetricCallback:  async () => {}
-                                    },true,"mic");
-        }
 
         audioEstablishmentLoop()
-        dataEstablishmentLoop()
         if (no_video) 
             return
-            
         videoEstablishmentLoop()
     }
 
