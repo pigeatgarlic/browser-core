@@ -82,9 +82,15 @@ export class WebRTC
 
     private async AcquireMicrophone() {
         // Handles being called several times to update labels. Preserve values.
-        const localStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-        })
+        let localStream : MediaStream = null;
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            })
+        } catch {
+            console.log(`failed to acquire microphone`)
+            return
+        }
 
         const audioTracks = localStream.getAudioTracks();
         if (audioTracks.length > 0) {
@@ -92,10 +98,10 @@ export class WebRTC
         }
 
         const tracks = localStream.getTracks()
-        this.AddLocalTrack(localStream,tracks)
+        await this.AddLocalTrack(localStream,tracks)
     }
 
-    private AddLocalTrack(stream :MediaStream,tracks: MediaStreamTrack[]) {
+    private async AddLocalTrack(stream :MediaStream,tracks: MediaStreamTrack[]) {
         console.log('Adding Local Stream to peer connection');
 
         tracks.forEach(track => this.Conn.addTrack(track, stream))
@@ -114,6 +120,7 @@ export class WebRTC
 
         transceiver.setCodecPreferences([selected]);
         console.log('Preferred video codec', selected);
+        await new Promise(r => setTimeout(r, 5000))
     }
 
     private onConnectionStateChange(eve: Event)
