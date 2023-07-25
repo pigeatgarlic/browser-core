@@ -71,6 +71,7 @@ export class RemoteDesktopClient  {
             this.audioConn       = new WebRTC(signalingConfig.audioURL,webrtcConfig,
                                     this.handleIncomingTrack.bind(this),
                                     this.handleIncomingDataChannel.bind(this),
+                                    this.handleLoggingStatus.bind(this),
                                     audioEstablishmentLoop,{
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
@@ -83,6 +84,7 @@ export class RemoteDesktopClient  {
             this.videoConn       = new WebRTC(signalingConfig.videoURL,webrtcConfig,
                                     this.handleIncomingTrack.bind(this),
                                     this.handleIncomingDataChannel.bind(this),
+                                    this.handleLoggingStatus.bind(this),
                                     videoEstablishmentLoop, {
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    this.handleVideoMetric.bind(this),
@@ -95,6 +97,7 @@ export class RemoteDesktopClient  {
             this.dataConn        = new WebRTC(signalingConfig.dataURL,webrtcConfig,
                                     this.handleIncomingTrack.bind(this),
                                     this.handleIncomingDataChannel.bind(this), 
+                                    this.handleLoggingStatus.bind(this),
                                     dataEstablishmentLoop,{
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    async () => {},
@@ -108,6 +111,10 @@ export class RemoteDesktopClient  {
             
         
         videoEstablishmentLoop()
+    }
+
+    private async handleLoggingStatus(event: string): Promise<void> {
+        Log(LogLevel.Infor,`WH Connect Status : ${event}`)
     }
 
     private async handleIncomingDataChannel(a: RTCDataChannelEvent): Promise<void> {
