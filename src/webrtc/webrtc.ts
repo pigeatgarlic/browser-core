@@ -16,19 +16,16 @@ export class WebRTC
     private MetricHandler     : MetricCallback
     private TrackHandler      : (a : RTCTrackEvent) => (any)
     private channelHandler    : (a : RTCDataChannelEvent) => (any)
-    private loggingHandler    : (event: string) => void
     private closeHandler      : () => void
 
     constructor(signalingURL    : string,
                 webrtcConfig    : RTCConfiguration,
                 TrackHandler    : (a : RTCTrackEvent) => Promise<void>,
                 channelHandler  : (a : RTCDataChannelEvent) => Promise<void>,
-                LoggingHandler  : (event: string) => void,
                 CloseHandler    : () => void,
                 metricHandler   : MetricCallback,
                 data?: any)
     {
-        this.loggingHandler    = LoggingHandler
         this.closeHandler      = CloseHandler
         this.MetricHandler     = metricHandler;
         this.TrackHandler      = TrackHandler;
@@ -103,7 +100,6 @@ export class WebRTC
             Log(LogLevel.Infor,"webrtc connection checking");
         }
 
-        this.loggingHandler((eve.target as RTCPeerConnection).connectionState)
         switch ((eve.target as RTCPeerConnection).connectionState as RTCPeerConnectionState) { // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
             case "new":
             case "connecting":
