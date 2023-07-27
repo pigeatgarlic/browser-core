@@ -12,6 +12,7 @@ export class WebRTC
     private Ads             : Adaptive
 
     private data            : any
+    private microphone      : boolean
 
     private MetricHandler     : MetricCallback
     private TrackHandler      : (a : RTCTrackEvent) => (any)
@@ -24,6 +25,7 @@ export class WebRTC
                 channelHandler  : (a : RTCDataChannelEvent) => Promise<void>,
                 CloseHandler    : () => void,
                 metricHandler   : MetricCallback,
+                microphone     ?: boolean,
                 data?: any)
     {
         this.closeHandler      = CloseHandler
@@ -32,6 +34,7 @@ export class WebRTC
         this.channelHandler    = channelHandler; 
         this.webrtcConfig      = webrtcConfig;
         this.data              = data
+        this.microphone        = microphone ?? false
 
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
         this.signaling = new SignallingClient(signalingURL,
@@ -77,9 +80,52 @@ export class WebRTC
         this.Conn.onconnectionstatechange  = this.onConnectionStateChange.bind(this);
     }
 
+    private async AcquireMicrophone() {
+        // Handles being called several times to update labels. Preserve values.
+        let localStream : MediaStream = null;
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+            })
+        } catch {
+            console.log(`failed to acquire microphone`)
+            return
+        }
+
+        const audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+            console.log(`Using Audio device: ${audioTracks[0].label}`);
+        }
+
+        const tracks = localStream.getTracks()
+        await this.AddLocalTrack(localStream,tracks)
+    }
+
+    private async AddLocalTrack(stream :MediaStream,tracks: MediaStreamTrack[]) {
+        console.log('Adding Local Stream to peer connection');
+
+        tracks.forEach(track => this.Conn.addTrack(track, stream))
+
+        const transceiver = this.Conn.getTransceivers()
+            .find(t => t?.sender?.track === stream.getAudioTracks()[0]);
+
+        const codec = {
+            clockRate: 48000,
+            channels: 2,
+            mimeType: "audio/opus",
+        }
+
+        const {codecs} = RTCRtpSender.getCapabilities('audio');
+        const selected = codecs.find(x => x.mimeType == codec.mimeType)
+
+        transceiver.setCodecPreferences([selected]);
+        console.log('Preferred video codec', selected);
+    }
+
     private onConnectionStateChange(eve: Event)
     {
-        const successHandler = () => {
+        const successHandler = async () => {
+            
             this.DoneHandshake()
             LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking,"done",this.data as string)
             Log(LogLevel.Infor,"webrtc connection established");
@@ -136,6 +182,9 @@ export class WebRTC
     
         try{
             await this.Conn.setRemoteDescription(sdp)
+            if (this.microphone) 
+                await this.AcquireMicrophone()
+
             const ans = await this.Conn.createAnswer()
             await this.onLocalDescription(ans);
         } catch(error) {
