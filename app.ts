@@ -38,7 +38,8 @@ export class RemoteDesktopClient  {
     private videoConn  : WebRTC
     private audioConn  : WebRTC
 
-    public HandleMetrics : (metrics: Metrics) => Promise<void>
+    public HandleMetrics   : (metrics: Metrics) => Promise<void>
+    public HandleMetricRaw : (data: NetworkMetrics | VideoMetrics | AudioMetrics) => Promise<void>
     constructor(signalingConfig : SignalingConfig,
                 webrtcConfig    : RTCConfiguration,
                 vid : HTMLVideoElement,
@@ -50,7 +51,8 @@ export class RemoteDesktopClient  {
         this.audio = audio;
         this.pipelines = new Map<string,Pipeline>();
         this.platform = platform != null ? platform : getPlatform()
-        this.HandleMetrics = async () => {}
+        this.HandleMetrics   = async () => {}
+        this.HandleMetricRaw = async () => {}
         
         this.hid = null;
         this.datachannels = new Map<ChannelName,DataChannel>();
@@ -144,14 +146,17 @@ export class RemoteDesktopClient  {
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
         await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
+        this.HandleMetricRaw(a)
     }
     private async handleVideoMetric(a: VideoMetrics): Promise<void> {
         await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
+        this.HandleMetricRaw(a)
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
         await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
+        this.HandleMetricRaw(a)
     }
 
 
