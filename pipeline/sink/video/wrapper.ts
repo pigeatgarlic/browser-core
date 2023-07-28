@@ -36,7 +36,7 @@ export class VideoWrapper {
     }
 
     async assign(provider: MediaProvider) {
-        if (new Date().getTime() - this.last_assign.getTime() < 300) {
+        if (new Date().getTime() - this.last_assign.getTime() < 1000) {
             Log(LogLevel.Warning,`reassign too quick, aborted`)
             return
         }
