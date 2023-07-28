@@ -7,6 +7,7 @@ import { getPlatform } from "./utils/platform";
 import { AudioMetrics, NetworkMetrics, VideoMetrics } from "./qos/models";
 import { SignalingConfig } from "./signaling/config";
 import { VideoWrapper } from "./pipeline/sink/video/wrapper";
+import { AudioWrapper } from "./pipeline/sink/audio/wrapper";
 
 type ChannelName = 'hid' | 'adaptive' | 'manual'
 
@@ -31,7 +32,7 @@ export class RemoteDesktopClient  {
 
     public  hid                 : HID 
     private video               : VideoWrapper
-    private audio               : HTMLAudioElement
+    private audio               : AudioWrapper 
     private pipelines           : Map<string,Pipeline>
     private datachannels        : Map<ChannelName,DataChannel>;
 
@@ -44,7 +45,7 @@ export class RemoteDesktopClient  {
     constructor(signalingConfig : SignalingConfig,
                 webrtcConfig    : RTCConfiguration,
                 vid : VideoWrapper,
-                audio: HTMLAudioElement,
+                audio: AudioWrapper,
                 platform?: 'mobile' | 'desktop',
                 no_video?: boolean) {
 
@@ -122,8 +123,7 @@ export class RemoteDesktopClient  {
         if (evt.track.kind == "video") {
             await this.video.assign(evt.streams.find(val => val.getVideoTracks().length > 0))
         } else if (evt.track.kind == "audio") {
-            this.audio.srcObject = null
-            this.audio.srcObject = evt.streams.find(val => val.getAudioTracks().length > 0)
+            await this.audio.assign(evt.streams.find(val => val.getAudioTracks().length > 0))
         }
 
         if (evt.track.kind == "video")  {
@@ -149,8 +149,6 @@ export class RemoteDesktopClient  {
             }
         }
 
-        if (evt.track.kind == "audio") 
-            await attempt(this.video.play())
     }
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {

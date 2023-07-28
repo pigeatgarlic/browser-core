@@ -1,3 +1,5 @@
+import { Log, LogLevel } from "../../../utils/log";
+
 export class VideoWrapper {
     private isPlaying : boolean;
     private video : HTMLVideoElement
@@ -11,6 +13,9 @@ export class VideoWrapper {
         }).bind(this);
         this.video.onpause = (() => {
             this.isPlaying = false;
+            this.play().catch(e => {
+                Log(LogLevel.Error,`error playing video ${e.message}`)
+            })
         }).bind(this);
     }
 
