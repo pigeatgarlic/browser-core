@@ -6,6 +6,7 @@ import { Pipeline } from "./pipeline/pipeline";
 import { getPlatform } from "./utils/platform";
 import { AudioMetrics, NetworkMetrics, VideoMetrics } from "./qos/models";
 import { SignalingConfig } from "./signaling/config";
+import { VideoWrapper } from "./pipeline/sink/video/wrapper";
 
 type ChannelName = 'hid' | 'adaptive' | 'manual'
 
@@ -29,7 +30,7 @@ export class RemoteDesktopClient  {
     private readonly platform : 'desktop' | 'mobile'
 
     public  hid                 : HID 
-    private video               : HTMLVideoElement
+    private video               : VideoWrapper
     private audio               : HTMLAudioElement
     private pipelines           : Map<string,Pipeline>
     private datachannels        : Map<ChannelName,DataChannel>;
@@ -42,7 +43,7 @@ export class RemoteDesktopClient  {
     public HandleMetricRaw : (data: NetworkMetrics | VideoMetrics | AudioMetrics) => Promise<void>
     constructor(signalingConfig : SignalingConfig,
                 webrtcConfig    : RTCConfiguration,
-                vid : HTMLVideoElement,
+                vid : VideoWrapper,
                 audio: HTMLAudioElement,
                 platform?: 'mobile' | 'desktop',
                 no_video?: boolean) {
@@ -64,7 +65,7 @@ export class RemoteDesktopClient  {
             this.hid.handleIncomingData(data);
         }))
 
-        this.hid = new HID( this.platform, this.video, (data: string) => {
+        this.hid = new HID( this.platform, this.video.internal(), (data: string) => {
             this.datachannels.get("hid").sendMessage(data);
         });
 
@@ -119,8 +120,7 @@ export class RemoteDesktopClient  {
             ))));
 
         if (evt.track.kind == "video") {
-            this.video.srcObject = null
-            this.video.srcObject = evt.streams.find(val => val.getVideoTracks().length > 0)
+            await this.video.assign(evt.streams.find(val => val.getVideoTracks().length > 0))
         } else if (evt.track.kind == "audio") {
             this.audio.srcObject = null
             this.audio.srcObject = evt.streams.find(val => val.getAudioTracks().length > 0)
@@ -150,8 +150,6 @@ export class RemoteDesktopClient  {
         }
 
         if (evt.track.kind == "audio") 
-            await attempt(this.video.play())
-        else if (evt.track.kind == "video") 
             await attempt(this.video.play())
     }
 
