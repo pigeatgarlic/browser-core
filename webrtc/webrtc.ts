@@ -119,7 +119,7 @@ export class WebRTC
         const selected = codecs.find(x => x.mimeType == codec.mimeType)
 
         transceiver.setCodecPreferences([selected]);
-        console.log('Preferred video codec', selected);
+        console.log('Preferred microphone codec', selected);
     }
 
     private onConnectionStateChange(eve: Event)
