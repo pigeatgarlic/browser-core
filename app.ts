@@ -136,11 +136,23 @@ export class RemoteDesktopClient  {
         }
 
         // user must interact with the document first, by then, video can start to play. so we wait for use to interact
-        if (evt.track.kind == "audio") 
-            await this.audio.play()
-        else if (evt.track.kind == "video") 
-            await this.video.play()
+        const attempt = async (func: Promise<any>) => {
+            while(true) {
+                try { 
+                    await func
+                    Log(LogLevel.Infor,'attemption done')
+                    return
+                } catch (e) { 
+                    Log(LogLevel.Warning,`unable to perform action ${e.message}`)
+                    await new Promise(r => setTimeout(r,1000))
+                }
+            }
+        }
 
+        if (evt.track.kind == "audio") 
+            await attempt(this.video.play())
+        else if (evt.track.kind == "video") 
+            await attempt(this.video.play())
     }
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
