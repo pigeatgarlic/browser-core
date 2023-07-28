@@ -3,10 +3,12 @@ import { Log, LogLevel } from "../../../utils/log";
 export class AudioWrapper {
     private isPlaying : boolean;
     private audio : HTMLAudioElement
+    private last_assign : Date
 
     constructor(vid: HTMLAudioElement) {
         this.audio = vid
         this.isPlaying = true
+        this.last_assign  = new Date()
 
         this.audio.onplaying = (() => {
             this.isPlaying = true;
@@ -34,10 +36,15 @@ export class AudioWrapper {
     }
 
     async assign(provider: MediaProvider) {
-        await this.pause()
+        if (new Date().getTime() - this.last_assign.getTime() < 300) {
+            Log(LogLevel.Warning,`reassign too quick, aborted`)
+            return
+        }
+
         this.audio.srcObject = null
         this.audio.srcObject = provider
         await this.play()
+        this.last_assign = new Date()
     }
 
     internal() : HTMLAudioElement {

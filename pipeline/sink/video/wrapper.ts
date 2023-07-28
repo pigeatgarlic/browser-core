@@ -3,10 +3,12 @@ import { Log, LogLevel } from "../../../utils/log";
 export class VideoWrapper {
     private isPlaying : boolean;
     private video : HTMLVideoElement
+    private last_assign : Date
 
     constructor(vid: HTMLVideoElement) {
         this.video = vid
         this.isPlaying = true
+        this.last_assign  = new Date()
 
         this.video.onplaying = (() => {
             this.isPlaying = true;
@@ -34,9 +36,16 @@ export class VideoWrapper {
     }
 
     async assign(provider: MediaProvider) {
+        if (new Date().getTime() - this.last_assign.getTime() < 300) {
+            Log(LogLevel.Warning,`reassign too quick, aborted`)
+            return
+        }
+            
+        
         this.video.srcObject = null
         this.video.srcObject = provider
         await this.play()
+        this.last_assign = new Date()
     }
 
     internal() : HTMLVideoElement {
