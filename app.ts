@@ -3,7 +3,7 @@ import { HID } from "./hid/hid"
 import { ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "./utils/log";
 import { WebRTC } from "./webrtc/webrtc";
 import { Pipeline } from "./pipeline/pipeline";
-import { getPlatform } from "./utils/platform";
+import { getOS, getPlatform } from "./utils/platform";
 import { AudioMetrics, NetworkMetrics, VideoMetrics } from "./qos/models";
 import { SignalingConfig } from "./signaling/config";
 import { VideoWrapper } from "./pipeline/sink/video/wrapper";
@@ -120,8 +120,12 @@ export class RemoteDesktopClient  {
                 x.getTracks().map(x => `${x.label} ${x.id}`
             ))));
 
-        if (evt.track.kind == "video") {
-            await this.video.assign(evt.streams.find(val => val.getVideoTracks().length > 0))
+        if (evt.track.kind == "video" ) {
+            const stream = evt.streams.find(val => val.getVideoTracks().length > 0)
+            if (Number.isNaN(parseInt(stream.id)) && getOS() == 'Windows') // RISK / black screen
+                return
+
+            await this.video.assign(stream)
         } else if (evt.track.kind == "audio") {
             await this.audio.assign(evt.streams.find(val => val.getAudioTracks().length > 0))
         }
@@ -134,21 +138,6 @@ export class RemoteDesktopClient  {
             // pipeline.updateSink(new VideoSink(this.video.current as HTMLVideoElement))
             // this.pipelines.set(evt.track.id,pipeline);
         }
-
-        // user must interact with the document first, by then, video can start to play. so we wait for use to interact
-        const attempt = async (func: Promise<any>) => {
-            while(true) {
-                try { 
-                    await func
-                    Log(LogLevel.Infor,'attemption done')
-                    return
-                } catch (e) { 
-                    Log(LogLevel.Warning,`unable to perform action ${e.message}`)
-                    await new Promise(r => setTimeout(r,1000))
-                }
-            }
-        }
-
     }
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
