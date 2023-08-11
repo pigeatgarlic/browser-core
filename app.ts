@@ -191,4 +191,12 @@ export class RemoteDesktopClient  {
 
         Log(LogLevel.Debug,`reset audio pipeline`)
     }
+
+    public async HardReset() {
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
+            type: "danger-reset",
+        }))
+
+        Log(LogLevel.Debug,`hard reset video stream`)
+    }
 }
