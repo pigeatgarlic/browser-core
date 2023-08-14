@@ -60,7 +60,13 @@ export class RemoteDesktopClient  {
         this.datachannels = new Map<ChannelName,DataChannel>();
         this.datachannels.set('manual',   new DataChannel())
         this.datachannels.set('adaptive', new DataChannel(async (data : string) => {
-            this.HandleMetrics(JSON.parse(data) as Metrics)
+            const result = JSON.parse(data) as Metrics
+            if (result.type == 'VIDEO' && result.decodefps.every(x => x == 0)) {
+                console.log("black screen detected")
+                this.videoConn.Close()
+            }
+
+            this.HandleMetrics(result)
         }))
         this.datachannels.set('hid',      new DataChannel(async (data : string) => {
             this.hid.handleIncomingData(data);

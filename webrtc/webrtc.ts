@@ -41,6 +41,17 @@ export class WebRTC
                                  this.handleIncomingPacket.bind(this));
     }
 
+    public Close () {
+        this.Conn?.close()
+        this.Ads?.Close()
+        this.signaling?.Close()
+
+        this.closeHandler()
+
+        LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
+        Log(LogLevel.Error,"webrtc connection establish failed");
+    }
+
     private async handleIncomingPacket(pkt : SignalingMessage)
     {
         switch (pkt.type) {
@@ -125,20 +136,9 @@ export class WebRTC
     private onConnectionStateChange(eve: Event)
     {
         const successHandler = async () => {
-            
             this.DoneHandshake()
             LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking,"done",this.data as string)
             Log(LogLevel.Infor,"webrtc connection established");
-        }
-        const failHandler = () => {
-            this.Conn?.close()
-            this.Ads?.Close()
-            this.signaling?.Close()
-
-            this.closeHandler()
-
-            LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
-            Log(LogLevel.Error,"webrtc connection establish failed");
         }
 
         const connectingHandler = () => {
@@ -157,7 +157,7 @@ export class WebRTC
             case "closed":
             case "failed":
             case "disconnected":
-                failHandler()
+                this.Close()
                 break;
             default:
                 break;
