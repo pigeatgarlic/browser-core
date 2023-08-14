@@ -130,7 +130,7 @@ export class RemoteDesktopClient  {
 
         if (evt.track.kind == "video" ) {
             const stream = evt.streams.find(val => val.getVideoTracks().length > 0)
-            if (Number.isNaN(parseInt(stream.id)) && (['Windows','Mac OS']).includes(getOS())) // RISK / black screen
+            if (Number.isNaN(parseInt(stream.id)) && (['Windows','Mac OS','Android']).includes(getOS())) // RISK / black screen
                 return
 
             await this.video.assign(stream)
