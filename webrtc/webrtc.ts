@@ -25,7 +25,7 @@ export class WebRTC
                 channelHandler  : (a : RTCDataChannelEvent) => Promise<void>,
                 CloseHandler    : () => void,
                 metricHandler   : MetricCallback,
-                microphone     ?: boolean,
+                no_microphone   : boolean,
                 data?: any)
     {
         this.closeHandler      = CloseHandler
@@ -34,11 +34,22 @@ export class WebRTC
         this.channelHandler    = channelHandler; 
         this.webrtcConfig      = webrtcConfig;
         this.data              = data
-        this.microphone        = microphone ?? false
+        this.microphone        = !no_microphone 
 
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
         this.signaling = new SignallingClient(signalingURL,
                                  this.handleIncomingPacket.bind(this));
+    }
+
+    public Close () {
+        this.Conn?.close()
+        this.Ads?.Close()
+        this.signaling?.Close()
+
+        this.closeHandler()
+
+        LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
+        Log(LogLevel.Error,"webrtc connection establish failed");
     }
 
     private async handleIncomingPacket(pkt : SignalingMessage)
@@ -125,20 +136,9 @@ export class WebRTC
     private onConnectionStateChange(eve: Event)
     {
         const successHandler = async () => {
-            
             this.DoneHandshake()
             LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking,"done",this.data as string)
             Log(LogLevel.Infor,"webrtc connection established");
-        }
-        const failHandler = () => {
-            this.Conn?.close()
-            this.Ads?.Close()
-            this.signaling?.Close()
-
-            this.closeHandler()
-
-            LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
-            Log(LogLevel.Error,"webrtc connection establish failed");
         }
 
         const connectingHandler = () => {
@@ -157,7 +157,7 @@ export class WebRTC
             case "closed":
             case "failed":
             case "disconnected":
-                failHandler()
+                this.Close()
                 break;
             default:
                 break;
@@ -183,7 +183,8 @@ export class WebRTC
         try{
             await this.Conn.setRemoteDescription(sdp)
             if (this.microphone) 
-                await this.AcquireMicrophone()
+                try { await this.AcquireMicrophone() } 
+                catch {console.log('failed to acquire microphone')}
 
             const ans = await this.Conn.createAnswer()
             await this.onLocalDescription(ans);

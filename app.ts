@@ -46,8 +46,10 @@ export class RemoteDesktopClient  {
                 webrtcConfig    : RTCConfiguration,
                 vid : VideoWrapper,
                 audio: AudioWrapper,
-                platform?: 'mobile' | 'desktop',
-                no_video?: boolean) {
+                platform: 'mobile' | 'desktop',
+                no_video: boolean,
+                no_microphone: boolean,
+                ) {
 
         this.video = vid;
         this.audio = audio;
@@ -60,7 +62,13 @@ export class RemoteDesktopClient  {
         this.datachannels = new Map<ChannelName,DataChannel>();
         this.datachannels.set('manual',   new DataChannel())
         this.datachannels.set('adaptive', new DataChannel(async (data : string) => {
-            this.HandleMetrics(JSON.parse(data) as Metrics)
+            const result = JSON.parse(data) as Metrics
+            if (result.type == 'VIDEO' && result.decodefps.every(x => x == 0)) {
+                console.log("black screen detected")
+                this.videoConn.Close()
+            }
+
+            this.HandleMetrics(result)
         }))
         this.datachannels.set('hid',      new DataChannel(async (data : string) => {
             this.hid.handleIncomingData(data);
@@ -79,7 +87,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  async () => {}
-                                    },true,"audio");
+                                    },no_microphone,"audio");
         }
 
         const videoEstablishmentLoop = () => {
@@ -91,7 +99,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    this.handleVideoMetric.bind(this),
                                         networkMetricCallback:  async () => {},
-                                    },false,"video");
+                                    },true,"video");
 
         }
 
@@ -122,7 +130,7 @@ export class RemoteDesktopClient  {
 
         if (evt.track.kind == "video" ) {
             const stream = evt.streams.find(val => val.getVideoTracks().length > 0)
-            if (Number.isNaN(parseInt(stream.id)) && (['Windows','Mac OS']).includes(getOS())) // RISK / black screen
+            if (Number.isNaN(parseInt(stream.id)) && (['Windows','Mac OS','Android']).includes(getOS())) // RISK / black screen
                 return
 
             await this.video.assign(stream)
@@ -190,5 +198,13 @@ export class RemoteDesktopClient  {
         }))
 
         Log(LogLevel.Debug,`reset audio pipeline`)
+    }
+
+    public async HardReset() {
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
+            type: "danger-reset",
+        }))
+
+        Log(LogLevel.Debug,`hard reset video stream`)
     }
 }
