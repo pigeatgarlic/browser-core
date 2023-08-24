@@ -82,6 +82,11 @@ export class NetworkMetrics {
     priority : number
 
     timestamp : number
+
+    address : {
+        local : string
+        remote : string
+    }
 }
 
 

@@ -86,7 +86,7 @@ export class RemoteDesktopClient  {
                                     audioEstablishmentLoop,{
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
-                                        networkMetricCallback:  async () => {}
+                                        networkMetricCallback:  this.handleNetworkMetric.bind(this)
                                     },no_microphone,"audio");
         }
 
@@ -98,7 +98,7 @@ export class RemoteDesktopClient  {
                                     videoEstablishmentLoop, {
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    this.handleVideoMetric.bind(this),
-                                        networkMetricCallback:  async () => {},
+                                        networkMetricCallback:  this.handleNetworkMetric.bind(this),
                                     },true,"video");
 
         }
@@ -159,8 +159,8 @@ export class RemoteDesktopClient  {
         this.HandleMetricRaw(a)
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
-        await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
-        Log(LogLevel.Debug,`sending ${a.type} metric`)
+        // await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
+        // Log(LogLevel.Debug,`sending ${a.type} metric`)
         this.HandleMetricRaw(a)
     }
 

@@ -12,7 +12,8 @@ export class SignallingClient
     private PacketHandler          : (Data : SignalingMessage) => Promise<void>
 
     constructor (url : string,
-                 PacketHandler : ((Data : SignalingMessage) => Promise<void>))
+                 PacketHandler : ((Data : SignalingMessage) => Promise<void>),
+                 onClose : () => Promise<void>)
     {
         this.url =url
         this.PacketHandler = PacketHandler;
@@ -20,6 +21,8 @@ export class SignallingClient
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
         this.WebSocketConnection            = new WebSocket(url);
         this.WebSocketConnection.onopen     = this.onServerOpen.bind(this)
+        this.WebSocketConnection.onerror    = onClose
+        this.WebSocketConnection.onclose    = onClose
     }
 
     public Close () {
@@ -34,9 +37,6 @@ export class SignallingClient
     {
         LogConnectionEvent(ConnectionEvent.WebSocketConnected)
         this.WebSocketConnection.onmessage  = this.onServerMessage.bind(this)
-
-        this.WebSocketConnection.onerror    = this.onServerError.bind(this)
-        this.WebSocketConnection.onclose    = this.onServerClose.bind(this)
     }
     /**
      * send messsage to signalling server
@@ -46,17 +46,6 @@ export class SignallingClient
         const data = JSON.stringify(msg)
         Log(LogLevel.Debug,`sending message (${this.url}) : ${data}`);
         this.WebSocketConnection.send(data);
-    }
-
-    private onServerClose(ev: CloseEvent) 
-    {
-        Log(LogLevel.Warning,"websocket connection disconnected " +ev.wasClean);
-        this.WebSocketConnection = null
-    }
-    private onServerError(ev : Event) 
-    {
-        Log(LogLevel.Warning,"websocket connection error");
-        this.WebSocketConnection = null
     }
 
 

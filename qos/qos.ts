@@ -43,6 +43,23 @@ export class Adaptive {
 
 
 
+        const id      = { remote : "", local : "" }
+        const address = { remote : "", local : "" }
+        report.forEach(val => {
+            if(val.type == 'candidate-pair' && val.bytesReceived > 0) {
+                id.local  = val.localCandidateId
+                id.remote = val.remoteCandidateId
+            }
+        })
+        report.forEach((val,key) => {
+            if(val.type == 'remote-candidate' && key == id.remote)
+                address.remote = `${val.address}:${val.port}`
+            if(val.type == 'local-candidate' && key == id.local)
+                address.local  = `${val.address}:${val.port}`
+        })
+
+
+
         let val = report.get(CandidatePair);
 
         let ret = new NetworkMetrics();
@@ -63,6 +80,7 @@ export class Adaptive {
         ret.totalRoundTripTime  = val["totalRoundTripTime"];
         ret.priority  = val["priority"];
         ret.timestamp  = val["timestamp"];
+        ret.address = address
 
         return ret;
     }
