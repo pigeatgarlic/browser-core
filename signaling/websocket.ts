@@ -25,8 +25,9 @@ export class SignallingClient
         this.WebSocketConnection.onclose    = onClose
     }
 
-    public Close () {
+    public Close() {
         this.WebSocketConnection?.close()
+        this.PacketHandler = async () => {}
     }
 
     /**
