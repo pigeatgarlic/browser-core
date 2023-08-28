@@ -22,6 +22,7 @@ export class HID {
 
     private disableKeyboard : boolean
     private disableMouse    : boolean
+    public isTouchVideo    : boolean
 
     public DisableKeyboard (val: boolean) {
         this.disableKeyboard = val
@@ -48,13 +49,17 @@ export class HID {
 
         this.disableKeyboard = false;
         this.disableMouse = false;
+        this.isTouchVideo = true;
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
         this.Screen = new Screen();
-        this.platform = platform == 'desktop' ? new DesktopTouch(Sendfunc) : new MobileTouch(videoElement,Sendfunc);
-
-
+        
+        this.platform = platform == 'desktop' 
+            ? new DesktopTouch(Sendfunc) 
+            : new MobileTouch(videoElement,Sendfunc);
+        if(platform == 'mobile')
+            document.addEventListener('touchstart', event => this.isTouchVideo = event.target === this.video)
         /**
          * video event
          */
@@ -306,7 +311,7 @@ export class HID {
         })).ToString());
     }
     private mouseButtonMovement(event: MouseEvent){
-        if (this.disableMouse) 
+        if (this.disableMouse || !this.isTouchVideo) 
             return;
 
         if (!this.relativeMouse) {
@@ -327,13 +332,13 @@ export class HID {
         }
     }
     private mouseButtonDown(event: MouseEvent){
-        if (this.disableMouse) 
+        if (this.disableMouse || !this.isTouchVideo) 
             return;
 
         this.MouseButtonDown(event)
     }
     private mouseButtonUp(event: MouseEvent){
-        if (this.disableMouse) 
+        if (this.disableMouse || !this.isTouchVideo) 
             return;
 
         this.MouseButtonUp(event)
