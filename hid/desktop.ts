@@ -2,30 +2,24 @@ import { EventCode, HIDMsg } from "../models/keys.model";
 import { Log, LogLevel } from "../utils/log";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
 
+
+
+// TODO i swear to god that one day I'll fix the touch issue on desktop 
 export class DesktopTouch {
     private onGoingTouchs: Map<number, TouchData>
     public SendFunc: ((data: string) => void)
+    public Toggle(disable: boolean) {}
 
-    private disable: boolean
-    public Toggle(disable: boolean) {
-        console.log(disable ? 'disable touch' : 'enable touch')
-        this.disable = disable
-        if (this.disable)
-            this.onGoingTouchs = new Map<number, TouchData>();
-    }
 
 
     constructor(Sendfunc: ((data: string) => void)) {
         this.onGoingTouchs = new Map<number, TouchData>()
         this.SendFunc = Sendfunc;
-        this.disable = false
 
         document.addEventListener('touchstart', this.handleStart.bind(this));
         document.addEventListener('touchend', this.handleEnd.bind(this));
         document.addEventListener('touchcancel', this.handleCancel.bind(this));
         document.addEventListener('touchmove', this.handleMove.bind(this));
-
-
     }
 
     public handleIncomingData(data: string) {
@@ -57,12 +51,6 @@ export class DesktopTouch {
 
 
     private handleMove(evt: TouchEvent) {
-        evt.preventDefault();
-        if (this.disable)
-            return;
-
-
-
         const touches = evt.touches;
         for (let i = 0; i < touches.length; i++) {
             const curr_touch = touches[i]
@@ -138,11 +126,6 @@ export class DesktopTouch {
 
 
     private handleStart(evt: TouchEvent) {
-        evt.preventDefault();
-        if (this.disable)
-            return;
-
-
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
             let touch = new TouchData(touches[i])
@@ -158,9 +141,6 @@ export class DesktopTouch {
         }
     }
     private handleEnd(evt: TouchEvent) {
-        evt.preventDefault();
-        if (this.disable)
-            return;
 
 
         const touches = evt.changedTouches;
@@ -178,13 +158,9 @@ export class DesktopTouch {
     }
 
     private handleCancel(evt: TouchEvent) {
-        evt.preventDefault();
-        if (this.disable)
-            return;
 
 
         const touches = evt.changedTouches;
-
         for (let i = 0; i < touches.length; i++) {
             const touch = this.onGoingTouchs.get(touches[i].identifier);
             if (touch.leftMouseDown) {

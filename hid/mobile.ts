@@ -26,9 +26,9 @@ export class MobileTouch {
         this.disable = false;
 		this.os = getOS()
 
-        document.addEventListener('touchstart',     this.handleStart.bind(this));
-        document.addEventListener('touchend',       this.handleEnd.bind(this));
-        document.addEventListener('touchmove',      this.handleMove.bind(this));
+        videoElement.addEventListener('touchstart',     this.handleStart.bind(this));
+        videoElement.addEventListener('touchend',       this.handleEnd.bind(this));
+        videoElement.addEventListener('touchmove',      this.handleMove.bind(this));
         this.SendFunc((new HIDMsg(EventCode.GamepadConnect,{
             gamepad_id: "0",
         }).ToString()))

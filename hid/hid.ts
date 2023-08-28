@@ -49,16 +49,17 @@ export class HID {
 
         this.disableKeyboard = false;
         this.disableMouse = false;
-        this.isTouchVideo = false;
+        this.isTouchVideo = true;
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
         this.Screen = new Screen();
-        this.platform = platform == 'desktop' ? new DesktopTouch(Sendfunc) : new MobileTouch(videoElement,Sendfunc);
-
-        document.addEventListener('touchstart', (event) => {
-            this.isTouchVideo = event.target === this.video
-        })
+        
+        this.platform = platform == 'desktop' 
+            ? new DesktopTouch(Sendfunc) 
+            : new MobileTouch(videoElement,Sendfunc);
+        if(platform == 'mobile')
+            document.addEventListener('touchstart', event => this.isTouchVideo = event.target === this.video)
         /**
          * video event
          */
