@@ -46,7 +46,7 @@ export class SignallingClient
     {
         const data = JSON.stringify(msg)
         Log(LogLevel.Debug,`sending message (${this.url}) : ${data}`);
-        this.WebSocketConnection.send(data);
+        this.WebSocketConnection?.send(data);
     }
 
 
