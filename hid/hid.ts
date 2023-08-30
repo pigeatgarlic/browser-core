@@ -4,7 +4,7 @@ import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
 import { getBrowser, getOS } from "../utils/platform";
 import { AxisType } from "../models/hid.model";
 import {Screen} from "../models/hid.model"
-import { isFullscreen, requestFullscreen } from "../utils/screen";
+import { VIDEO_ELEMENT_ID, isFullscreen, requestFullscreen } from "../utils/screen";
 import { MobileTouch } from "./mobile";
 import { DesktopTouch } from "./desktop";
 
@@ -99,8 +99,8 @@ export class HID {
         setInterval(() => {
             const havingPtrLock = document.pointerLockElement != null
             this.relativeMouse = havingPtrLock;
-
-            this.video.style.objectFit = isFullscreen(this.video) || getBrowser() == 'Safari'
+            this.video.setAttribute('id', VIDEO_ELEMENT_ID);
+            this.video.style.objectFit = isFullscreen(this.video)
                 ?  "fill"
                 :  "contain"
 

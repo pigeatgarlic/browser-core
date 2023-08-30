@@ -1,5 +1,7 @@
 import { getBrowser } from "./platform";
 
+export const VIDEO_ELEMENT_ID = 'videoElm'
+
 declare global {
     interface Document {
         mozCancelFullScreen?: () => Promise<void>;
@@ -37,13 +39,20 @@ export function requestFullscreen(video? : HTMLVideoElement): Promise<void> {
 
     // TODO figure out how to do this
 	// return video.webkitRequestFullscreen() // or video.webkitEnterFullScreen()
-    if (browser == 'Safari') 
+    if (browser == 'Safari') {
+        const videoElm = document.getElementById(VIDEO_ELEMENT_ID)
+        videoElm.classList.toggle("fillVideoIos");
         return
+    }
     
     // TODO test on firefox
     // if (browser == 'Firefox') 
     //     return document.documentElement.msRequestFullscreen()
-    
-    return document.documentElement.requestFullscreen()
+    const elementToFullscreen = document.documentElement
+    if (!document.fullscreenElement && elementToFullscreen?.requestFullscreen) {
+        elementToFullscreen.requestFullscreen();
+    } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+    }
 }
 
