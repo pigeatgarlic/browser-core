@@ -42,19 +42,22 @@ export class RemoteDesktopClient  {
 
     public HandleMetrics   : (metrics: Metrics) => Promise<void>
     public HandleMetricRaw : (data: NetworkMetrics | VideoMetrics | AudioMetrics) => Promise<void>
-    constructor(signalingConfig : SignalingConfig,
-                webrtcConfig    : RTCConfiguration,
-                vid : VideoWrapper,
+    constructor(vid : VideoWrapper,
                 audio: AudioWrapper,
-                platform: 'mobile' | 'desktop',
-                no_video: boolean,
-                no_microphone: boolean,
-                ) {
+                signalingConfig : SignalingConfig,
+                WebRTCConfig : RTCConfiguration,
+                { platform, no_video, no_mic ,turn, no_hid }: {
+                    turn?: boolean,
+                    platform?: 'mobile' | 'desktop',
+                    no_video?: boolean,
+                    no_mic?: boolean,
+                    no_hid?: boolean,
+                }) {
 
         this.video = vid;
         this.audio = audio;
         this.pipelines = new Map<string,Pipeline>();
-        this.platform = platform != null ? platform : getPlatform()
+        this.platform = platform ?? getPlatform()
         this.HandleMetrics   = async () => {}
         this.HandleMetricRaw = async () => {}
         
@@ -70,16 +73,14 @@ export class RemoteDesktopClient  {
 
             this.HandleMetrics(result)
         }))
-        this.datachannels.set('hid',      new DataChannel(async (data : string) => {
-            this.hid.handleIncomingData(data);
-        }))
 
-        this.hid = new HID( this.platform, this.video.internal(), (data: string) => {
-            this.datachannels.get("hid").sendMessage(data);
-        });
 
+
+        const webrtcConfig = {
+            ...WebRTCConfig,
+            iceTransportPolicy: ( turn ?? false) ? "relay" : "all" as any
+        }
         const audioEstablishmentLoop = () => {
-            this.audioConn       = null
             this.audioConn       = new WebRTC(signalingConfig.audioURL,webrtcConfig,
                                     this.handleIncomingTrack.bind(this),
                                     this.handleIncomingDataChannel.bind(this),
@@ -87,11 +88,10 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this)
-                                    },no_microphone,"audio");
+                                    },no_mic,"audio");
         }
 
         const videoEstablishmentLoop = () => {
-            this.videoConn       = null
             this.videoConn       = new WebRTC(signalingConfig.videoURL,webrtcConfig,
                                     this.handleIncomingTrack.bind(this),
                                     this.handleIncomingDataChannel.bind(this),
@@ -104,9 +104,22 @@ export class RemoteDesktopClient  {
         }
 
         audioEstablishmentLoop()
-        if (no_video) 
+        if (no_video ?? false) 
             return
         videoEstablishmentLoop()
+
+        this.datachannels.set('hid',      new DataChannel(async (data : string) => {
+            if (no_hid ?? false) 
+                return 
+
+            this.hid.handleIncomingData(data);
+        }))
+        this.hid = new HID( this.platform, this.video.internal(), (data: string) => {
+            if (no_hid ?? false) 
+                return 
+            
+            this.datachannels.get("hid").sendMessage(data);
+        });
     }
 
 
@@ -184,6 +197,12 @@ export class RemoteDesktopClient  {
         }))
 
         Log(LogLevel.Debug,`changing bitrate to ${bitrate}`)
+    }
+    public async PointerVisible (enable: boolean) {
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
+            type: "pointer",
+            value: enable ? 1 : 0
+        }))
     }
 
     public async ResetVideo () {
