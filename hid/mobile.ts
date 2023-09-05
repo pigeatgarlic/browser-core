@@ -172,7 +172,7 @@ export class MobileTouch {
             Math.abs(distance.now) > Math.abs(distance.prev) &&
             !isFullscreen(this.video)
         ) {	
-            await requestFullscreen(this.video);
+            requestFullscreen();
             return;
         }
 
