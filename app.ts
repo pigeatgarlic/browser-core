@@ -225,6 +225,8 @@ export class RemoteDesktopClient  {
             type: "danger-reset",
         }))
 
+        this.videoConn?.Close()
+        this.audioConn?.Close()
         Log(LogLevel.Debug,`hard reset video stream`)
     }
 }
