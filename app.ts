@@ -121,11 +121,13 @@ export class RemoteDesktopClient  {
 
             this.hid.handleIncomingData(data);
         }))
+
+        const hid_channel = this.datachannels.get("hid")
         this.hid = new HID( this.platform, this.video.internal(), (data: string) => {
             if ((no_hid ?? false) || this.closed) 
                 return 
             
-            this.datachannels.get("hid").sendMessage(data);
+            hid_channel.sendMessage(data);
         });
     }
 

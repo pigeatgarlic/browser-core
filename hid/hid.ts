@@ -86,7 +86,7 @@ export class HID {
          * shortcuts stuff
          */
         this.shortcuts = new Array<Shortcut>();
-        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.F],requestFullscreen))
+        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.P],requestFullscreen))
 
         /**
          * gamepad stuff
@@ -110,13 +110,13 @@ export class HID {
 
 
     public SetClipboard(val: string){
-        let code = EventCode.ClipboardSet
+        const code = EventCode.ClipboardSet
         this.SendFunc((new HIDMsg(code,{
             val: btoa(val)
         })).ToString());
     }
     public PasteClipboard(){
-        let code = EventCode.ClipboardPaste
+        const code = EventCode.ClipboardPaste
         this.SendFunc((new HIDMsg(code,{})).ToString());
     }
 
@@ -268,7 +268,7 @@ export class HID {
 
         let disable_send = false;
         this.shortcuts.forEach((element: Shortcut) => {
-            let triggered = element.HandleShortcut(event);
+            const triggered = element.HandleShortcut(event);
 
             if (triggered) 
                 disable_send = true;
@@ -280,10 +280,10 @@ export class HID {
             return;
 
 
-        let jsKey = event.key;
-        let code = EventCode.KeyDown
+        const jsKey = event.key;
+        const code = EventCode.KeyDown
         this.SendFunc((new HIDMsg(code,{
-            key: jsKey,
+            key: jsKey == KeyCode.F1 ? KeyCode.Esc : jsKey,
         })).ToString());
     }
     private keyup(event: KeyboardEvent) {
@@ -291,20 +291,20 @@ export class HID {
         if (this.disableKeyboard) 
             return;
 
-        let jsKey = event.key;
-        let code = EventCode.KeyUp;
+        const jsKey = event.key;
+        const code = EventCode.KeyUp;
         this.SendFunc((new HIDMsg(code,{
-            key: jsKey,
+            key: jsKey == KeyCode.F1 ? KeyCode.Esc : jsKey,
         })).ToString());
     }
     private mouseWheel(event: WheelEvent){
-        let code = EventCode.MouseWheel
+        const code = EventCode.MouseWheel
         this.SendFunc((new HIDMsg(code,{
             deltaY: -Math.round(event.deltaY),
         })).ToString());
     }
     public mouseMoveRel(event: {movementX: number, movementY: number}){
-        let code = EventCode.MouseMoveRel
+        const code = EventCode.MouseMoveRel
         this.SendFunc((new HIDMsg(code,{
             dX: event.movementX,
             dY: event.movementY,
@@ -316,15 +316,15 @@ export class HID {
 
         if (!this.relativeMouse) {
             this.elementConfig(this.video)
-            let code = EventCode.MouseMoveAbs
-            let mousePosition_X = this.clientToServerX(event.clientX);
-            let mousePosition_Y = this.clientToServerY(event.clientY);
+            const code = EventCode.MouseMoveAbs
+            const mousePosition_X = this.clientToServerX(event.clientX);
+            const mousePosition_Y = this.clientToServerY(event.clientY);
             this.SendFunc((new HIDMsg(code,{
                 dX: mousePosition_X,
                 dY: mousePosition_Y,
             })).ToString());
         } else {
-            let code = EventCode.MouseMoveRel
+            const code = EventCode.MouseMoveRel
             this.SendFunc((new HIDMsg(code,{
                 dX: event.movementX,
                 dY: event.movementY,
@@ -345,13 +345,13 @@ export class HID {
     }
 
     public MouseButtonDown(event: {button: number}){
-        let code = EventCode.MouseDown
+        const code = EventCode.MouseDown
         this.SendFunc((new HIDMsg(code,{
             button: event.button
         })).ToString());
     }
     public MouseButtonUp(event: {button: number}){
-        let code = EventCode.MouseUp
+        const code = EventCode.MouseUp
         this.SendFunc((new HIDMsg(code,{
             button: event.button
         })).ToString());
@@ -379,19 +379,19 @@ export class HID {
         this.Screen.StreamWidth  =  VideoElement.videoWidth;
         this.Screen.Streamheight =  VideoElement.videoHeight;
 
-        let desiredRatio = this.Screen.StreamWidth / this.Screen.Streamheight;
-        let HTMLVideoElementRatio = this.Screen.ClientWidth / this.Screen.ClientHeight;
-        let HTMLdocumentElementRatio = document.documentElement.scrollWidth / document.documentElement.scrollHeight;
+        const desiredRatio = this.Screen.StreamWidth / this.Screen.Streamheight;
+        const HTMLVideoElementRatio = this.Screen.ClientWidth / this.Screen.ClientHeight;
+        const HTMLdocumentElementRatio = document.documentElement.scrollWidth / document.documentElement.scrollHeight;
 
         if (HTMLVideoElementRatio > desiredRatio) {
-            let virtualWidth = this.Screen.ClientHeight * desiredRatio
-            let virtualLeft = ( this.Screen.ClientWidth - virtualWidth ) / 2;
+            const virtualWidth = this.Screen.ClientHeight * desiredRatio
+            const virtualLeft = ( this.Screen.ClientWidth - virtualWidth ) / 2;
 
             this.Screen.ClientWidth = virtualWidth
             this.Screen.ClientLeft = virtualLeft
         } else if (HTMLdocumentElementRatio < desiredRatio) {
-            let virtualHeight = document.documentElement.offsetWidth / desiredRatio
-            let virtualTop    = ( this.Screen.ClientHeight - virtualHeight ) / 2;
+            const virtualHeight = document.documentElement.offsetWidth / desiredRatio
+            const virtualTop    = ( this.Screen.ClientHeight - virtualHeight ) / 2;
 
             this.Screen.ClientHeight =virtualHeight 
             this.Screen.ClientTop = virtualTop 
