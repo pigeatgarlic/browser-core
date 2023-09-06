@@ -104,9 +104,8 @@ export class RemoteDesktopClient  {
         }
 
         audioEstablishmentLoop()
-        if (no_video ?? false) 
-            return
-        videoEstablishmentLoop()
+        if (!(no_video ?? false)) 
+            videoEstablishmentLoop()
 
         this.datachannels.set('hid',      new DataChannel(async (data : string) => {
             if (no_hid ?? false) 
