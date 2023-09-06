@@ -36,9 +36,10 @@ export class RemoteDesktopClient  {
     private pipelines           : Map<string,Pipeline>
     private datachannels        : Map<ChannelName,DataChannel>;
 
-    private dataConn   : WebRTC
     private videoConn  : WebRTC
     private audioConn  : WebRTC
+
+    private closed     : boolean
 
     public HandleMetrics   : (metrics: Metrics) => Promise<void>
     public HandleMetricRaw : (data: NetworkMetrics | VideoMetrics | AudioMetrics) => Promise<void>
@@ -54,6 +55,7 @@ export class RemoteDesktopClient  {
                     no_hid?: boolean,
                 }) {
 
+        this.closed = false
         this.video = vid;
         this.audio = audio;
         this.pipelines = new Map<string,Pipeline>();
@@ -81,6 +83,9 @@ export class RemoteDesktopClient  {
             iceTransportPolicy: ( turn ?? false) ? "relay" : "all" as any
         }
         const audioEstablishmentLoop = () => {
+            if (this.closed) 
+                return
+            
             this.audioConn       = new WebRTC(signalingConfig.audioURL,webrtcConfig,
                                     this.handleIncomingTrack.bind(this),
                                     this.handleIncomingDataChannel.bind(this),
@@ -92,6 +97,9 @@ export class RemoteDesktopClient  {
         }
 
         const videoEstablishmentLoop = () => {
+            if (this.closed) 
+                return
+
             this.videoConn       = new WebRTC(signalingConfig.videoURL,webrtcConfig,
                                     this.handleIncomingTrack.bind(this),
                                     this.handleIncomingDataChannel.bind(this),
@@ -108,13 +116,13 @@ export class RemoteDesktopClient  {
             videoEstablishmentLoop()
 
         this.datachannels.set('hid',      new DataChannel(async (data : string) => {
-            if (no_hid ?? false) 
+            if ((no_hid ?? false) || this.closed) 
                 return 
 
             this.hid.handleIncomingData(data);
         }))
         this.hid = new HID( this.platform, this.video.internal(), (data: string) => {
-            if (no_hid ?? false) 
+            if ((no_hid ?? false) || this.closed) 
                 return 
             
             this.datachannels.get("hid").sendMessage(data);
@@ -124,6 +132,8 @@ export class RemoteDesktopClient  {
 
 
     private async handleIncomingDataChannel(a: RTCDataChannelEvent): Promise<void> {
+        if (this.closed) 
+            return
         LogConnectionEvent(ConnectionEvent.ReceivedDatachannel, a.channel.label)
         Log(LogLevel.Infor,`incoming data channel: ${a.channel.label}`)
 
@@ -132,6 +142,8 @@ export class RemoteDesktopClient  {
 
     private async handleIncomingTrack(evt: RTCTrackEvent) : Promise<void>
     {
+        if (this.closed) 
+            return
         Log(LogLevel.Infor,`Incoming ${evt.track.kind} stream`);
         await LogConnectionEvent(evt.track.kind == 'video' 
             ? ConnectionEvent.ReceivedVideoStream 
@@ -163,16 +175,22 @@ export class RemoteDesktopClient  {
     }
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
+        if (this.closed) 
+            return
         await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
         this.HandleMetricRaw(a)
     }
     private async handleVideoMetric(a: VideoMetrics): Promise<void> {
+        if (this.closed) 
+            return
         await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         Log(LogLevel.Debug,`sending ${a.type} metric`)
         this.HandleMetricRaw(a)
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
+        if (this.closed) 
+            return
         // await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
         // Log(LogLevel.Debug,`sending ${a.type} metric`)
         this.HandleMetricRaw(a)
@@ -182,6 +200,8 @@ export class RemoteDesktopClient  {
 
 
     public async ChangeFramerate (framerate : number) {
+        if (this.closed) 
+            return
         await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "framerate",
             value: framerate
@@ -190,6 +210,8 @@ export class RemoteDesktopClient  {
         Log(LogLevel.Debug,`changing framerate to ${framerate}`)
     }
     public async ChangeBitrate (bitrate: number) {
+        if (this.closed) 
+            return
         await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "bitrate",
             value: bitrate
@@ -198,6 +220,8 @@ export class RemoteDesktopClient  {
         Log(LogLevel.Debug,`changing bitrate to ${bitrate}`)
     }
     public async PointerVisible (enable: boolean) {
+        if (this.closed) 
+            return
         await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "pointer",
             value: enable ? 1 : 0
@@ -205,6 +229,8 @@ export class RemoteDesktopClient  {
     }
 
     public async ResetVideo () {
+        if (this.closed) 
+            return
         await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "reset",
         }))
@@ -213,6 +239,8 @@ export class RemoteDesktopClient  {
     }
 
     public async ResetAudio () {
+        if (this.closed) 
+            return
         await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "audio-reset",
         }))
@@ -221,6 +249,8 @@ export class RemoteDesktopClient  {
     }
 
     public async HardReset() {
+        if (this.closed) 
+            return
         await this.datachannels.get('manual').sendMessage(JSON.stringify({
             type: "danger-reset",
         }))
@@ -228,5 +258,11 @@ export class RemoteDesktopClient  {
         this.videoConn?.Close()
         this.audioConn?.Close()
         Log(LogLevel.Debug,`hard reset video stream`)
+    }
+
+
+    public Close() {
+        this.hid.Close()
+        this.closed = true
     }
 }

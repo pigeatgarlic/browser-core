@@ -40,6 +40,8 @@ export class HID {
     private SendFunc: ((data: string) => void)
     private platform : MobileTouch | DesktopTouch
 
+    private intervals : any[] 
+
     constructor(platform : 'mobile' | 'desktop',
                 videoElement: HTMLVideoElement, 
                 Sendfunc: ((data: string)=>void)){
@@ -54,6 +56,7 @@ export class HID {
         this.video = videoElement;
         this.SendFunc = Sendfunc;
         this.Screen = new Screen();
+        this.intervals = []
         
         this.platform = platform == 'desktop' 
             ? new DesktopTouch(Sendfunc) 
@@ -63,7 +66,7 @@ export class HID {
         /**
          * video event
          */
-        this.video.addEventListener('contextmenu',   ((event: Event) => {event.preventDefault()})); ///disable content menu key on remote control
+        this.video.addEventListener('contextmenu',  event => event.preventDefault()); ///disable content menu key on remote control
 
         /**
          * mouse event
@@ -88,22 +91,20 @@ export class HID {
         /**
          * gamepad stuff
          */
-        setInterval(() => this.runButton(), 1);
-        setInterval(() => this.runAxis(), 1);
-        setInterval(() => this.runSlider(), 1);
+        this.intervals.push(setInterval(this.runButton , 1));
+        this.intervals.push(setInterval(this.runAxis   , 1));
+        this.intervals.push(setInterval(this.runSlider , 1));
 
-        /**
-         * mouse pointer stuff
-         */
-        setInterval(() => {
-            const havingPtrLock = document.pointerLockElement != null
-            this.relativeMouse = havingPtrLock;
+        this.intervals.push(setInterval(() => this.relativeMouse = document.pointerLockElement != null,100))
+    }
 
-            if ((isFullscreen(this.video) && !havingPtrLock ) && getBrowser() != 'Safari')
-                this.video.requestPointerLock();
-            else if ((!isFullscreen(this.video) && havingPtrLock) && getBrowser() != 'Safari') 
-                document.exitPointerLock();
-        }, 100);
+    public Close() {
+        this.intervals.forEach(x => clearInterval(x))
+        document.removeEventListener('wheel',          this.mouseWheel.bind(this));
+        document.removeEventListener('mousemove',      this.mouseButtonMovement.bind(this));
+        document.removeEventListener('mousedown',      this.mouseButtonDown.bind(this));
+        document.removeEventListener('mouseup',        this.mouseButtonUp.bind(this));
+        document.removeEventListener('keydown',        this.keydown.bind(this));
     }
 
 
