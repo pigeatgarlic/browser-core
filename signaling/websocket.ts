@@ -7,23 +7,30 @@ import {SignalingMessage} from "./msg"
 
 export class SignallingClient
 {
+    private ping                   : any
     private url                    : string
     private WebSocketConnection    : WebSocket | null;
     private PacketHandler          : (Data : SignalingMessage) => Promise<void>
 
     constructor (url : string,
-                 PacketHandler : ((Data : SignalingMessage) => Promise<void>))
+                 PacketHandler : ((Data : SignalingMessage) => Promise<void>),
+                 onClose : () => Promise<void>)
     {
+        this.ping = null
         this.url =url
         this.PacketHandler = PacketHandler;
 
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
         this.WebSocketConnection            = new WebSocket(url);
         this.WebSocketConnection.onopen     = this.onServerOpen.bind(this)
+        this.WebSocketConnection.onerror    = onClose
+        this.WebSocketConnection.onclose    = onClose
     }
 
-    public Close () {
+    public Close() {
         this.WebSocketConnection?.close()
+        this.PacketHandler = async () => {}
+        clearInterval(this.ping)
     }
 
     /**
@@ -34,9 +41,7 @@ export class SignallingClient
     {
         LogConnectionEvent(ConnectionEvent.WebSocketConnected)
         this.WebSocketConnection.onmessage  = this.onServerMessage.bind(this)
-
-        this.WebSocketConnection.onerror    = this.onServerError.bind(this)
-        this.WebSocketConnection.onclose    = this.onServerClose.bind(this)
+        this.ping = setInterval(() => this.WebSocketConnection?.send("ping"),1000)
     }
     /**
      * send messsage to signalling server
@@ -45,18 +50,7 @@ export class SignallingClient
     {
         const data = JSON.stringify(msg)
         Log(LogLevel.Debug,`sending message (${this.url}) : ${data}`);
-        this.WebSocketConnection.send(data);
-    }
-
-    private onServerClose(ev: CloseEvent) 
-    {
-        Log(LogLevel.Warning,"websocket connection disconnected " +ev.wasClean);
-        this.WebSocketConnection = null
-    }
-    private onServerError(ev : Event) 
-    {
-        Log(LogLevel.Warning,"websocket connection error");
-        this.WebSocketConnection = null
+        this.WebSocketConnection?.send(data);
     }
 
 

@@ -22,6 +22,7 @@ export class HID {
 
     private disableKeyboard : boolean
     private disableMouse    : boolean
+    public isTouchVideo    : boolean
 
     public DisableKeyboard (val: boolean) {
         this.disableKeyboard = val
@@ -39,6 +40,8 @@ export class HID {
     private SendFunc: ((data: string) => void)
     private platform : MobileTouch | DesktopTouch
 
+    private intervals : any[] 
+
     constructor(platform : 'mobile' | 'desktop',
                 videoElement: HTMLVideoElement, 
                 Sendfunc: ((data: string)=>void)){
@@ -48,17 +51,22 @@ export class HID {
 
         this.disableKeyboard = false;
         this.disableMouse = false;
+        this.isTouchVideo = true;
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
         this.Screen = new Screen();
-        this.platform = platform == 'desktop' ? new DesktopTouch(Sendfunc) : new MobileTouch(videoElement,Sendfunc);
-
-
+        this.intervals = []
+        
+        this.platform = platform == 'desktop' 
+            ? new DesktopTouch(Sendfunc) 
+            : new MobileTouch(videoElement,Sendfunc);
+        if(platform == 'mobile')
+            document.addEventListener('touchstart', event => this.isTouchVideo = event.target === this.video)
         /**
          * video event
          */
-        this.video.addEventListener('contextmenu',   ((event: Event) => {event.preventDefault()})); ///disable content menu key on remote control
+        this.video.addEventListener('contextmenu',  event => event.preventDefault()); ///disable content menu key on remote control
 
         /**
          * mouse event
@@ -78,45 +86,37 @@ export class HID {
          * shortcuts stuff
          */
         this.shortcuts = new Array<Shortcut>();
-        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.F],
-            () => {requestFullscreen(videoElement)}))
+        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.P],requestFullscreen))
 
         /**
          * gamepad stuff
          */
-        setInterval(() => this.runButton(), 1);
-        setInterval(() => this.runAxis(), 1);
-        setInterval(() => this.runSlider(), 1);
+        this.intervals.push(setInterval(this.runButton , 1));
+        this.intervals.push(setInterval(this.runAxis   , 1));
+        this.intervals.push(setInterval(this.runSlider , 1));
 
-        /**
-         * mouse pointer stuff
-         */
-        setInterval(() => {
-            const havingPtrLock = document.pointerLockElement != null
-            this.relativeMouse = havingPtrLock;
+        this.intervals.push(setInterval(() => this.relativeMouse = document.pointerLockElement != null,100))
+    }
 
-            this.video.style.objectFit = isFullscreen(this.video) || getBrowser() == 'Safari'
-                ?  "fill"
-                :  "contain"
-
-            if ((isFullscreen(this.video) && !havingPtrLock ) && getBrowser() != 'Safari') {
-                this.video.requestPointerLock();
-            } else if ((!isFullscreen(this.video) && havingPtrLock) && getBrowser() != 'Safari') {
-                document.exitPointerLock();
-            }
-        }, 100);
+    public Close() {
+        this.intervals.forEach(x => clearInterval(x))
+        document.removeEventListener('wheel',          this.mouseWheel.bind(this));
+        document.removeEventListener('mousemove',      this.mouseButtonMovement.bind(this));
+        document.removeEventListener('mousedown',      this.mouseButtonDown.bind(this));
+        document.removeEventListener('mouseup',        this.mouseButtonUp.bind(this));
+        document.removeEventListener('keydown',        this.keydown.bind(this));
     }
 
 
 
     public SetClipboard(val: string){
-        let code = EventCode.ClipboardSet
+        const code = EventCode.ClipboardSet
         this.SendFunc((new HIDMsg(code,{
             val: btoa(val)
         })).ToString());
     }
     public PasteClipboard(){
-        let code = EventCode.ClipboardPaste
+        const code = EventCode.ClipboardPaste
         this.SendFunc((new HIDMsg(code,{})).ToString());
     }
 
@@ -257,13 +257,18 @@ export class HID {
     public ResetKeyStuck() {
         this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
     }
+    public TriggerKey(code : EventCode.KeyUp | EventCode.KeyDown ,jsKey : string) {
+        this.SendFunc((new HIDMsg(code ,{
+            key: jsKey,
+        })).ToString());
+    }
 
     private keydown(event: KeyboardEvent) {
         event.preventDefault();
 
         let disable_send = false;
         this.shortcuts.forEach((element: Shortcut) => {
-            let triggered = element.HandleShortcut(event);
+            const triggered = element.HandleShortcut(event);
 
             if (triggered) 
                 disable_send = true;
@@ -275,10 +280,10 @@ export class HID {
             return;
 
 
-        let jsKey = event.key;
-        let code = EventCode.KeyDown
+        const jsKey = event.key;
+        const code = EventCode.KeyDown
         this.SendFunc((new HIDMsg(code,{
-            key: jsKey,
+            key: jsKey == KeyCode.F1 ? KeyCode.Esc : jsKey,
         })).ToString());
     }
     private keyup(event: KeyboardEvent) {
@@ -286,40 +291,40 @@ export class HID {
         if (this.disableKeyboard) 
             return;
 
-        let jsKey = event.key;
-        let code = EventCode.KeyUp;
+        const jsKey = event.key;
+        const code = EventCode.KeyUp;
         this.SendFunc((new HIDMsg(code,{
-            key: jsKey,
+            key: jsKey == KeyCode.F1 ? KeyCode.Esc : jsKey,
         })).ToString());
     }
     private mouseWheel(event: WheelEvent){
-        let code = EventCode.MouseWheel
+        const code = EventCode.MouseWheel
         this.SendFunc((new HIDMsg(code,{
             deltaY: -Math.round(event.deltaY),
         })).ToString());
     }
     public mouseMoveRel(event: {movementX: number, movementY: number}){
-        let code = EventCode.MouseMoveRel
+        const code = EventCode.MouseMoveRel
         this.SendFunc((new HIDMsg(code,{
             dX: event.movementX,
             dY: event.movementY,
         })).ToString());
     }
     private mouseButtonMovement(event: MouseEvent){
-        if (this.disableMouse) 
+        if (this.disableMouse || !this.isTouchVideo) 
             return;
 
         if (!this.relativeMouse) {
             this.elementConfig(this.video)
-            let code = EventCode.MouseMoveAbs
-            let mousePosition_X = this.clientToServerX(event.clientX);
-            let mousePosition_Y = this.clientToServerY(event.clientY);
+            const code = EventCode.MouseMoveAbs
+            const mousePosition_X = this.clientToServerX(event.clientX);
+            const mousePosition_Y = this.clientToServerY(event.clientY);
             this.SendFunc((new HIDMsg(code,{
                 dX: mousePosition_X,
                 dY: mousePosition_Y,
             })).ToString());
         } else {
-            let code = EventCode.MouseMoveRel
+            const code = EventCode.MouseMoveRel
             this.SendFunc((new HIDMsg(code,{
                 dX: event.movementX,
                 dY: event.movementY,
@@ -327,26 +332,26 @@ export class HID {
         }
     }
     private mouseButtonDown(event: MouseEvent){
-        if (this.disableMouse) 
+        if (this.disableMouse || !this.isTouchVideo) 
             return;
 
         this.MouseButtonDown(event)
     }
     private mouseButtonUp(event: MouseEvent){
-        if (this.disableMouse) 
+        if (this.disableMouse || !this.isTouchVideo) 
             return;
 
         this.MouseButtonUp(event)
     }
 
     public MouseButtonDown(event: {button: number}){
-        let code = EventCode.MouseDown
+        const code = EventCode.MouseDown
         this.SendFunc((new HIDMsg(code,{
             button: event.button
         })).ToString());
     }
     public MouseButtonUp(event: {button: number}){
-        let code = EventCode.MouseUp
+        const code = EventCode.MouseUp
         this.SendFunc((new HIDMsg(code,{
             button: event.button
         })).ToString());
@@ -374,19 +379,19 @@ export class HID {
         this.Screen.StreamWidth  =  VideoElement.videoWidth;
         this.Screen.Streamheight =  VideoElement.videoHeight;
 
-        let desiredRatio = this.Screen.StreamWidth / this.Screen.Streamheight;
-        let HTMLVideoElementRatio = this.Screen.ClientWidth / this.Screen.ClientHeight;
-        let HTMLdocumentElementRatio = document.documentElement.scrollWidth / document.documentElement.scrollHeight;
+        const desiredRatio = this.Screen.StreamWidth / this.Screen.Streamheight;
+        const HTMLVideoElementRatio = this.Screen.ClientWidth / this.Screen.ClientHeight;
+        const HTMLdocumentElementRatio = document.documentElement.scrollWidth / document.documentElement.scrollHeight;
 
         if (HTMLVideoElementRatio > desiredRatio) {
-            let virtualWidth = this.Screen.ClientHeight * desiredRatio
-            let virtualLeft = ( this.Screen.ClientWidth - virtualWidth ) / 2;
+            const virtualWidth = this.Screen.ClientHeight * desiredRatio
+            const virtualLeft = ( this.Screen.ClientWidth - virtualWidth ) / 2;
 
             this.Screen.ClientWidth = virtualWidth
             this.Screen.ClientLeft = virtualLeft
         } else if (HTMLdocumentElementRatio < desiredRatio) {
-            let virtualHeight = document.documentElement.offsetWidth / desiredRatio
-            let virtualTop    = ( this.Screen.ClientHeight - virtualHeight ) / 2;
+            const virtualHeight = document.documentElement.offsetWidth / desiredRatio
+            const virtualTop    = ( this.Screen.ClientHeight - virtualHeight ) / 2;
 
             this.Screen.ClientHeight =virtualHeight 
             this.Screen.ClientTop = virtualTop 

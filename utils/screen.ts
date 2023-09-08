@@ -32,18 +32,14 @@ export function isFullscreen(video?: HTMLVideoElement): boolean {
 }
 
 // TODO figure out on IOS safari
-export function requestFullscreen(video? : HTMLVideoElement): Promise<void> {
-    const browser = getBrowser()
+export function requestFullscreen()  {
+    const elementToFullscreen = document.documentElement
+    if (!document.fullscreenElement && elementToFullscreen?.requestFullscreen) {
+        elementToFullscreen.requestFullscreen();
+    } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+    }
 
-    // TODO figure out how to do this
-	// return video.webkitRequestFullscreen() // or video.webkitEnterFullScreen()
-    if (browser == 'Safari') 
-        return
-    
-    // TODO test on firefox
-    // if (browser == 'Firefox') 
-    //     return document.documentElement.msRequestFullscreen()
-    
-    return document.documentElement.requestFullscreen()
+    return
 }
 

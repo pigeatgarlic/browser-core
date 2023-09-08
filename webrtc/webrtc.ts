@@ -6,6 +6,7 @@ import { MetricCallback } from "../qos/models";
 
 export class WebRTC 
 {
+    private status          : 'connected' | 'not connected'
     private Conn            : RTCPeerConnection;
     private webrtcConfig    : RTCConfiguration
     private signaling       : SignallingClient
@@ -28,6 +29,7 @@ export class WebRTC
                 no_microphone   : boolean,
                 data?: any)
     {
+        this.status = 'not connected'
         this.closeHandler      = CloseHandler
         this.MetricHandler     = metricHandler;
         this.TrackHandler      = TrackHandler;
@@ -38,10 +40,18 @@ export class WebRTC
 
         Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
         this.signaling = new SignallingClient(signalingURL,
-                                 this.handleIncomingPacket.bind(this));
+                                 this.handleIncomingPacket.bind(this),
+                                 this.SignalingOnClose.bind(this));
     }
 
-    public Close () {
+    private async SignalingOnClose() {
+        if (this.status == 'connected') 
+            return
+    
+        this.Close()
+    }
+
+    public Close() {
         this.Conn?.close()
         this.Ads?.Close()
         this.signaling?.Close()
@@ -50,6 +60,10 @@ export class WebRTC
 
         LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
         Log(LogLevel.Error,"webrtc connection establish failed");
+
+        this.TrackHandler   = () => {}
+        this.channelHandler = () => {}
+        this.closeHandler   = () => {}
     }
 
     private async handleIncomingPacket(pkt : SignalingMessage)
@@ -136,6 +150,8 @@ export class WebRTC
     private onConnectionStateChange(eve: Event)
     {
         const successHandler = async () => {
+            await new Promise(r => setTimeout(r,5000))
+            this.status = 'connected'
             this.DoneHandshake()
             LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking,"done",this.data as string)
             Log(LogLevel.Infor,"webrtc connection established");
@@ -152,7 +168,7 @@ export class WebRTC
                 connectingHandler()
                 break;
             case "connected":
-                setTimeout(successHandler,2000)
+                successHandler()
                 break;
             case "closed":
             case "failed":
