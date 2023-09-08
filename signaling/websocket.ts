@@ -7,6 +7,7 @@ import {SignalingMessage} from "./msg"
 
 export class SignallingClient
 {
+    private ping                   : any
     private url                    : string
     private WebSocketConnection    : WebSocket | null;
     private PacketHandler          : (Data : SignalingMessage) => Promise<void>
@@ -15,6 +16,7 @@ export class SignallingClient
                  PacketHandler : ((Data : SignalingMessage) => Promise<void>),
                  onClose : () => Promise<void>)
     {
+        this.ping = null
         this.url =url
         this.PacketHandler = PacketHandler;
 
@@ -28,6 +30,7 @@ export class SignallingClient
     public Close() {
         this.WebSocketConnection?.close()
         this.PacketHandler = async () => {}
+        clearInterval(this.ping)
     }
 
     /**
@@ -38,6 +41,7 @@ export class SignallingClient
     {
         LogConnectionEvent(ConnectionEvent.WebSocketConnected)
         this.WebSocketConnection.onmessage  = this.onServerMessage.bind(this)
+        this.ping = setInterval(() => this.WebSocketConnection?.send("ping"),1000)
     }
     /**
      * send messsage to signalling server
