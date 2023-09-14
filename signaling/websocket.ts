@@ -20,6 +20,7 @@ export class SignallingClient
         this.url =url
         this.PacketHandler = PacketHandler;
 
+
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
         this.WebSocketConnection            = new WebSocket(url);
         this.WebSocketConnection.onopen     = this.onServerOpen.bind(this)
@@ -31,6 +32,7 @@ export class SignallingClient
         this.WebSocketConnection?.close()
         this.PacketHandler = async () => {}
         clearInterval(this.ping)
+        this.WebSocketConnection = undefined
     }
 
     /**
