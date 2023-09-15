@@ -20,19 +20,22 @@ export class SignallingClient
         this.url =url
         this.PacketHandler = PacketHandler;
 
+        const internalOnClose = () => {
+            this.WebSocketConnection = undefined
+            clearInterval(this.ping)
+            this.PacketHandler = async () => {}
+            onClose()
+        }
 
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting)
         this.WebSocketConnection            = new WebSocket(url);
         this.WebSocketConnection.onopen     = this.onServerOpen.bind(this)
-        this.WebSocketConnection.onerror    = onClose
-        this.WebSocketConnection.onclose    = onClose
+        this.WebSocketConnection.onerror    = internalOnClose
+        this.WebSocketConnection.onclose    = internalOnClose
     }
 
     public Close() {
         this.WebSocketConnection?.close()
-        this.PacketHandler = async () => {}
-        clearInterval(this.ping)
-        this.WebSocketConnection = undefined
     }
 
     /**
