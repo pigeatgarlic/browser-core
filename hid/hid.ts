@@ -91,9 +91,9 @@ export class HID {
         /**
          * gamepad stuff
          */
-        this.intervals.push(setInterval(this.runButton , 1));
-        this.intervals.push(setInterval(this.runAxis   , 1));
-        this.intervals.push(setInterval(this.runSlider , 1));
+        this.intervals.push(setInterval(this.runButton.bind(this), 1));
+        this.intervals.push(setInterval(this.runAxis  .bind(this), 1));
+        this.intervals.push(setInterval(this.runSlider.bind(this), 1));
 
         this.intervals.push(setInterval(() => this.relativeMouse = document.pointerLockElement != null,100))
     }
