@@ -35,7 +35,7 @@ export function isFullscreen(video?: HTMLVideoElement): boolean {
 export function requestFullscreen()  {
     const elementToFullscreen = document.documentElement
     if (!document.fullscreenElement && elementToFullscreen?.requestFullscreen) {
-        elementToFullscreen.requestFullscreen();
+        elementToFullscreen.requestFullscreen().catch(e => {});
     } else if (document.exitFullscreen) {
         document.exitFullscreen();
     }
