@@ -1,12 +1,9 @@
-import { Log, LogLevel } from "../utils/log";
 import { EventCode } from "../models/keys.model";
 import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
-import { getBrowser, getOS } from "../utils/platform";
 import { AxisType } from "../models/hid.model";
 import {Screen} from "../models/hid.model"
-import { isFullscreen, requestFullscreen } from "../utils/screen";
-import { MobileTouch } from "./mobile";
-import { DesktopTouch } from "./desktop";
+import { requestFullscreen } from "../utils/screen";
+import { MobileTouch as Touch } from "./mobile";
 
 
 
@@ -19,26 +16,31 @@ export class HID {
     private shortcuts: Array<Shortcut>
 
     private relativeMouse : boolean
-
     private disableKeyboard : boolean
     private disableMouse    : boolean
-    public isTouchVideo    : boolean
 
-    public DisableKeyboard (val: boolean) {
-        this.disableKeyboard = val
-    }
-    public DisableMouse (val: boolean) {
-        this.disableMouse = val
-    }
-    public DisableTouch (val: boolean) {
-        this.platform.Toggle(val);
+    public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
+        const ignore = event => event.preventDefault()
+        this.video.removeEventListener('touchstart',   ignore) 
+        this.video.removeEventListener('touchend',     ignore) 
+        this.video.removeEventListener('touchmove',    ignore) 
+        if (mode != 'mouse') {
+            this.video.addEventListener('touchstart',   ignore) 
+            this.video.addEventListener('touchend',     ignore) 
+            this.video.addEventListener('touchmove',    ignore) 
+        }
+
+        if (mode == 'gamepad' || mode == 'trackpad')
+            this.touch.mode = mode
+        else 
+            this.touch.mode = 'none'
     }
 
     private Screen : Screen;
     private video: HTMLVideoElement
 
     private SendFunc: ((data: string) => void)
-    private platform : MobileTouch | DesktopTouch
+    private touch : Touch 
 
     private intervals : any[] 
 
@@ -51,30 +53,26 @@ export class HID {
 
         this.disableKeyboard = false;
         this.disableMouse = false;
-        this.isTouchVideo = true;
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
+
+        this.touch = new Touch (videoElement,Sendfunc);
         this.Screen = new Screen();
         this.intervals = []
-        
-        this.platform = platform == 'desktop' 
-            ? new DesktopTouch(Sendfunc) 
-            : new MobileTouch(videoElement,Sendfunc);
-        if(platform == 'mobile')
-            document.addEventListener('touchstart', event => this.isTouchVideo = event.target === this.video)
+
         /**
          * video event
          */
-        this.video.addEventListener('contextmenu',  event => event.preventDefault()); ///disable content menu key on remote control
+        this.video.addEventListener('contextmenu',  event => event.preventDefault())
 
         /**
          * mouse event
          */
-        document.addEventListener('wheel',          this.mouseWheel.bind(this));
-        document.addEventListener('mousemove',      this.mouseButtonMovement.bind(this));
-        document.addEventListener('mousedown',      this.mouseButtonDown.bind(this));
-        document.addEventListener('mouseup',        this.mouseButtonUp.bind(this));
+        this.video.addEventListener('wheel',          this.mouseWheel.bind(this));
+        this.video.addEventListener('mousemove',      this.mouseButtonMovement.bind(this));
+        this.video.addEventListener('mousedown',      this.mouseButtonDown.bind(this));
+        this.video.addEventListener('mouseup',        this.mouseButtonUp.bind(this));
         
         /**
          * keyboard event
@@ -96,6 +94,8 @@ export class HID {
         this.intervals.push(setInterval(this.runSlider.bind(this), 1));
 
         this.intervals.push(setInterval(() => this.relativeMouse = document.pointerLockElement != null,100))
+
+        this.setTouchMode('trackpad')
     }
 
     public Close() {
@@ -124,7 +124,27 @@ export class HID {
 
 
     public handleIncomingData(data: string) {
-        this.platform.handleIncomingData(data);
+        const fields = data.split("|")
+        switch (fields.at(0)) {
+            case 'grum':
+                const index = Number(fields.at(1));
+                const sMag = Number(fields.at(2)) / 255;
+                const wMag = Number(fields.at(3)) / 255;
+                if (sMag > 0 || wMag > 0) {
+                    navigator.getGamepads().forEach((gamepad: any) =>{
+                        if (gamepad?.index === index)
+                        gamepad?.vibrationActuator?.playEffect?.("dual-rumble", {
+                            startDelay: 0,
+                            duration: 200,
+                            weakMagnitude: wMag,
+                            strongMagnitude: sMag,
+                        });
+                    })
+                }
+                break;
+            default:
+                break;
+        }
     }
 
 
@@ -310,8 +330,8 @@ export class HID {
             dY: event.movementY,
         })).ToString());
     }
-    private mouseButtonMovement(event: MouseEvent){
-        if (this.disableMouse || !this.isTouchVideo) 
+    private mouseButtonMovement(event: {clientX:number,clientY:number,movementX:number,movementY:number}){
+        if (this.disableMouse) 
             return;
 
         if (!this.relativeMouse) {
@@ -332,13 +352,13 @@ export class HID {
         }
     }
     private mouseButtonDown(event: MouseEvent){
-        if (this.disableMouse || !this.isTouchVideo) 
+        if (this.disableMouse) 
             return;
 
         this.MouseButtonDown(event)
     }
     private mouseButtonUp(event: MouseEvent){
-        if (this.disableMouse || !this.isTouchVideo) 
+        if (this.disableMouse) 
             return;
 
         this.MouseButtonUp(event)

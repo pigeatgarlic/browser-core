@@ -3,18 +3,13 @@ import { isFullscreen, requestFullscreen } from "../utils/screen";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
 import { getOS, OS } from "../utils/platform";
 
+
+const RADIUS = 100
 export class MobileTouch {
     private onGoingTouchs: Map<number,TouchData>
     private events : string[] = []
 
-	private os : OS
-    private disable : boolean
-    public Toggle (disable: boolean) {
-        console.log(disable ? 'disable touch' : 'enable touch')
-        this.disable = disable
-        if (this.disable) 
-            this.onGoingTouchs = new Map<number,TouchData>();
-    }
+    public  mode : 'gamepad' | 'trackpad' | 'none'
 
 
     private video : HTMLVideoElement;
@@ -24,46 +19,26 @@ export class MobileTouch {
         this.video = videoElement;
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
-        this.disable = false;
-		this.os = getOS()
 
-        videoElement.addEventListener('touchstart',     this.handleStart.bind(this));
-        videoElement.addEventListener('touchend',       this.handleEnd.bind(this));
-        videoElement.addEventListener('touchmove',      this.handleMove.bind(this));
+        document.addEventListener('touchstart',     this.handleStart  .bind(this));
+        document.addEventListener('touchend',       this.handleEnd    .bind(this));
+        document.addEventListener('touchmove',      this.handleMove   .bind(this));
         this.ListenEvents()
     }
 
 
-    public handleIncomingData(data: string) {
-        const fields = data.split("|")
-        switch (fields.at(0)) {
-            case 'grum':
-                const index = Number(fields.at(1));
-                const sMag = Number(fields.at(2)) / 255;
-                const wMag = Number(fields.at(3)) / 255;
-                if (sMag > 0 || wMag > 0) {
-                    navigator.getGamepads().forEach((gamepad: any) =>{
-                        if (gamepad?.index === index)
-                        gamepad?.vibrationActuator?.playEffect?.("dual-rumble", {
-                            startDelay: 0,
-                            duration: 200,
-                            weakMagnitude: wMag,
-                            strongMagnitude: sMag,
-                        });
-                    })
-                }
-                break;
-            default:
-                break;
-        }
-    }
 
 
 
 
     private async ListenEvents () {
-        while (!this.disable) {
+        while (true) {
             const first = this.events.pop()
+            if(this.mode != 'trackpad') {
+                await new Promise(r => setTimeout(r,100))
+                continue
+            }
+
             if (first == "two_start") {
                 await new Promise(r => setTimeout(r,200))
                 const sec   = this.events.pop()
@@ -94,14 +69,9 @@ export class MobileTouch {
 
 
     private handleStart = (evt: TouchEvent) => {
-        evt.preventDefault()
-
-        if (this.disable) 
-            return;
-
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-			const key = this.os == 'Android' ? touches[i].identifier : i;
+			const key = touches[i].identifier 
 			this.onGoingTouchs.set(key, new TouchData(touches[i]));
         }
 
@@ -109,19 +79,20 @@ export class MobileTouch {
             this.events.push("two_start")
     };
     private handleEnd = (evt: TouchEvent) => {
-        evt.preventDefault()
-
-        if (this.disable) 
-            return;
-
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
-			const key = this.os == 'Android' ? touches[i].identifier : i;
+			const key = touches[i].identifier 
 			const touch = this.onGoingTouchs.get(key);
-            if(touch != null) 
-                this.handleScroll(touch) 
-            if (new Date().getTime() - touch.startTime.getTime() < 200)
+            if(touch == null) 
+                continue
+            else if (new Date().getTime() - touch.startTime.getTime() < 200)
                 this.events.push('short')
+
+
+            if (this.mode == 'gamepad') 
+                this.handleGamepad(touch.touchStart,touch)
+            else if (this.mode == 'trackpad') 
+                this.handleScroll(touch) 
 
             this.onGoingTouchs.delete(key);
         }
@@ -131,11 +102,6 @@ export class MobileTouch {
     };
 
     private handleMove = async (evt: TouchEvent) => {
-        evt.preventDefault()
-
-        if (this.disable) 
-            return;
-
         const touches = evt.touches;
         for (let i = 0; i < touches.length; i++) {
             const curr_touch = touches[i]
@@ -146,27 +112,24 @@ export class MobileTouch {
                 continue;
             
             if (new Date().getTime() - prev_touch.startTime.getTime() > 200 && 
-                curr_touch.clientX - prev_touch.touchStart.clientX < 10 &&
-                curr_touch.clientY - prev_touch.touchStart.clientY < 10 &&
-               !prev_touch.doMove) {
+                curr_touch.clientX   - prev_touch.touchStart.clientX < 10 &&
+                curr_touch.clientY   - prev_touch.touchStart.clientY < 10 &&
+                !prev_touch.doMove
+            ) {
                 prev_touch.doMove = true
                 this.events.push('long')
             }
 
-            const diff = {
-                movementX: 3 * Math.round(curr_touch.clientX - prev_touch.clientX),
-                movementY: 3 * Math.round(curr_touch.clientY - prev_touch.clientY)
-            }
 
             // one finger only
-            if (identifier == 0) {
-                let code = EventCode.MouseMoveRel
-                this.SendFunc((new HIDMsg(code, {
-                    dX: diff.movementX,
-                    dY: diff.movementY,
+            if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad') 
+                this.SendFunc((new HIDMsg(EventCode.MouseMoveRel, {
+                    dX: 3 * Math.round(curr_touch.clientX - prev_touch.clientX),
+                    dY: 3 * Math.round(curr_touch.clientY - prev_touch.clientY)
                 })).ToString());
-            }
-
+            else if (this.onGoingTouchs.size < 3 && this.mode == 'gamepad') 
+                this.handleGamepad(curr_touch,prev_touch)
+            
             prev_touch.copyFromTouch(curr_touch)
         }
 
@@ -176,6 +139,46 @@ export class MobileTouch {
 
 
 
+    private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
+        const pos = {
+            x: curr_touch.clientX - prev_touch.touchStart.clientX,
+            y: curr_touch.clientY - prev_touch.touchStart.clientY,
+        }
+
+        const raw = Math.sqrt(pos.x * pos.x + pos.y * pos.y)
+        const rad = Math.sqrt((pos.x * pos.x + pos.y * pos.y) / (RADIUS * RADIUS))
+        const final_rad = rad > 1 ? 1 : rad
+
+        const x =   pos.x * (final_rad / raw)
+        const y =   pos.y * (final_rad / raw)
+
+        const group = prev_touch.touchStart.clientX > document.documentElement.clientWidth / 2 
+            ? "right"
+            : "left"
+
+        let axisx, axisy : number
+        switch (group) {
+            case 'left':
+                axisx = 0
+                axisy = 1
+                break;
+            case 'right':
+                axisx = 2
+                axisy = 3
+                break;
+        }
+
+        this.SendFunc((new HIDMsg(EventCode.GamepadAxis,{ 
+            gamepad_id: 0,
+            index: axisx,
+            val: x 
+        }).ToString()))
+        this.SendFunc((new HIDMsg(EventCode.GamepadAxis,{ 
+            gamepad_id: 0,
+            index: axisy,
+            val: y
+        }).ToString()))
+    }
 
 
 
