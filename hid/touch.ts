@@ -1,11 +1,10 @@
 import { EventCode, HIDMsg } from "../models/keys.model";
 import { isFullscreen, requestFullscreen } from "../utils/screen";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
-import { getOS, OS } from "../utils/platform";
 
 
 const RADIUS = 100
-export class MobileTouch {
+export class Touch {
     private onGoingTouchs: Map<number,TouchData>
     private events : string[] = []
 
@@ -133,7 +132,8 @@ export class MobileTouch {
             prev_touch.copyFromTouch(curr_touch)
         }
 
-        this.handleSwipe()
+        if (this.mode == 'trackpad')
+            this.handleSwipe()
     };
 
 

@@ -3,7 +3,7 @@ import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
 import { AxisType } from "../models/hid.model";
 import {Screen} from "../models/hid.model"
 import { requestFullscreen } from "../utils/screen";
-import { MobileTouch as Touch } from "./mobile";
+import { Touch } from "./touch";
 
 
 
@@ -20,20 +20,20 @@ export class HID {
     private disableMouse    : boolean
 
     public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
-        const ignore = event => event.preventDefault()
-        this.video.removeEventListener('touchstart',   ignore) 
-        this.video.removeEventListener('touchend',     ignore) 
-        this.video.removeEventListener('touchmove',    ignore) 
-        if (mode != 'mouse') {
-            this.video.addEventListener('touchstart',   ignore) 
-            this.video.addEventListener('touchend',     ignore) 
-            this.video.addEventListener('touchmove',    ignore) 
-        }
-
         if (mode == 'gamepad' || mode == 'trackpad')
             this.touch.mode = mode
         else 
             this.touch.mode = 'none'
+
+        // if (mode == 'mouse') {
+        //     this.video.addEventListener('pointermove',      this.mouseButtonMovement.bind(this));
+        //     this.video.addEventListener('pointerdown',      this.mouseButtonDown.bind(this));
+        //     this.video.addEventListener('pointerup',        this.mouseButtonUp.bind(this));
+        // } else {
+        //     this.video.removeEventListener('pointermove',   this.mouseButtonMovement.bind(this));
+        //     this.video.removeEventListener('pointerdown',   this.mouseButtonDown.bind(this));
+        //     this.video.removeEventListener('pointerup',     this.mouseButtonUp.bind(this));
+        // }
     }
 
     private Screen : Screen;
@@ -64,7 +64,12 @@ export class HID {
         /**
          * video event
          */
-        this.video.addEventListener('contextmenu',  event => event.preventDefault())
+
+        const ignore = event => event.preventDefault()
+        this.video.addEventListener('contextmenu',  ignore)
+        this.video.addEventListener('touchstart',   ignore) 
+        this.video.addEventListener('touchend',     ignore) 
+        this.video.addEventListener('touchmove',    ignore) 
 
         /**
          * mouse event
