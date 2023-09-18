@@ -3,7 +3,7 @@ import { HIDMsg, KeyCode, Shortcut, ShortcutCode } from "../models/keys.model";
 import { AxisType } from "../models/hid.model";
 import {Screen} from "../models/hid.model"
 import { requestFullscreen } from "../utils/screen";
-import { Touch } from "./touch";
+import { TouchHandler } from "./touch";
 
 
 
@@ -40,7 +40,7 @@ export class HID {
     private video: HTMLVideoElement
 
     private SendFunc: ((data: string) => void)
-    private touch : Touch 
+    private touch : TouchHandler 
 
     private intervals : any[] 
 
@@ -57,7 +57,7 @@ export class HID {
         this.video = videoElement;
         this.SendFunc = Sendfunc;
 
-        this.touch = new Touch (videoElement,Sendfunc);
+        this.touch = new TouchHandler (videoElement,Sendfunc);
         this.Screen = new Screen();
         this.intervals = []
 

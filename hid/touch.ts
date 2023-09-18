@@ -4,7 +4,7 @@ import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model
 
 
 const RADIUS = 100
-export class Touch {
+export class TouchHandler {
     private onGoingTouchs: Map<number,TouchData>
     private events : string[] = []
 
