@@ -38,3 +38,11 @@ export function getBrowser(): Browser {
 
     return ('unknown');
 }
+
+
+export function getResolution(): {width:number,height:number} { 
+    return {
+        width:  document.documentElement.scrollWidth,
+        height: document.documentElement.scrollHeight
+    }
+}
