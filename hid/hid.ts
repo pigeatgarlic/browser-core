@@ -323,6 +323,7 @@ export class HID {
         })).ToString());
     }
     private mouseWheel(event: WheelEvent){
+        event.preventDefault();
         const code = EventCode.MouseWheel
         this.SendFunc((new HIDMsg(code,{
             deltaY: -Math.round(event.deltaY),
