@@ -156,7 +156,7 @@ export class RemoteDesktopClient  {
 
         if (evt.track.kind == "video" ) {
             const stream = evt.streams.find(val => val.getVideoTracks().length > 0)
-            if (Number.isNaN(parseInt(stream.id)))`` {
+            if (Number.isNaN(parseInt(stream.id))) {
                 console.log(`blocked video stream ${stream.id}`)
                 return
             } // RISK / black screen
