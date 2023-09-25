@@ -15,6 +15,26 @@ export function convertJSKey(key: string, position: number) : number | undefined
         lower = "back"
     else if (lower.includes("arrow")) 
         lower = lower.split("arrow").at(1)
+    else if (lower == ":" )                  
+        lower = ";" 
+    else if (lower == "+" )                  
+        lower = "=" 
+    else if (lower == "<" )                  
+        lower = "," 
+    else if (lower == "_" )                  
+        lower = "-" 
+    else if (lower == ">" )                  
+        lower = "." 
+    else if (lower == "?" )                  
+        lower = "/" 
+    else if (lower == "~" )                  
+        lower = "`" 
+    else if (lower == "{" )                  
+        lower = "[" 
+    else if (lower == "|")                  
+        lower = "\\"
+    else if (lower == "}" )                  
+        lower = "]" 
     
     return code[(lr.includes(lower) ? 
         (position  == KeyboardEvent.DOM_KEY_LOCATION_LEFT 
