@@ -4,6 +4,7 @@ import { AxisType } from "../models/hid.model";
 import {Screen} from "../models/hid.model"
 import { requestFullscreen } from "../utils/screen";
 import { TouchHandler } from "./touch";
+import { convertJSKey } from "../utils/convert";
 
 
 
@@ -12,6 +13,7 @@ export class HID {
     private prev_sliders : Map<number,number>;
     private prev_axis    : Map<number,number>;
 
+    private pressing_keys : number[];
 
     private shortcuts: Array<Shortcut>
 
@@ -60,6 +62,7 @@ export class HID {
         this.touch = new TouchHandler (videoElement,Sendfunc);
         this.Screen = new Screen();
         this.intervals = []
+        this.pressing_keys = []
 
         /**
          * video event
@@ -305,22 +308,27 @@ export class HID {
             return;
 
 
-        const jsKey = event.key;
+        const key = convertJSKey(event.key,event.location)
+        if (key == undefined) 
+            return
+            
+       
         const code = EventCode.KeyDown
-        this.SendFunc((new HIDMsg(code,{
-            key: jsKey == KeyCode.F1 ? KeyCode.Esc : jsKey,
-        })).ToString());
+        this.SendFunc((new HIDMsg(code,{ key })).ToString());
+        this.pressing_keys.push(key)
     }
     private keyup(event: KeyboardEvent) {
         event.preventDefault();
         if (this.disableKeyboard) 
             return;
 
-        const jsKey = event.key;
+        const key = convertJSKey(event.key,event.location)
+        if (key == undefined) 
+            return
+
         const code = EventCode.KeyUp;
-        this.SendFunc((new HIDMsg(code,{
-            key: jsKey == KeyCode.F1 ? KeyCode.Esc : jsKey,
-        })).ToString());
+        this.SendFunc((new HIDMsg(code,{ key })).ToString());
+        this.pressing_keys.splice(this.pressing_keys.findIndex(x => x == key))
     }
     private mouseWheel(event: WheelEvent){
         event.preventDefault();
