@@ -286,9 +286,11 @@ export class HID {
         this.SendFunc((new HIDMsg(EventCode.KeyReset,{ }).ToString()))
     }
     public TriggerKey(code : EventCode.KeyUp | EventCode.KeyDown ,jsKey : string) {
-        this.SendFunc((new HIDMsg(code ,{
-            key: jsKey,
-        })).ToString());
+        const key = convertJSKey(jsKey,0)
+        if (key == undefined) 
+            return
+
+        this.SendFunc((new HIDMsg(code ,{ key, })).ToString());
     }
 
     private keydown(event: KeyboardEvent) {
