@@ -1,5 +1,13 @@
 const lr = ['shift','win','control','menu','button']
+const special_char = {
+    special : `!@#$%^&*()_+{}|:"<>?`.split(""),
+    normal  : `1234567890-=[]\\;',./`.split("")
+}
 export function convertJSKey(key: string, position: number) : number | undefined {
+    const index = special_char.special.findIndex(x => x == key)
+    if (index != -1) 
+        return code[special_char.normal[index]]
+
     let lower = key.toLowerCase()
     if (lower == "alt") 
         lower = "menu"
@@ -15,26 +23,6 @@ export function convertJSKey(key: string, position: number) : number | undefined
         lower = "back"
     else if (lower.includes("arrow")) 
         lower = lower.split("arrow").at(1)
-    else if (lower == ":" )                  
-        lower = ";" 
-    else if (lower == "+" )                  
-        lower = "=" 
-    else if (lower == "<" )                  
-        lower = "," 
-    else if (lower == "_" )                  
-        lower = "-" 
-    else if (lower == ">" )                  
-        lower = "." 
-    else if (lower == "?" )                  
-        lower = "/" 
-    else if (lower == "~" )                  
-        lower = "`" 
-    else if (lower == "{" )                  
-        lower = "[" 
-    else if (lower == "|")                  
-        lower = "\\"
-    else if (lower == "}" )                  
-        lower = "]" 
     
     return code[(lr.includes(lower) ? 
         (position  == KeyboardEvent.DOM_KEY_LOCATION_LEFT 
