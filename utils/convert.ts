@@ -1,7 +1,7 @@
 const lr = ['shift','win','control','menu','button']
 const special_char = {
-    special : `!@#$%^&*()_+{}:"<>?|`.split(""),
-    normal  : `1234567890-=[];',./\\`.split("")
+    special : `!@#$%^&*()_+{}:"<>?|~`.split(""),
+    normal  : `1234567890-=[];',./\\\``.split("")
 }
 
 export function useShift(char: string) : boolean {
