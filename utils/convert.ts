@@ -1,7 +1,17 @@
 const lr = ['shift','win','control','menu','button']
 const special_char = {
-    special : `!@#$%^&*()_+{}|:"<>?`.split(""),
-    normal  : `1234567890-=[]\\;',./`.split("")
+    special : `!@#$%^&*()_+{}:"<>?|`.split(""),
+    normal  : `1234567890-=[];',./\\`.split("")
+}
+
+export function useShift(char: string) : boolean {
+    if (char.length != 1) 
+        return false
+    else if (char.toLowerCase() != char)
+        return true
+    else if (special_char.special.includes(char))
+        return true
+    return false
 }
 export function convertJSKey(key: string, position: number) : number | undefined {
     const index = special_char.special.findIndex(x => x == key)
