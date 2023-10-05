@@ -20,6 +20,7 @@ export class HID {
     private relativeMouse : boolean
     private disableKeyboard : boolean
     private disableMouse    : boolean
+    private scancode        : boolean
 
     public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
         if (mode == 'gamepad' || mode == 'trackpad')
@@ -46,15 +47,16 @@ export class HID {
 
     private intervals : any[] 
 
-    constructor(platform : 'mobile' | 'desktop',
-                videoElement: HTMLVideoElement, 
-                Sendfunc: ((data: string)=>void)){
+    constructor(videoElement: HTMLVideoElement, 
+                Sendfunc: ((data: string)=>void),
+                scancode?: boolean){
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
 
         this.disableKeyboard = false;
         this.disableMouse = false;
+        this.scancode = scancode ?? false
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
@@ -315,7 +317,9 @@ export class HID {
             return
             
        
-        const code = EventCode.KeyDown
+        let code = EventCode.KeyDown
+        if (this.scancode)
+            code += 2
         this.SendFunc((new HIDMsg(code,{ key })).ToString());
         this.pressing_keys.push(key)
     }
@@ -328,7 +332,9 @@ export class HID {
         if (key == undefined) 
             return
 
-        const code = EventCode.KeyUp;
+        let code = EventCode.KeyUp;
+        if (this.scancode)
+            code += 2
         this.SendFunc((new HIDMsg(code,{ key })).ToString());
         this.pressing_keys.splice(this.pressing_keys.findIndex(x => x == key))
     }

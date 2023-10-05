@@ -10,6 +10,8 @@ export enum EventCode{
 
     KeyUp,
     KeyDown,
+    KeyUpScan,
+    KeyDownScan,
     KeyPress,
     KeyReset,
 
@@ -103,6 +105,10 @@ export class HIDMsg {
                 return `ku|${this.data.key}`
             case EventCode.KeyDown:
                 return `kd|${this.data.key}`
+            case EventCode.KeyUpScan:
+                return `kus|${this.data.key}`
+            case EventCode.KeyDownScan:
+                return `kds|${this.data.key}`
             case EventCode.KeyReset:
                 return `kr`
 

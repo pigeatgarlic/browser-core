@@ -47,12 +47,13 @@ export class RemoteDesktopClient  {
                 audio: AudioWrapper,
                 signalingConfig : SignalingConfig,
                 WebRTCConfig : RTCConfiguration,
-                { platform, no_video, no_mic ,turn, no_hid }: {
+                { platform, no_video, no_mic ,turn, no_hid,scancode }: {
                     turn?: boolean,
                     platform?: 'mobile' | 'desktop',
                     no_video?: boolean,
                     no_mic?: boolean,
                     no_hid?: boolean,
+                    scancode?: boolean,
                 }) {
 
         this.closed = false
@@ -123,12 +124,12 @@ export class RemoteDesktopClient  {
         }))
 
         const hid_channel = this.datachannels.get("hid")
-        this.hid = new HID( this.platform, this.video.internal(), (data: string) => {
+        this.hid = new HID( this.video.internal(), (data: string) => {
             if ((no_hid ?? false) || this.closed) 
                 return 
             
             hid_channel.sendMessage(data);
-        });
+        },scancode);
     }
 
 
