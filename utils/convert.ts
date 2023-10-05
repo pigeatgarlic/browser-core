@@ -125,8 +125,8 @@ const code = {
   "y"                   : 0x59,
   "z"                   : 0x5A,
 
-  "lwin"                : 0x5B,
-  "rwin"                : 0x5C,
+//   "lwin"                : 0x5B,
+//   "rwin"                : 0x5C,
   "apps"                : 0x5D,
   "sleep"               : 0x5F,
 
