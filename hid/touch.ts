@@ -3,7 +3,7 @@ import { isFullscreen, requestFullscreen } from "../utils/screen";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
 
 
-const RADIUS = 100
+const RADIUS = 50
 export class TouchHandler {
     private onGoingTouchs: Map<number,TouchData>
     private events : string[] = []
@@ -140,6 +140,7 @@ export class TouchHandler {
 
 
     private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
+        return
         const pos = {
             x: curr_touch.clientX - prev_touch.touchStart.clientX,
             y: curr_touch.clientY - prev_touch.touchStart.clientY,
