@@ -140,7 +140,7 @@ export class TouchHandler {
 
 
     private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
-        return
+        //return
         const pos = {
             x: curr_touch.clientX - prev_touch.touchStart.clientX,
             y: curr_touch.clientY - prev_touch.touchStart.clientY,
