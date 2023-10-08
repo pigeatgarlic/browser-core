@@ -22,11 +22,18 @@ export class HID {
     private disableMouse    : boolean
     private scancode        : boolean
 
-    public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
-        if (mode == 'gamepad' || mode == 'trackpad')
+    public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none',data?: any) {
+        if (mode == 'gamepad' ) {
             this.touch.mode = mode
-        else 
+            this.touch.mode_data = data
+            console.log(data)
+        } else if (mode == 'trackpad') {
+            this.touch.mode = undefined
+            this.touch.mode_data = undefined
+        } else {
             this.touch.mode = 'none'
+            this.touch.mode_data = undefined
+        }
 
         // if (mode == 'mouse') {
         //     this.video.addEventListener('pointermove',      this.mouseButtonMovement.bind(this));

@@ -9,6 +9,16 @@ export class TouchHandler {
     private events : string[] = []
 
     public  mode : 'gamepad' | 'trackpad' | 'none'
+    public  mode_data : {
+        left : {
+            x : number
+            y : number
+        }
+        right : {
+            x : number
+            y : number
+        }
+    } | undefined
 
 
     private video : HTMLVideoElement;
@@ -18,6 +28,7 @@ export class TouchHandler {
         this.video = videoElement;
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
+        this.mode_data = undefined
 
         document.addEventListener('touchstart',     this.handleStart  .bind(this));
         document.addEventListener('touchend',       this.handleEnd    .bind(this));
@@ -140,11 +151,23 @@ export class TouchHandler {
 
 
     private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
-        const pos = {
-            x: curr_touch.clientX - prev_touch.touchStart.clientX,
-            y: curr_touch.clientY - prev_touch.touchStart.clientY,
+        const group = prev_touch.touchStart.clientX > document.documentElement.clientWidth / 2 
+            ? "right"
+            : "left"
+
+        const initialpos = {
+            x: prev_touch.touchStart.clientX - (this.mode_data as any)[group].x,
+            y: prev_touch.touchStart.clientY - (this.mode_data as any)[group].y,
         }
 
+        const radstart = (initialpos.x * initialpos.x + initialpos.y * initialpos.y) / (RADIUS * RADIUS)
+        if (radstart > 1) 
+            return
+
+        const pos = {
+            x: curr_touch.clientX - (this.mode_data as any)[group].x,
+            y: curr_touch.clientY - (this.mode_data as any)[group].y,
+        }
         const raw = Math.sqrt(pos.x * pos.x + pos.y * pos.y)
         const rad = Math.sqrt((pos.x * pos.x + pos.y * pos.y) / (RADIUS * RADIUS))
         const final_rad = rad > 1 ? 1 : rad
@@ -152,9 +175,6 @@ export class TouchHandler {
         const x =   pos.x * (final_rad / raw)
         const y =   pos.y * (final_rad / raw)
 
-        const group = prev_touch.touchStart.clientX > document.documentElement.clientWidth / 2 
-            ? "right"
-            : "left"
 
         let axisx, axisy : number
         switch (group) {
