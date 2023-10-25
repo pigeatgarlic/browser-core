@@ -43,7 +43,8 @@ export function convertJSKey(key: string, position: number) : number | undefined
         : "") + lower]
 }
 
-const code = {
+
+const default_code = {
   "lbutton"             : 0x01,
   "rbutton"             : 0x02,
 
@@ -226,4 +227,13 @@ const code = {
   "noname"              : 0xFC,
   "pa1"                 : 0xFD,
   "oem_clear"           : 0xFE,
+}
+
+let code = default_code
+export function SwapKey(map: {from:string,to:string}[]) {
+    code = default_code
+    map.forEach((m) => {
+        const {from,to} = m
+        code[from] = default_code[to]
+    })
 }
