@@ -10,6 +10,7 @@ export class TouchHandler {
 
     public  mode : 'gamepad' | 'trackpad' | 'none'
 
+    private lastTimeTouch: number;
 
     private video : HTMLVideoElement;
     public SendFunc: ((data: string) => void)
@@ -47,7 +48,7 @@ export class TouchHandler {
                     this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '2' })).ToString());
                 }
             } else if (first == "short") {
-                await new Promise(r => setTimeout(r,400))
+                await new Promise(r => setTimeout(r, 100))
                 const sec = this.events.pop()
                 if (sec == "short")  {
                     this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '0' })).ToString());
@@ -71,20 +72,31 @@ export class TouchHandler {
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
 			const key = touches[i].identifier 
-			this.onGoingTouchs.set(key, new TouchData(touches[i]));
+            this.onGoingTouchs.set(key, new TouchData(touches[i]));
         }
-
+        if (new Date().getTime() - this.lastTimeTouch < 300) {
+            this.events.push('long')
+        }
         if (evt.touches.length == 2) 
             this.events.push("two_start")
+
     };
     private handleEnd = (evt: TouchEvent) => {
         const touches = evt.changedTouches;
+        if (touches.length == 1) {
+            const key = touches[0].identifier
+            const touch = this.onGoingTouchs.get(key);
+            this.lastTimeTouch = touch?.startTime?.getTime()
+        }
         for (let i = 0; i < touches.length; i++) {
 			const key = touches[i].identifier 
 			const touch = this.onGoingTouchs.get(key);
             if(touch == null) 
                 continue
-            else if (new Date().getTime() - touch.startTime.getTime() < 200)
+            else if (
+                new Date().getTime() - touch.startTime.getTime() < 250 &&
+                new Date().getTime() - touch.startTime.getTime() > 50
+            )
                 this.events.push('short')
 
 
@@ -110,14 +122,15 @@ export class TouchHandler {
             if (prev_touch == null) 
                 continue;
             
-            if (new Date().getTime() - prev_touch.startTime.getTime() > 200 && 
-                curr_touch.clientX   - prev_touch.touchStart.clientX < 10 &&
-                curr_touch.clientY   - prev_touch.touchStart.clientY < 10 &&
-                !prev_touch.doMove
-            ) {
-                prev_touch.doMove = true
-                this.events.push('long')
-            }
+            //if (new Date().getTime() - prev_touch.startTime.getTime() > 0 &&
+            //    new Date().getTime() - prev_touch.startTime.getTime() < 200 &&
+            //    //curr_touch.clientX   - prev_touch.touchStart.clientX < 10 &&
+            //    //curr_touch.clientY   - prev_touch.touchStart.clientY < 10 &&
+            //    !prev_touch.doMove
+            //) {
+            //    prev_touch.doMove = true
+            //    this.events.push('long')
+            //}
 
 
             // one finger only
