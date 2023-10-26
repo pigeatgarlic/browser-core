@@ -40,13 +40,16 @@ export class TouchHandler {
             }
 
             if (first == "two_start") {
-                await new Promise(r => setTimeout(r,200))
-                const sec   = this.events.pop()
-                const third = this.events.pop()
-                if (sec == "short" && third == "short") {
-                    this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '2' })).ToString());
-                    this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '2' })).ToString());
-                }
+                //this.SendFunc((new HIDMsg(code,{
+                //    deltaY: -Math.round(event.deltaY),
+                //})).ToString())
+                //await new Promise(r => setTimeout(r,200))
+                //const sec   = this.events.pop()
+                //const third = this.events.pop()
+                //if (sec == "short" && third == "short") {
+                //    this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '2' })).ToString());
+                //    this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '2' })).ToString());
+                //}
             } else if (first == "short") {
                 await new Promise(r => setTimeout(r, 100))
                 const sec = this.events.pop()
@@ -87,6 +90,9 @@ export class TouchHandler {
             const key = touches[0].identifier
             const touch = this.onGoingTouchs.get(key);
             this.lastTimeTouch = touch?.startTime?.getTime()
+        }
+        if (touches.length === 2) {
+            this.handleTwoFingerScroll(touches);
         }
         for (let i = 0; i < touches.length; i++) {
 			const key = touches[i].identifier 
@@ -150,6 +156,36 @@ export class TouchHandler {
     };
 
 
+    private isTwoFingerScrollingHorizontally(touches: TouchList): boolean {
+        if (touches.length !== 2) {
+            return false;
+        }
+
+        const firstTouch = touches[0];
+        const secondTouch = touches[1];
+
+        const deltaX = Math.abs(secondTouch.clientX - firstTouch.clientX);
+        const deltaY = Math.abs(secondTouch.clientY - firstTouch.clientY);
+
+        return deltaX > deltaY;
+    }
+
+    private handleTwoFingerScroll(touches: TouchList) {
+        if (this.isTwoFingerScrollingHorizontally(touches)) {
+            // Calculate the horizontal scroll amount based on touch movement
+            const deltaX = touches[1].clientX - touches[0].clientX;
+            const wheelValue = deltaX; // You can adjust the value as needed
+            // Send a mouse wheel event with the horizontal scroll value
+            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaX: wheelValue })).ToString());
+        } else {
+            // Calculate the vertical scroll amount based on touch movement
+            const deltaY = touches[1].clientY - touches[0].clientY;
+            const wheelValue = deltaY; // You can adjust the value as needed
+
+            // Send a mouse wheel event with the vertical scroll value
+            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaY: wheelValue })).ToString());
+        }
+    }
 
 
     private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
