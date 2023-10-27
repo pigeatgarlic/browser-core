@@ -3,13 +3,14 @@ import { isFullscreen, requestFullscreen } from "../utils/screen";
 import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model";
 
 
-const RADIUS = 100
+const RADIUS = 50
 export class TouchHandler {
     private onGoingTouchs: Map<number,TouchData>
     private events : string[] = []
 
     public  mode : 'gamepad' | 'trackpad' | 'none'
 
+    private lastTimeTouch: number;
 
     private video : HTMLVideoElement;
     public SendFunc: ((data: string) => void)
@@ -39,15 +40,18 @@ export class TouchHandler {
             }
 
             if (first == "two_start") {
-                await new Promise(r => setTimeout(r,200))
-                const sec   = this.events.pop()
-                const third = this.events.pop()
-                if (sec == "short" && third == "short") {
-                    this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '2' })).ToString());
-                    this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '2' })).ToString());
-                }
+                //this.SendFunc((new HIDMsg(code,{
+                //    deltaY: -Math.round(event.deltaY),
+                //})).ToString())
+                //await new Promise(r => setTimeout(r,200))
+                //const sec   = this.events.pop()
+                //const third = this.events.pop()
+                //if (sec == "short" && third == "short") {
+                //    this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '2' })).ToString());
+                //    this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '2' })).ToString());
+                //}
             } else if (first == "short") {
-                await new Promise(r => setTimeout(r,400))
+                await new Promise(r => setTimeout(r, 100))
                 const sec = this.events.pop()
                 if (sec == "short")  {
                     this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '0' })).ToString());
@@ -71,20 +75,34 @@ export class TouchHandler {
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
 			const key = touches[i].identifier 
-			this.onGoingTouchs.set(key, new TouchData(touches[i]));
+            this.onGoingTouchs.set(key, new TouchData(touches[i]));
         }
-
+        if (new Date().getTime() - this.lastTimeTouch < 300) {
+            this.events.push('long')
+        }
         if (evt.touches.length == 2) 
             this.events.push("two_start")
+
     };
     private handleEnd = (evt: TouchEvent) => {
         const touches = evt.changedTouches;
+        if (touches.length == 1) {
+            const key = touches[0].identifier
+            const touch = this.onGoingTouchs.get(key);
+            this.lastTimeTouch = touch?.startTime?.getTime()
+        }
+        if (touches.length === 2) {
+            this.handleTwoFingerScroll(touches);
+        }
         for (let i = 0; i < touches.length; i++) {
 			const key = touches[i].identifier 
 			const touch = this.onGoingTouchs.get(key);
             if(touch == null) 
                 continue
-            else if (new Date().getTime() - touch.startTime.getTime() < 200)
+            else if (
+                new Date().getTime() - touch.startTime.getTime() < 250 &&
+                new Date().getTime() - touch.startTime.getTime() > 50
+            )
                 this.events.push('short')
 
 
@@ -110,14 +128,15 @@ export class TouchHandler {
             if (prev_touch == null) 
                 continue;
             
-            if (new Date().getTime() - prev_touch.startTime.getTime() > 200 && 
-                curr_touch.clientX   - prev_touch.touchStart.clientX < 10 &&
-                curr_touch.clientY   - prev_touch.touchStart.clientY < 10 &&
-                !prev_touch.doMove
-            ) {
-                prev_touch.doMove = true
-                this.events.push('long')
-            }
+            //if (new Date().getTime() - prev_touch.startTime.getTime() > 0 &&
+            //    new Date().getTime() - prev_touch.startTime.getTime() < 200 &&
+            //    //curr_touch.clientX   - prev_touch.touchStart.clientX < 10 &&
+            //    //curr_touch.clientY   - prev_touch.touchStart.clientY < 10 &&
+            //    !prev_touch.doMove
+            //) {
+            //    prev_touch.doMove = true
+            //    this.events.push('long')
+            //}
 
 
             // one finger only
@@ -137,9 +156,40 @@ export class TouchHandler {
     };
 
 
+    private isTwoFingerScrollingHorizontally(touches: TouchList): boolean {
+        if (touches.length !== 2) {
+            return false;
+        }
+
+        const firstTouch = touches[0];
+        const secondTouch = touches[1];
+
+        const deltaX = Math.abs(secondTouch.clientX - firstTouch.clientX);
+        const deltaY = Math.abs(secondTouch.clientY - firstTouch.clientY);
+
+        return deltaX > deltaY;
+    }
+
+    private handleTwoFingerScroll(touches: TouchList) {
+        if (this.isTwoFingerScrollingHorizontally(touches)) {
+            // Calculate the horizontal scroll amount based on touch movement
+            const deltaX = touches[1].clientX - touches[0].clientX;
+            const wheelValue = deltaX; // You can adjust the value as needed
+            // Send a mouse wheel event with the horizontal scroll value
+            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaX: wheelValue })).ToString());
+        } else {
+            // Calculate the vertical scroll amount based on touch movement
+            const deltaY = touches[1].clientY - touches[0].clientY;
+            const wheelValue = deltaY; // You can adjust the value as needed
+
+            // Send a mouse wheel event with the vertical scroll value
+            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaY: wheelValue })).ToString());
+        }
+    }
 
 
     private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
+        //return
         const pos = {
             x: curr_touch.clientX - prev_touch.touchStart.clientX,
             y: curr_touch.clientY - prev_touch.touchStart.clientY,
