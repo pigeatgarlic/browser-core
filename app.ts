@@ -28,6 +28,11 @@ export type Metrics = {
 }
 
 export class RemoteDesktopClient  {
+    private displays            : {
+        timestamp: Date 
+        value: string[] 
+    }
+
     private readonly platform : 'desktop' | 'mobile'
 
     public  hid                 : HID 
@@ -63,10 +68,26 @@ export class RemoteDesktopClient  {
         this.platform = platform ?? getPlatform()
         this.HandleMetrics   = async () => {}
         this.HandleMetricRaw = async () => {}
+        this.displays = {
+            timestamp: new Date(),
+            value: []
+        }
         
         this.hid = null;
         this.datachannels = new Map<ChannelName,DataChannel>();
-        this.datachannels.set('manual',   new DataChannel())
+        this.datachannels.set('manual',   new DataChannel(async (data : string) => {
+            const result = JSON.parse(data) as {
+                type: 'displays',
+                value: any
+            }
+
+            if (result.type = 'displays') {
+                this.displays = {
+                    timestamp : new Date(),
+                    value: result.value.filter(x => x.length > 0) as string[]
+                }
+            }
+        }))
         this.datachannels.set('adaptive', new DataChannel(async (data : string) => {
             const result = JSON.parse(data) as Metrics
             if (result.type == 'VIDEO' && result.decodefps.every(x => x == 0)) {
@@ -202,16 +223,6 @@ export class RemoteDesktopClient  {
 
 
 
-    public async ChangeFramerate (framerate : number) {
-        if (this.closed) 
-            return
-        await this.datachannels.get('manual').sendMessage(JSON.stringify({
-            type: "framerate",
-            value: framerate
-        }))
-
-        Log(LogLevel.Debug,`changing framerate to ${framerate}`)
-    }
     public async ChangeBitrate (bitrate: number) {
         if (this.closed) 
             return
@@ -222,6 +233,31 @@ export class RemoteDesktopClient  {
 
         Log(LogLevel.Debug,`changing bitrate to ${bitrate}`)
     }
+
+    public async SwitchDisplay (selection : (displays: string[]) => Promise<{
+        display:string,
+        width:number,
+        height:number,
+        framerate:number,
+    }>) {
+        if (this.closed) 
+            return
+        const timestamp = new Date()
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
+            type: "displays",
+            value: ""
+        }))
+
+        while(this.displays.timestamp < timestamp)
+            await new Promise(r => setTimeout(r,100))
+
+        const result = await selection(this.displays.value)
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
+            type: "display",
+            value: result
+        }))
+    }
+
     public async PointerVisible (enable: boolean) {
         if (this.closed) 
             return

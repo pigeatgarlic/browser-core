@@ -311,6 +311,8 @@ export class HID {
         if (disable_send || this.disableKeyboard) 
             return;
 
+        if (event.key == "Meta")
+            return
 
         const key = convertJSKey(event.key,event.location)
         if (key == undefined) 
@@ -327,6 +329,9 @@ export class HID {
         event.preventDefault();
         if (this.disableKeyboard) 
             return;
+
+        if (event.key == "Meta")
+            return
 
         const key = convertJSKey(event.key,event.location)
         if (key == undefined) 
