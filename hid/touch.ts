@@ -91,9 +91,7 @@ export class TouchHandler {
             const touch = this.onGoingTouchs.get(key);
             this.lastTimeTouch = touch?.startTime?.getTime()
         }
-        if (touches.length === 2) {
-            this.handleTwoFingerScroll(touches);
-        }
+
         for (let i = 0; i < touches.length; i++) {
 			const key = touches[i].identifier 
 			const touch = this.onGoingTouchs.get(key);
@@ -120,6 +118,9 @@ export class TouchHandler {
 
     private handleMove = async (evt: TouchEvent) => {
         const touches = evt.touches;
+        if (touches.length === 2) {
+            this.handleTwoFingerScroll(touches);
+        }
         for (let i = 0; i < touches.length; i++) {
             const curr_touch = touches[i]
             const identifier = curr_touch.identifier;
@@ -173,17 +174,19 @@ export class TouchHandler {
     private handleTwoFingerScroll(touches: TouchList) {
         if (this.isTwoFingerScrollingHorizontally(touches)) {
             // Calculate the horizontal scroll amount based on touch movement
-            const deltaX = touches[1].clientX - touches[0].clientX;
+            const deltaX = (touches[0].clientX - touches[1].clientX) * 0.5;
             const wheelValue = deltaX; // You can adjust the value as needed
             // Send a mouse wheel event with the horizontal scroll value
-            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaX: wheelValue })).ToString());
+            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaX: -wheelValue })).ToString());
         } else {
             // Calculate the vertical scroll amount based on touch movement
-            const deltaY = touches[1].clientY - touches[0].clientY;
+            console.log(touches);
+            const deltaY = (touches[0].clientY - touches[1].clientY) * 0.5
             const wheelValue = deltaY; // You can adjust the value as needed
+            console.log(deltaY);
 
             // Send a mouse wheel event with the vertical scroll value
-            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaY: wheelValue })).ToString());
+            this.SendFunc((new HIDMsg(EventCode.MouseWheel, { deltaY: -wheelValue })).ToString());
         }
     }
 
