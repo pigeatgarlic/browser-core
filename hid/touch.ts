@@ -4,6 +4,8 @@ import { thresholdDistance, thresholdTime, TouchData } from "../models/hid.model
 
 
 const RADIUS = 50
+const BOTTOM_THRESHOLD_PERCENT = 25;
+const MOUSE_SPEED = 4
 export class TouchHandler {
     private onGoingTouchs: Map<number,TouchData>
     private events : string[] = []
@@ -50,16 +52,24 @@ export class TouchHandler {
                 //    this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '2' })).ToString());
                 //    this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '2' })).ToString());
                 //}
-            } else if (first == "short") {
+            } else if (first == "short_right" || first == "short_left") {
                 await new Promise(r => setTimeout(r, 100))
                 const sec = this.events.pop()
-                if (sec == "short")  {
+                //Double click
+                if (first == 'short_left' && sec == "short_left") {
                     this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '0' })).ToString());
                     this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '0' })).ToString());
                     this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '0' })).ToString());
                     this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '0' })).ToString());
-                } else if (sec == "long") {
+                }
+                //Click & hold 
+                else if (sec == "long") {
                     this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '0' })).ToString());
+                }
+                //Right click
+                else if (first == 'short_right') {
+                    this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '2' })).ToString());
+                    this.SendFunc((new HIDMsg(EventCode.MouseUp, { button: '2' })).ToString());
                 } else {
                     this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '0' })).ToString());
                     this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '0' })).ToString());
@@ -99,10 +109,18 @@ export class TouchHandler {
                 continue
             else if (
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
-                new Date().getTime() - touch.startTime.getTime() > 50
+                new Date().getTime() - touch.startTime.getTime() > 30 &&
+                touches.length == 1 &&
+                this.isTouchInBottomRight(touch)
             )
-                this.events.push('short')
-
+                this.events.push('short_right')
+            else if (
+                new Date().getTime() - touch.startTime.getTime() < 250 &&
+                new Date().getTime() - touch.startTime.getTime() > 30 &&
+                touches.length == 1
+            ) {
+                this.events.push('short_left')
+            }
 
             if (this.mode == 'gamepad') 
                 this.handleGamepad(touch.touchStart,touch)
@@ -143,8 +161,8 @@ export class TouchHandler {
             // one finger only
             if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad') 
                 this.SendFunc((new HIDMsg(EventCode.MouseMoveRel, {
-                    dX: 3 * Math.round(curr_touch.clientX - prev_touch.clientX),
-                    dY: 3 * Math.round(curr_touch.clientY - prev_touch.clientY)
+                    dX: MOUSE_SPEED * Math.round(curr_touch.clientX - prev_touch.clientX),
+                    dY: MOUSE_SPEED * Math.round(curr_touch.clientY - prev_touch.clientY)
                 })).ToString());
             else if (this.onGoingTouchs.size < 3 && this.mode == 'gamepad') 
                 this.handleGamepad(curr_touch,prev_touch)
@@ -300,5 +318,17 @@ export class TouchHandler {
                 await new Promise(r => setTimeout(r,30))
             }
         }
+    }
+
+    private isTouchInBottomLeft(touch: Touch): boolean {
+        const screenHeight = document.documentElement.clientHeight;
+        const screenBottom = screenHeight * (1 - BOTTOM_THRESHOLD_PERCENT / 100);
+        return touch.clientY >= screenBottom && touch.clientX < document.documentElement.clientWidth / 2;
+    }
+
+    private isTouchInBottomRight(touch: Touch): boolean {
+        const screenHeight = document.documentElement.clientHeight;
+        const screenBottom = screenHeight * (1 - BOTTOM_THRESHOLD_PERCENT / 100);
+        return touch.clientY >= screenBottom && touch.clientX >= document.documentElement.clientWidth / 2;
     }
 }
