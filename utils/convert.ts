@@ -29,6 +29,8 @@ export function convertJSKey(key: string, position: number) : number | undefined
         lower = "return"
     else if (lower == " ") 
         lower = "space"
+    else if (lower == "f1")
+        lower = "escape"
     else if (lower == "backspace") 
         lower = "back"
     else if (lower.includes("arrow")) 
