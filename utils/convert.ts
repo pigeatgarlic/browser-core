@@ -33,6 +33,8 @@ export function convertJSKey(key: string, position: number) : number | undefined
         lower = "escape"
     else if (lower == "backspace") 
         lower = "back"
+    else if (lower == "f1")
+        lower = "escape"
     else if (lower.includes("arrow")) 
         lower = lower.split("arrow").at(1)
     
