@@ -95,7 +95,7 @@ export class HID {
          * shortcuts stuff
          */
         this.shortcuts = new Array<Shortcut>();
-        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen,[KeyCode.Ctrl,KeyCode.Shift,KeyCode.P],requestFullscreen))
+        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen, [KeyCode.Ctrl, KeyCode.Shift, KeyCode.F], requestFullscreen))
 
         /**
          * gamepad stuff
