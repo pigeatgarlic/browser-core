@@ -66,6 +66,7 @@ export class HID {
         this.intervals = []
         this.pressing_keys = []
 
+        this.disableKeyWhileFullscreen()
         /**
          * video event
          */
@@ -445,4 +446,24 @@ export class HID {
         }
     }
     
+    private disableKeyWhileFullscreen() {
+        const supportsKeyboardLock =
+            ('keyboard' in navigator) && ('lock' in navigator.keyboard);
+
+        if (supportsKeyboardLock) {
+            document.addEventListener('fullscreenchange', async () => {
+                if (document.fullscreenElement) {
+                    // The magic happens here… 🦄
+                    //@ts-ignore
+                    await navigator.keyboard.lock(['Escape']);
+                    //await navigator.keyboard.lock(['F11']);
+                    console.log('Keyboard locked.');
+                    return;
+                }
+                //@ts-ignore
+                navigator.keyboard.unlock();
+                console.log('Keyboard unlocked.');
+            });
+        }
+    }
 }
