@@ -448,6 +448,7 @@ export class HID {
     
     private disableKeyWhileFullscreen() {
         const supportsKeyboardLock =
+            //@ts-ignore
             ('keyboard' in navigator) && ('lock' in navigator.keyboard);
 
         if (supportsKeyboardLock) {
