@@ -6,7 +6,7 @@ import { requestFullscreen } from "../utils/screen";
 import { TouchHandler } from "./touch";
 import { convertJSKey } from "../utils/convert";
 
-
+const MOUSE_SPEED = 1.07
 
 export class HID {
     private prev_buttons : Map<number,boolean>;
@@ -374,8 +374,8 @@ export class HID {
         } else {
             const code = EventCode.MouseMoveRel
             this.SendFunc((new HIDMsg(code,{
-                dX: event.movementX,
-                dY: event.movementY,
+                dX: event.movementX * MOUSE_SPEED,
+                dY: event.movementY * MOUSE_SPEED,
             })).ToString());
         }
     }
