@@ -7,9 +7,19 @@ export class Adaptive {
 
     private conn : RTCPeerConnection
     private loopNumber: any;
+    private last_timestamp : {
+        audio : number
+        video : number
+        network : number
+    }
 
     constructor(conn: RTCPeerConnection,
                 callback : MetricCallback) {
+        this.last_timestamp = {
+            audio : 0,
+            video : 0,
+            network: 0
+        }
 
         this.conn = conn;
 
@@ -17,7 +27,7 @@ export class Adaptive {
         this.audioMetricCallback   = callback.audioMetricCallback   ;
         this.videoMetricCallback   = callback.videoMetricCallback   ;
 
-        this.loopNumber = setInterval(this.getConnectionStats.bind(this),500)
+        this.loopNumber = setInterval(this.getConnectionStats.bind(this),20)
     }
 
 
@@ -151,16 +161,22 @@ export class Adaptive {
         const result = await this.conn.getStats()
 
         const network = this.filterNetwork(result);
-        if (network != null)  
+        if (network != null && network.timestamp != this.last_timestamp.network) {
+            this.last_timestamp.network = network.timestamp
             this.networkMetricCallback(network);
+        }
 
         const audio   = this.filterAudio(result);
-        if (audio != null) 
+        if (audio != null && audio.timestamp != this.last_timestamp.audio) {
+            this.last_timestamp.audio = audio.timestamp
             this.audioMetricCallback(audio);
+        }
         
         const video   = this.filterVideo(result);
-        if (video != null) 
+        if (video != null && video.timestamp != this.last_timestamp.video) {
+            this.last_timestamp.video = video.timestamp
             this.videoMetricCallback(video);
+        } 
     }
 
     public Close() {
