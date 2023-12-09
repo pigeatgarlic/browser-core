@@ -14,7 +14,8 @@ export class Adaptive {
     }
 
     constructor(conn: RTCPeerConnection,
-                callback : MetricCallback) {
+                callback : MetricCallback,
+                period?: number) {
         this.last_timestamp = {
             audio : 0,
             video : 0,
@@ -27,7 +28,7 @@ export class Adaptive {
         this.audioMetricCallback   = callback.audioMetricCallback   ;
         this.videoMetricCallback   = callback.videoMetricCallback   ;
 
-        this.loopNumber = setInterval(this.getConnectionStats.bind(this),20)
+        this.loopNumber = setInterval(this.getConnectionStats.bind(this),period ?? 20)
     }
 
 

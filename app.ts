@@ -52,8 +52,9 @@ export class RemoteDesktopClient  {
                 audio: AudioWrapper,
                 signalingConfig : SignalingConfig,
                 WebRTCConfig : RTCConfiguration,
-                { platform, no_video, no_mic ,turn, no_hid,scancode }: {
+                { ads_period,platform, no_video, no_mic ,turn, no_hid,scancode }: {
                     turn?: boolean,
+                    ads_period?: number,
                     platform?: 'mobile' | 'desktop',
                     no_video?: boolean,
                     no_mic?: boolean,
@@ -115,7 +116,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this)
-                                    },no_mic,"audio");
+                                    },no_mic,ads_period,"audio");
         }
 
         const videoEstablishmentLoop = () => {
@@ -129,7 +130,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    this.handleVideoMetric.bind(this),
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this),
-                                    },true,"video");
+                                    },true,ads_period,"video");
 
         }
 

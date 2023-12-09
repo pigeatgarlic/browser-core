@@ -14,6 +14,7 @@ export class WebRTC
 
     private data            : any
     private microphone      : boolean
+    private ads_period     ?: number
 
     private MetricHandler     : MetricCallback
     private TrackHandler      : (a : RTCTrackEvent) => (any)
@@ -27,9 +28,11 @@ export class WebRTC
                 CloseHandler    : () => void,
                 metricHandler   : MetricCallback,
                 no_microphone   : boolean,
+                ads_period     ?: number,
                 data?: any)
     {
         this.status = 'not connected'
+        this.ads_period        = ads_period
         this.closeHandler      = CloseHandler
         this.MetricHandler     = metricHandler;
         this.TrackHandler      = TrackHandler;
@@ -97,7 +100,7 @@ export class WebRTC
 
     public SetupConnection(config : RTCConfiguration) {
         this.Conn                          = new RTCPeerConnection(config);
-        this.Ads                           = new Adaptive(this.Conn,this.MetricHandler);
+        this.Ads                           = new Adaptive(this.Conn,this.MetricHandler,this.ads_period);
 
         this.Conn.ondatachannel            = this.channelHandler;    
         this.Conn.ontrack                  = this.TrackHandler;
