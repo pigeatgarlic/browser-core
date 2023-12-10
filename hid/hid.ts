@@ -80,10 +80,10 @@ export class HID {
         /**
          * mouse event
          */
-        this.video.addEventListener('wheel',          this.mouseWheel.bind(this));
-        this.video.addEventListener('mousemove',      this.mouseButtonMovement.bind(this));
-        this.video.addEventListener('mousedown',      this.mouseButtonDown.bind(this));
-        this.video.addEventListener('mouseup',        this.mouseButtonUp.bind(this));
+        document.addEventListener('wheel',          this.mouseWheel.bind(this));
+        document.addEventListener('mousemove',      this.mouseButtonMovement.bind(this));
+        document.addEventListener('mousedown',      this.mouseButtonDown.bind(this));
+        document.addEventListener('mouseup',        this.mouseButtonUp.bind(this));
         
         /**
          * keyboard event
