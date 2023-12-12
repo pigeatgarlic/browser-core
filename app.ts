@@ -2,7 +2,7 @@ import { DataChannel } from "./datachannel/datachannel";
 import { HID } from "./hid/hid"
 import { ConnectionEvent, Log, LogConnectionEvent, LogLevel } from "./utils/log";
 import { WebRTC } from "./webrtc/webrtc";
-import { Pipeline } from "./pipeline/pipeline";
+// import { Pipeline } from "./pipeline/pipeline";
 import { getOS, getPlatform } from "./utils/platform";
 import { AudioMetrics, NetworkMetrics, VideoMetrics } from "./qos/models";
 import { SignalingConfig } from "./signaling/config";
@@ -38,7 +38,7 @@ export class RemoteDesktopClient  {
     public  hid                 : HID 
     private video               : VideoWrapper
     private audio               : AudioWrapper 
-    private pipelines           : Map<string,Pipeline>
+    // private pipelines           : Map<string,Pipeline>
     private datachannels        : Map<ChannelName,DataChannel>;
 
     private videoConn  : WebRTC
@@ -65,7 +65,7 @@ export class RemoteDesktopClient  {
         this.closed = false
         this.video = vid;
         this.audio = audio;
-        this.pipelines = new Map<string,Pipeline>();
+        // this.pipelines = new Map<string,Pipeline>();
         this.platform = platform ?? getPlatform()
         this.HandleMetrics   = async () => {}
         this.HandleMetricRaw = async () => {}
