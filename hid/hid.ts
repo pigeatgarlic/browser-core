@@ -22,21 +22,16 @@ export class HID {
     private disableMouse    : boolean
     private scancode        : boolean
 
+    last_interact : Date
+    public last_active() : number {
+        return ( new Date().getTime() - this.last_interact.getTime() ) / 1000
+    }
+
     public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
         if (mode == 'gamepad' || mode == 'trackpad')
             this.touch.mode = mode
         else 
             this.touch.mode = 'none'
-
-        // if (mode == 'mouse') {
-        //     this.video.addEventListener('pointermove',      this.mouseButtonMovement.bind(this));
-        //     this.video.addEventListener('pointerdown',      this.mouseButtonDown.bind(this));
-        //     this.video.addEventListener('pointerup',        this.mouseButtonUp.bind(this));
-        // } else {
-        //     this.video.removeEventListener('pointermove',   this.mouseButtonMovement.bind(this));
-        //     this.video.removeEventListener('pointerdown',   this.mouseButtonDown.bind(this));
-        //     this.video.removeEventListener('pointerup',     this.mouseButtonUp.bind(this));
-        // }
     }
 
     private Screen : Screen;
@@ -61,7 +56,10 @@ export class HID {
         this.video = videoElement;
         this.SendFunc = Sendfunc;
 
-        this.touch = new TouchHandler (videoElement,Sendfunc);
+        this.touch = new TouchHandler (videoElement,(data:string) => { 
+            Sendfunc(data); 
+            this.last_interact = new Date() 
+        });
         this.Screen = new Screen();
         this.intervals = []
         this.pressing_keys = []
@@ -218,6 +216,7 @@ export class HID {
                 if(Math.abs(this.prev_axis.get(index) - value) < 0.000001) 
                     return;
                 
+                this.last_interact = new Date()
                 this.SendFunc((new HIDMsg(EventCode.GamepadAxis,{ 
                     gamepad_id: gamepad_id,
                     index: index,
@@ -298,6 +297,7 @@ export class HID {
 
     private keydown(event: KeyboardEvent) {
         event.preventDefault();
+        this.last_interact = new Date()
 
         let disable_send = false;
         this.shortcuts.forEach((element: Shortcut) => {
@@ -362,6 +362,7 @@ export class HID {
         if (this.disableMouse) 
             return;
 
+        this.last_interact = new Date()
         if (!this.relativeMouse) {
             this.elementConfig(this.video)
             const code = EventCode.MouseMoveAbs
