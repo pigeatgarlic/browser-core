@@ -13,19 +13,15 @@ export class TouchHandler {
     public  mode : 'gamepad' | 'trackpad' | 'none'
 
     private lastTimeTouch: number;
-    public lastCheckHangUp: number;
 
     private video : HTMLVideoElement;
     public SendFunc: ((data: string) => void)
-
     constructor(videoElement : HTMLVideoElement,
-        Sendfunc: ((data: string) => void),
-        lastCheckHangUp: number
-    ) {
+                Sendfunc: ((data: string)=>void)){
         this.video = videoElement;
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
-        this.lastCheckHangUp = lastCheckHangUp
+
         document.addEventListener('touchstart',     this.handleStart  .bind(this));
         document.addEventListener('touchend',       this.handleEnd    .bind(this));
         document.addEventListener('touchmove',      this.handleMove   .bind(this));
@@ -87,8 +83,6 @@ export class TouchHandler {
 
     private handleStart = (evt: TouchEvent) => {
         const touches = evt.changedTouches;
-        this.lastCheckHangUp = new Date().getTime()
-        console.log('check touch');
         for (let i = 0; i < touches.length; i++) {
 			const key = touches[i].identifier 
             this.onGoingTouchs.set(key, new TouchData(touches[i]));

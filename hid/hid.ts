@@ -8,8 +8,6 @@ import { convertJSKey } from "../utils/convert";
 
 const MOUSE_SPEED = 1.07
 
-const TIME_AFK = 10 * 60 * 1000
-
 export class HID {
     private prev_buttons : Map<number,boolean>;
     private prev_sliders : Map<number,number>;
@@ -23,8 +21,6 @@ export class HID {
     private disableKeyboard : boolean
     private disableMouse    : boolean
     private scancode        : boolean
-    private lastCheckHangUp: number
-    public afkStatus: 'low' | 'medium' | 'high'
 
     public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
         if (mode == 'gamepad' || mode == 'trackpad')
@@ -64,24 +60,13 @@ export class HID {
 
         this.video = videoElement;
         this.SendFunc = Sendfunc;
-        this.lastCheckHangUp = new Date().getTime()
 
-        this.touch = new TouchHandler(videoElement, Sendfunc, this.lastCheckHangUp);
+        this.touch = new TouchHandler (videoElement,Sendfunc);
         this.Screen = new Screen();
         this.intervals = []
         this.pressing_keys = []
 
         this.disableKeyWhileFullscreen()
-
-
-        this.intervals.push(setInterval(() => {
-            const now = new Date().getTime()
-            const touchLastCheck = this.touch.lastCheckHangUp
-            //10  * 60 * 1000 
-            if (now - this.lastCheckHangUp >= TIME_AFK || now - touchLastCheck >= TIME_AFK) {
-                this.afkStatus = 'medium'
-            }
-        }, TIME_AFK))
         /**
          * video event
          */
@@ -238,7 +223,7 @@ export class HID {
                     index: index,
                     val: value
                 }).ToString()))
-                this.lastCheckHangUp = new Date().getTime()
+
                 this.prev_axis.set(index,value)
             })
         })
@@ -376,8 +361,6 @@ export class HID {
     private mouseButtonMovement(event: {clientX:number,clientY:number,movementX:number,movementY:number}){
         if (this.disableMouse) 
             return;
-
-        this.lastCheckHangUp = new Date().getTime()
 
         if (!this.relativeMouse) {
             this.elementConfig(this.video)
