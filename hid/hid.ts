@@ -427,23 +427,13 @@ export class HID {
         this.Screen.StreamWidth  =  VideoElement.videoWidth;
         this.Screen.Streamheight =  VideoElement.videoHeight;
 
-        const desiredRatio = this.Screen.StreamWidth / this.Screen.Streamheight;
         const HTMLVideoElementRatio = this.Screen.ClientWidth / this.Screen.ClientHeight;
-        const HTMLdocumentElementRatio = document.documentElement.scrollWidth / document.documentElement.scrollHeight;
 
-        if (HTMLVideoElementRatio > desiredRatio) {
-            const virtualWidth = this.Screen.ClientHeight * desiredRatio
-            const virtualLeft = ( this.Screen.ClientWidth - virtualWidth ) / 2;
+        const virtualWidth = this.Screen.ClientHeight * HTMLVideoElementRatio
+        const virtualLeft = ( this.Screen.ClientWidth - virtualWidth ) / 2;
 
-            this.Screen.ClientWidth = virtualWidth
-            this.Screen.ClientLeft = virtualLeft
-        } else if (HTMLdocumentElementRatio < desiredRatio) {
-            const virtualHeight = document.documentElement.offsetWidth / desiredRatio
-            const virtualTop    = ( this.Screen.ClientHeight - virtualHeight ) / 2;
-
-            this.Screen.ClientHeight =virtualHeight 
-            this.Screen.ClientTop = virtualTop 
-        }
+        this.Screen.ClientWidth = virtualWidth
+        this.Screen.ClientLeft = virtualLeft
     }
     
     private disableKeyWhileFullscreen() {
