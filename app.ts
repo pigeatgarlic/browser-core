@@ -303,6 +303,9 @@ export class RemoteDesktopClient  {
 
     public Close() {
         this.hid.Close()
+        this.videoConn?.Close()
+        this.audioConn?.Close()
+        this.datachannels = new Map<ChannelName,DataChannel>()
         this.closed = true
     }
 }

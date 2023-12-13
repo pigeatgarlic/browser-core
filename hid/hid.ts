@@ -27,16 +27,6 @@ export class HID {
             this.touch.mode = mode
         else 
             this.touch.mode = 'none'
-
-        // if (mode == 'mouse') {
-        //     this.video.addEventListener('pointermove',      this.mouseButtonMovement.bind(this));
-        //     this.video.addEventListener('pointerdown',      this.mouseButtonDown.bind(this));
-        //     this.video.addEventListener('pointerup',        this.mouseButtonUp.bind(this));
-        // } else {
-        //     this.video.removeEventListener('pointermove',   this.mouseButtonMovement.bind(this));
-        //     this.video.removeEventListener('pointerdown',   this.mouseButtonDown.bind(this));
-        //     this.video.removeEventListener('pointerup',     this.mouseButtonUp.bind(this));
-        // }
     }
 
     private Screen : Screen;
@@ -47,6 +37,7 @@ export class HID {
 
     private intervals : any[] 
 
+    private ignore = event => event.preventDefault()
     constructor(videoElement: HTMLVideoElement, 
                 Sendfunc: ((data: string)=>void),
                 scancode?: boolean){
@@ -71,31 +62,21 @@ export class HID {
          * video event
          */
 
-        const ignore = event => event.preventDefault()
-        this.video.addEventListener('contextmenu',  ignore)
-        this.video.addEventListener('touchstart',   ignore) 
-        this.video.addEventListener('touchend',     ignore) 
-        this.video.addEventListener('touchmove',    ignore) 
-
-        /**
-         * mouse event
-         */
-        document.addEventListener('wheel',          this.mouseWheel.bind(this));
-        document.addEventListener('mousemove',      this.mouseButtonMovement.bind(this));
-        document.addEventListener('mousedown',      this.mouseButtonDown.bind(this));
-        document.addEventListener('mouseup',        this.mouseButtonUp.bind(this));
-        
-        /**
-         * keyboard event
-         */
-        document.addEventListener('keydown',        this.keydown.bind(this));
-        document.addEventListener('keyup',          this.keyup.bind(this));
+        document.ontouchstart     = this.ignore 
+        document.ontouchend       = this.ignore 
+        document.ontouchmove      = this.ignore 
+        document.onwheel          = this.mouseWheel.bind(this);
+        document.onmousemove      = this.mouseButtonMovement.bind(this);
+        document.onmousedown      = this.mouseButtonDown.bind(this);
+        document.onmouseup        = this.mouseButtonUp.bind(this);
+        document.onkeydown        = this.keydown.bind(this);
+        document.onkeyup          = this.keyup.bind(this);
 
         /**
          * shortcuts stuff
          */
         this.shortcuts = new Array<Shortcut>();
-        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen, [KeyCode.Esc], () => document.documentElement.requestFullscreen().catch(() => {})))
+        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen, [KeyCode.F11], () => document.documentElement.requestFullscreen().catch(() => {})))
 
         /**
          * gamepad stuff
@@ -103,7 +84,6 @@ export class HID {
         this.intervals.push(setInterval(this.runButton.bind(this), 1));
         this.intervals.push(setInterval(this.runAxis  .bind(this), 1));
         this.intervals.push(setInterval(this.runSlider.bind(this), 1));
-
         this.intervals.push(setInterval(() => this.relativeMouse = document.pointerLockElement != null,100))
 
         this.setTouchMode('trackpad')
@@ -111,11 +91,16 @@ export class HID {
 
     public Close() {
         this.intervals.forEach(x => clearInterval(x))
-        document.removeEventListener('wheel',          this.mouseWheel.bind(this));
-        document.removeEventListener('mousemove',      this.mouseButtonMovement.bind(this));
-        document.removeEventListener('mousedown',      this.mouseButtonDown.bind(this));
-        document.removeEventListener('mouseup',        this.mouseButtonUp.bind(this));
-        document.removeEventListener('keydown',        this.keydown.bind(this));
+        document.onwheel         = null
+        document.onmousemove     = null
+        document.onmousedown     = null
+        document.onmouseup       = null
+        document.onkeydown       = null
+        document.ontouchstart    = null
+        document.ontouchend      = null
+        document.ontouchmove     = null
+        this.shortcuts = new Array<Shortcut>()
+        this.touch.Close()
     }
 
 
@@ -442,7 +427,7 @@ export class HID {
             ('keyboard' in navigator) && ('lock' in navigator.keyboard);
 
         if (supportsKeyboardLock) {
-            document.addEventListener('fullscreenchange', async () => {
+            document.onfullscreenchange = async () => {
                 if (document.fullscreenElement) {
                     // The magic happens here… 🦄
                     //@ts-ignore
@@ -454,7 +439,8 @@ export class HID {
                 //@ts-ignore
                 navigator.keyboard.unlock();
                 console.log('Keyboard unlocked.');
-            });
-        }
+            };
+        } else
+            document.onfullscreenchange = null
     }
 }

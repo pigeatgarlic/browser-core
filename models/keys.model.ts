@@ -41,6 +41,7 @@ export enum KeyCode{
     F = "KeyF",
     P = "KeyP",
     F1 = "F1",
+    F11 = "F11",
     Esc = "Escape",
 }
 

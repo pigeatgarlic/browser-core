@@ -14,6 +14,7 @@ export class TouchHandler {
 
     private lastTimeTouch: number;
 
+    private running = true;
     private video : HTMLVideoElement;
     public SendFunc: ((data: string) => void)
     constructor(videoElement : HTMLVideoElement,
@@ -22,10 +23,17 @@ export class TouchHandler {
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
 
-        document.addEventListener('touchstart',     this.handleStart  .bind(this));
-        document.addEventListener('touchend',       this.handleEnd    .bind(this));
-        document.addEventListener('touchmove',      this.handleMove   .bind(this));
+        document.ontouchstart     = this.handleStart  .bind(this);
+        document.ontouchend       = this.handleEnd    .bind(this);
+        document.ontouchmove      = this.handleMove   .bind(this);
         this.ListenEvents()
+    }
+
+    public Close() {
+        document.ontouchstart     = null;
+        document.ontouchend       = null;
+        document.ontouchmove      = null;
+        this.running = false
     }
 
 
@@ -34,7 +42,7 @@ export class TouchHandler {
 
 
     private async ListenEvents () {
-        while (true) {
+        while (this.running) {
             const first = this.events.pop()
             if(this.mode != 'trackpad') {
                 await new Promise(r => setTimeout(r,100))
