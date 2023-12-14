@@ -173,6 +173,7 @@ export class HID {
                     if(this.prev_buttons.get(index) == pressed)
                         return;
 
+                    this.last_interact = new Date()
                     this.SendFunc((new HIDMsg(pressed ?  EventCode.GamepadButtonUp : EventCode.GamepadButtonDown,{ 
                         gamepad_id: gamepad_id,
                         index: index
@@ -195,7 +196,7 @@ export class HID {
                     if(Math.abs(this.prev_sliders.get(index) - value) < 0.000001) 
                         return;
                     
-
+                    this.last_interact = new Date()
                     this.SendFunc((new HIDMsg(EventCode.GamepadSlide, {
                         gamepad_id: gamepad_id,
                         index: index,
