@@ -33,8 +33,6 @@ export class RemoteDesktopClient  {
         value: string[] 
     }
 
-    private readonly platform : 'desktop' | 'mobile'
-
     public  hid                 : HID 
     private video               : VideoWrapper
     private audio               : AudioWrapper 
@@ -51,14 +49,11 @@ export class RemoteDesktopClient  {
     constructor(vid : VideoWrapper,
                 audio: AudioWrapper,
                 signalingConfig : SignalingConfig,
-                WebRTCConfig : RTCConfiguration,
-                { ads_period,platform, no_video, no_mic ,turn, no_hid,scancode }: {
-                    turn?: boolean,
+                WebRTCConfig : RTCConfiguration, { 
+                    ads_period, 
+                    scancode 
+                }: {
                     ads_period?: number,
-                    platform?: 'mobile' | 'desktop',
-                    no_video?: boolean,
-                    no_mic?: boolean,
-                    no_hid?: boolean,
                     scancode?: boolean,
                 }) {
 
@@ -66,7 +61,6 @@ export class RemoteDesktopClient  {
         this.video = vid;
         this.audio = audio;
         // this.pipelines = new Map<string,Pipeline>();
-        this.platform = platform ?? getPlatform()
         this.HandleMetrics   = async () => {}
         this.HandleMetricRaw = async () => {}
         this.displays = {
@@ -103,7 +97,7 @@ export class RemoteDesktopClient  {
 
         const webrtcConfig = {
             ...WebRTCConfig,
-            iceTransportPolicy: ( turn ?? false) ? "relay" : "all" as any
+            iceTransportPolicy: "all" as any
         }
         const audioEstablishmentLoop = () => {
             if (this.closed) 
@@ -116,7 +110,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this)
-                                    },no_mic,ads_period,"audio");
+                                    },false,ads_period,"audio");
         }
 
         const videoEstablishmentLoop = () => {
@@ -135,23 +129,11 @@ export class RemoteDesktopClient  {
         }
 
         audioEstablishmentLoop()
-        if (!(no_video ?? false)) 
-            videoEstablishmentLoop()
+        videoEstablishmentLoop()
 
-        this.datachannels.set('hid',      new DataChannel(async (data : string) => {
-            if ((no_hid ?? false) || this.closed) 
-                return 
-
-            this.hid.handleIncomingData(data);
-        }))
-
-        const hid_channel = this.datachannels.get("hid")
-        this.hid = new HID( this.video.internal(), (data: string) => {
-            if ((no_hid ?? false) || this.closed) 
-                return 
-            
-            hid_channel.sendMessage(data);
-        },scancode);
+        const hid_channel = new DataChannel(this.hid.handleIncomingData)
+        this.hid = new HID( this.video.internal(), hid_channel.sendMessage ,scancode);
+        this.datachannels.set('hid', hid_channel)
     }
 
 
