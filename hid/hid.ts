@@ -33,13 +33,14 @@ export class HID {
     private video: HTMLVideoElement
 
     private SendFunc: ((data: string) => void)
-    private touch : TouchHandler 
+    public setSendFunc(Sendfunc: ((data: string) => void)) {
+        this.SendFunc = Sendfunc;
+    }
 
+    private touch : TouchHandler 
     private intervals : any[] 
 
-    private ignore = event => event.preventDefault()
-    constructor(Sendfunc: ((data: string)=>void),
-                scancode?: boolean){
+    constructor(scancode?: boolean){
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
@@ -48,8 +49,7 @@ export class HID {
         this.disableMouse = false;
         this.scancode = scancode ?? false
 
-        this.SendFunc = Sendfunc;
-        this.touch = new TouchHandler (Sendfunc);
+        this.touch = new TouchHandler (data => this.SendFunc(data));
         this.Screen = new Screen();
         this.intervals = []
         this.pressing_keys = []
@@ -59,9 +59,6 @@ export class HID {
          * video event
          */
 
-        document.ontouchstart     = this.ignore 
-        document.ontouchend       = this.ignore 
-        document.ontouchmove      = this.ignore 
         document.onwheel          = this.mouseWheel.bind(this);
         document.onmousemove      = this.mouseButtonMovement.bind(this);
         document.onmousedown      = this.mouseButtonDown.bind(this);
@@ -93,11 +90,8 @@ export class HID {
         document.onmousedown     = null
         document.onmouseup       = null
         document.onkeydown       = null
-        document.ontouchstart    = null
-        document.ontouchend      = null
-        document.ontouchmove     = null
         this.shortcuts = new Array<Shortcut>()
-        this.touch.Close()
+        this.touch?.Close()
     }
 
 
@@ -345,7 +339,6 @@ export class HID {
             return;
 
         if (!this.relativeMouse) {
-            this.elementConfig(this.video)
             const code = EventCode.MouseMoveAbs
             const mousePosition_X = this.clientToServerX(event.clientX);
             const mousePosition_Y = this.clientToServerY(event.clientY);
@@ -391,33 +384,14 @@ export class HID {
 
     private clientToServerY(clientY: number): number
     {
-        return (clientY - this.Screen.ClientTop) / this.Screen.ClientHeight;
+        return clientY / document.documentElement.clientHeight;
     }
 
     private clientToServerX(clientX: number): number 
     {
-        return (clientX - this.Screen.ClientLeft) / this.Screen.ClientWidth;
+        return clientX  / document.documentElement.clientWidth;
     }
 
-    private elementConfig(VideoElement: HTMLVideoElement) 
-    {
-        this.Screen.ClientWidth  =  VideoElement.offsetWidth;
-        this.Screen.ClientHeight =  VideoElement.offsetHeight;
-        this.Screen.ClientTop    =  VideoElement.offsetTop;
-        this.Screen.ClientLeft   =  VideoElement.offsetLeft;
-
-        this.Screen.StreamWidth  =  VideoElement.videoWidth;
-        this.Screen.Streamheight =  VideoElement.videoHeight;
-
-        const HTMLVideoElementRatio = this.Screen.ClientWidth / this.Screen.ClientHeight;
-
-        const virtualWidth = this.Screen.ClientHeight * HTMLVideoElementRatio
-        const virtualLeft = ( this.Screen.ClientWidth - virtualWidth ) / 2;
-
-        this.Screen.ClientWidth = virtualWidth
-        this.Screen.ClientLeft = virtualLeft
-    }
-    
     private disableKeyWhileFullscreen() {
         const supportsKeyboardLock =
             //@ts-ignore

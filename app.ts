@@ -131,8 +131,9 @@ export class RemoteDesktopClient  {
         audioEstablishmentLoop()
         videoEstablishmentLoop()
 
+        this.hid = new HID(scancode);
         const hid_channel = new DataChannel(this.hid.handleIncomingData)
-        this.hid = new HID( hid_channel.sendMessage ,scancode);
+        this.hid.setSendFunc(hid_channel.sendMessage.bind(hid_channel))
         this.datachannels.set('hid', hid_channel)
     }
 
