@@ -132,7 +132,7 @@ export class RemoteDesktopClient  {
         videoEstablishmentLoop()
 
         const hid_channel = new DataChannel(this.hid.handleIncomingData)
-        this.hid = new HID( this.video.internal(), hid_channel.sendMessage ,scancode);
+        this.hid = new HID( hid_channel.sendMessage ,scancode);
         this.datachannels.set('hid', hid_channel)
     }
 
@@ -284,7 +284,7 @@ export class RemoteDesktopClient  {
 
 
     public Close() {
-        this.hid.Close()
+        this.hid?.Close()
         this.videoConn?.Close()
         this.audioConn?.Close()
         this.datachannels = new Map<ChannelName,DataChannel>()

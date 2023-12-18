@@ -15,11 +15,8 @@ export class TouchHandler {
     private lastTimeTouch: number;
 
     private running = true;
-    private video : HTMLVideoElement;
     public SendFunc: ((data: string) => void)
-    constructor(videoElement : HTMLVideoElement,
-                Sendfunc: ((data: string)=>void)){
-        this.video = videoElement;
+    constructor(Sendfunc: ((data: string)=>void)){
         this.onGoingTouchs = new Map<number,TouchData>()
         this.SendFunc = Sendfunc;
 
@@ -295,12 +292,12 @@ export class TouchHandler {
 
         // zoom in
         if ( Math.abs(distance.now) > Math.abs(distance.prev) &&
-            !isFullscreen(this.video)) 	
+            !isFullscreen()) 	
             requestFullscreen();
 
         // zoom out
         if ( Math.abs(distance.now) < Math.abs(distance.prev) &&
-            isFullscreen(this.video)) 
+            isFullscreen()) 
             document.exitFullscreen().catch(e => {});
     }
 

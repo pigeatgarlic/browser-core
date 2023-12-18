@@ -38,8 +38,7 @@ export class HID {
     private intervals : any[] 
 
     private ignore = event => event.preventDefault()
-    constructor(videoElement: HTMLVideoElement, 
-                Sendfunc: ((data: string)=>void),
+    constructor(Sendfunc: ((data: string)=>void),
                 scancode?: boolean){
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
@@ -49,10 +48,8 @@ export class HID {
         this.disableMouse = false;
         this.scancode = scancode ?? false
 
-        this.video = videoElement;
         this.SendFunc = Sendfunc;
-
-        this.touch = new TouchHandler (videoElement,Sendfunc);
+        this.touch = new TouchHandler (Sendfunc);
         this.Screen = new Screen();
         this.intervals = []
         this.pressing_keys = []

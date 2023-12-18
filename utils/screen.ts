@@ -17,7 +17,7 @@ declare global {
 }
 
 
-export function isFullscreen(video?: HTMLVideoElement): boolean {
+export function isFullscreen(): boolean {
     const browser = getBrowser()
 
 	// TODO return video?.webkitDisplayingFullscreen
