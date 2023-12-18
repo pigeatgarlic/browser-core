@@ -135,6 +135,8 @@ export class RemoteDesktopClient  {
         const hid_channel = new DataChannel(this.hid.handleIncomingData)
         this.hid.setSendFunc(hid_channel.sendMessage.bind(hid_channel))
         this.datachannels.set('hid', hid_channel)
+
+        Log(LogLevel.Infor,`Started remote desktop connection`);
     }
 
 
@@ -290,5 +292,6 @@ export class RemoteDesktopClient  {
         this.audioConn?.Close()
         this.datachannels = new Map<ChannelName,DataChannel>()
         this.closed = true
+        Log(LogLevel.Infor,`Closed remote desktop connection`);
     }
 }
