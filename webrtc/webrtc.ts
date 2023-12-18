@@ -41,7 +41,7 @@ export class WebRTC
         this.data              = data
         this.microphone        = !no_microphone 
 
-        Log(LogLevel.Infor,`Started oneplay app connect to signaling server ${signalingURL}`);
+        Log(LogLevel.Infor,`Started connect to signaling server ${signalingURL}`);
         this.signaling = new SignallingClient(signalingURL,
                                  this.handleIncomingPacket.bind(this),
                                  this.SignalingOnClose.bind(this));

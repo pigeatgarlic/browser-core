@@ -97,7 +97,7 @@ export class RemoteDesktopClient  {
 
         const webrtcConfig = {
             ...WebRTCConfig,
-            iceTransportPolicy: "all" as any
+            iceTransportPolicy: "relay" as any
         }
         const audioEstablishmentLoop = () => {
             if (this.closed) 
