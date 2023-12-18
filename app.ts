@@ -99,7 +99,7 @@ export class RemoteDesktopClient  {
             ...WebRTCConfig,
             iceTransportPolicy: "relay" as any
         }
-        const audioEstablishmentLoop = () => {
+        const audioEstablishmentLoop = async () => {
             if (this.closed) 
                 return
             
@@ -111,9 +111,13 @@ export class RemoteDesktopClient  {
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this)
                                     },false,ads_period,"audio");
+
+            await new Promise(r => setTimeout(r,10000))
+            if (!this.audioConn.connected) 
+                this.audioConn.Close()
         }
 
-        const videoEstablishmentLoop = () => {
+        const videoEstablishmentLoop = async () => {
             if (this.closed) 
                 return
 
@@ -126,6 +130,9 @@ export class RemoteDesktopClient  {
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this),
                                     },true,ads_period,"video");
 
+            await new Promise(r => setTimeout(r,10000))
+            if (!this.videoConn.connected) 
+                this.videoConn.Close()
         }
 
         audioEstablishmentLoop()

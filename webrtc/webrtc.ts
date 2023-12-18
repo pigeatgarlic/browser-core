@@ -6,7 +6,7 @@ import { MetricCallback } from "../qos/models";
 
 export class WebRTC 
 {
-    private status          : 'connected' | 'not connected'
+    public connected           : boolean
     private Conn            : RTCPeerConnection;
     private webrtcConfig    : RTCConfiguration
     private signaling       : SignallingClient
@@ -31,7 +31,7 @@ export class WebRTC
                 ads_period     ?: number,
                 data?: any)
     {
-        this.status = 'not connected'
+        this.connected = false
         this.ads_period        = ads_period
         this.closeHandler      = CloseHandler
         this.MetricHandler     = metricHandler;
@@ -48,13 +48,14 @@ export class WebRTC
     }
 
     private async SignalingOnClose() {
-        if (this.status == 'connected') 
+        if (this.connected) 
             return
     
         this.Close()
     }
 
     public Close() {
+        this.connected = false
         this.Conn?.close()
         this.Ads?.Close()
         this.signaling?.Close()
@@ -150,7 +151,7 @@ export class WebRTC
     {
         const successHandler = async () => {
             await new Promise(r => setTimeout(r,5000))
-            this.status = 'connected'
+            this.connected = true
             this.DoneHandshake()
             LogConnectionEvent(ConnectionEvent.WebRTCConnectionDoneChecking,"done",this.data as string)
             Log(LogLevel.Infor,"webrtc connection established");
