@@ -58,15 +58,11 @@ export class WebRTC
         this.Conn?.close()
         this.Ads?.Close()
         this.signaling?.Close()
-
         this.closeHandler()
-
-        LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
-        Log(LogLevel.Error,"webrtc connection establish failed");
-
         this.TrackHandler   = () => {}
         this.channelHandler = () => {}
         this.closeHandler   = () => {}
+        LogConnectionEvent(ConnectionEvent.WebRTCConnectionClosed,"close",this.data as string)
     }
 
     private async handleIncomingPacket(pkt : SignalingMessage)
