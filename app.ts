@@ -112,7 +112,7 @@ export class RemoteDesktopClient  {
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this)
                                     },false,ads_period,"audio");
 
-            await new Promise(r => setTimeout(r,10000))
+            await new Promise(r => setTimeout(r,20000))
             if (!this.audioConn.connected) 
                 this.audioConn.Close()
         }
@@ -130,7 +130,7 @@ export class RemoteDesktopClient  {
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this),
                                     },true,ads_period,"video");
 
-            await new Promise(r => setTimeout(r,10000))
+            await new Promise(r => setTimeout(r,20000))
             if (!this.videoConn.connected) 
                 this.videoConn.Close()
         }
