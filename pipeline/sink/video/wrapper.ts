@@ -2,7 +2,7 @@ import { Log, LogLevel } from "../../../utils/log";
 
 export class VideoWrapper {
     private isPlaying : boolean;
-    private video : HTMLVideoElement
+    public video : HTMLVideoElement
 
     constructor(vid: HTMLVideoElement) {
         this.video = vid

@@ -34,8 +34,8 @@ export class RemoteDesktopClient  {
     }
 
     public  hid                 : HID 
-    private video               : VideoWrapper
-    private audio               : AudioWrapper 
+    public  video               : VideoWrapper
+    public  audio               : AudioWrapper 
     // private pipelines           : Map<string,Pipeline>
     private datachannels        : Map<ChannelName,DataChannel>;
 
