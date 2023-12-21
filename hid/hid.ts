@@ -33,14 +33,12 @@ export class HID {
     private video: HTMLVideoElement
 
     private SendFunc: ((data: string) => void)
-    public setSendFunc(Sendfunc: ((data: string) => void)) {
-        this.SendFunc = Sendfunc;
-    }
 
     private touch : TouchHandler 
     private intervals : any[] 
 
-    constructor(scancode?: boolean){
+    constructor(Sendfunc: ((data: string) => void),scancode?: boolean){
+        this.SendFunc = Sendfunc
         this.prev_buttons = new Map<number,boolean>();
         this.prev_sliders = new Map<number,number>();
         this.prev_axis    = new Map<number,number>();
@@ -321,7 +319,6 @@ export class HID {
         this.pressing_keys.splice(this.pressing_keys.findIndex(x => x == key))
     }
     private mouseWheel(event: WheelEvent){
-        event.preventDefault();
         const code = EventCode.MouseWheel
         this.SendFunc((new HIDMsg(code,{
             deltaY: -Math.round(event.deltaY),

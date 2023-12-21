@@ -135,15 +135,25 @@ export class RemoteDesktopClient  {
                 this.videoConn.Close()
         }
 
+        Log(LogLevel.Infor,`Started remote desktop connection`);
         audioEstablishmentLoop()
         videoEstablishmentLoop()
 
-        this.hid = new HID(scancode);
-        const hid_channel = new DataChannel(this.hid.handleIncomingData)
-        this.hid.setSendFunc(hid_channel.sendMessage.bind(hid_channel))
-        this.datachannels.set('hid', hid_channel)
 
-        Log(LogLevel.Infor,`Started remote desktop connection`);
+        this.datachannels.set('hid',      new DataChannel(async (data : string) => {
+            if (this.closed) 
+                return 
+
+            this.hid.handleIncomingData(data);
+        }))
+
+        const hid_channel = this.datachannels.get("hid")
+        this.hid = new HID((data: string) => {
+            if (this.closed) 
+                return 
+            
+            hid_channel.sendMessage(data);
+        },scancode);
     }
 
 
