@@ -235,12 +235,7 @@ export class RemoteDesktopClient  {
         Log(LogLevel.Debug,`changing bitrate to ${bitrate}`)
     }
 
-    public async SwitchDisplay (selection : (displays: string[]) => Promise<{
-        display:string,
-        width:number,
-        height:number,
-        framerate:number,
-    }>) {
+    public async SwitchDisplay (selection : (displays: string[]) => Promise<string>) {
         if (this.closed) 
             return
         const timestamp = new Date()
