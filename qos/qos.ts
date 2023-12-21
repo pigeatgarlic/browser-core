@@ -28,7 +28,7 @@ export class Adaptive {
         this.audioMetricCallback   = callback.audioMetricCallback   ;
         this.videoMetricCallback   = callback.videoMetricCallback   ;
 
-        this.loopNumber = setInterval(this.getConnectionStats.bind(this),100)
+        this.loopNumber = setInterval(this.getConnectionStats.bind(this),200)
     }
 
 
