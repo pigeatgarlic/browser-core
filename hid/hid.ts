@@ -20,7 +20,7 @@ export class HID {
     private relativeMouse : boolean
     private disableKeyboard : boolean
     private disableMouse    : boolean
-    private scancode        : boolean
+    public  scancode        : boolean
 
     public setTouchMode (mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
         if (mode == 'gamepad' || mode == 'trackpad')
@@ -68,7 +68,7 @@ export class HID {
          * shortcuts stuff
          */
         this.shortcuts = new Array<Shortcut>();
-        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen, [KeyCode.F11], () => document.documentElement.requestFullscreen().catch(() => {})))
+        this.shortcuts.push(new Shortcut(ShortcutCode.Fullscreen, [KeyCode.F11], requestFullscreen))
 
         /**
          * gamepad stuff
