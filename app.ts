@@ -226,6 +226,16 @@ export class RemoteDesktopClient  {
 
 
 
+    public async ChangeFramerate (framerate: number) {
+        if (this.closed) 
+            return
+        await this.datachannels.get('manual').sendMessage(JSON.stringify({
+            type: "framerate",
+            value: framerate
+        }))
+
+        Log(LogLevel.Debug,`changing bitrate to ${framerate}`)
+    }
     public async ChangeBitrate (bitrate: number) {
         if (this.closed) 
             return
