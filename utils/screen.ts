@@ -32,7 +32,7 @@ export function isFullscreen(): boolean {
 }
 
 // TODO figure out on IOS safari
-export function requestFullscreen()  {
+export async function requestFullscreen()  {
     const elementToFullscreen = document.documentElement
     if (!document.fullscreenElement && elementToFullscreen?.requestFullscreen) {
         elementToFullscreen.requestFullscreen().catch(e => {});

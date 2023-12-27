@@ -70,7 +70,7 @@ class Logger {
     async BroadcastEvent(event: ConnectionEvent, text?: string, source?: string) {
         for (let index = 0; index < this.Notifiers.length; index++) {
             const x = this.Notifiers[index];
-            await x(event,text,source);
+            x(event,text,source);
         }
     }
 
@@ -109,5 +109,5 @@ export function Log(level : LogLevel, message: string) {
 
 export async function LogConnectionEvent(a : ConnectionEvent , text?: string, source? : string) {
     let logger = getLoggerSingleton()
-    await logger.BroadcastEvent(a,text,source);
+    logger.BroadcastEvent(a,text,source);
 }
