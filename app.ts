@@ -116,8 +116,15 @@ export class RemoteDesktopClient  {
                                     },false,ads_period,"audio");
 
             await new Promise(r => setTimeout(r,20000))
-            if (!this.audioConn.connected) 
+            if (!this.audioConn.connected) {
                 this.audioConn.Close()
+                return
+            } else if (this.videoConn.connected) 
+                return
+
+            await new Promise(r => setTimeout(r,20000))
+            if (!this.videoConn.connected && this.audioConn.connected) 
+                await this.HardReset()
         }
 
         const videoEstablishmentLoop = async () => {
@@ -134,8 +141,15 @@ export class RemoteDesktopClient  {
                                     },true,ads_period,"video");
 
             await new Promise(r => setTimeout(r,20000))
-            if (!this.videoConn.connected) 
+            if (!this.videoConn.connected) {
                 this.videoConn.Close()
+                return
+            } else if (this.audioConn.connected) 
+                return
+
+            await new Promise(r => setTimeout(r,20000))
+            if (!this.audioConn.connected && this.videoConn.connected) 
+                await this.HardReset()
         }
 
         Log(LogLevel.Infor,`Started remote desktop connection`);
