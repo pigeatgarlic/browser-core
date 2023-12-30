@@ -331,13 +331,13 @@ export class RemoteDesktopClient  {
 
 
     public Close() {
+        this.closed = true
         this.hid?.Close()
         this.videoConn?.Close()
         this.audioConn?.Close()
         this.video.video.srcObject = null
         this.audio.internal().srcObject = null
         this.datachannels = new Map<ChannelName,DataChannel>()
-        this.closed = true
         Log(LogLevel.Infor,`Closed remote desktop connection`);
     }
 }
