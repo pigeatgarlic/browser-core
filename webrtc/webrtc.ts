@@ -6,15 +6,14 @@ import { MetricCallback } from "../qos/models";
 
 export class WebRTC 
 {
-    public connected           : boolean
+    public  connected       : boolean
     private Conn            : RTCPeerConnection;
     private webrtcConfig    : RTCConfiguration
     private signaling       : SignallingClient
-    private Ads             : Adaptive
+    public  Ads             : Adaptive
 
     private data            : any
     private microphone      : boolean
-    private ads_period     ?: number
 
     private MetricHandler     : MetricCallback
     private TrackHandler      : (a : RTCTrackEvent) => (any)
@@ -28,11 +27,9 @@ export class WebRTC
                 CloseHandler    : () => void,
                 metricHandler   : MetricCallback,
                 no_microphone   : boolean,
-                ads_period     ?: number,
                 data?: any)
     {
         this.connected = false
-        this.ads_period        = ads_period
         this.closeHandler      = CloseHandler
         this.MetricHandler     = metricHandler;
         this.TrackHandler      = TrackHandler;
@@ -97,7 +94,7 @@ export class WebRTC
 
     public SetupConnection(config : RTCConfiguration) {
         this.Conn                          = new RTCPeerConnection(config);
-        this.Ads                           = new Adaptive(this.Conn,this.MetricHandler,this.ads_period);
+        this.Ads                           = new Adaptive(this.Conn,this.MetricHandler);
 
         this.Conn.ondatachannel            = this.channelHandler;    
         this.Conn.ontrack                  = this.TrackHandler;

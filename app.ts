@@ -113,7 +113,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    this.handleAudioMetric.bind(this),
                                         videoMetricCallback:    async () => {},
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this)
-                                    },false,ads_period,"audio");
+                                    },false,"audio");
 
             await new Promise(r => setTimeout(r,20000))
             if (!this.audioConn.connected) {
@@ -138,7 +138,7 @@ export class RemoteDesktopClient  {
                                         audioMetricCallback:    async () => {},
                                         videoMetricCallback:    this.handleVideoMetric.bind(this),
                                         networkMetricCallback:  this.handleNetworkMetric.bind(this),
-                                    },true,ads_period,"video");
+                                    },true,"video");
 
             await new Promise(r => setTimeout(r,20000))
             if (!this.videoConn.connected) {
@@ -243,6 +243,13 @@ export class RemoteDesktopClient  {
 
 
 
+    public async SetPeriod (period: number) {
+        if (this.closed) 
+            return
+
+        Log(LogLevel.Infor,`changing period to ${period}`)
+        this.videoConn?.Ads?.SetPeriod(period)
+    }
     public async ChangeFramerate (framerate: number) {
         if (this.closed) 
             return
@@ -251,7 +258,7 @@ export class RemoteDesktopClient  {
             value: framerate
         }))
 
-        Log(LogLevel.Debug,`changing bitrate to ${framerate}`)
+        Log(LogLevel.Infor,`changing framerate to ${framerate}`)
     }
     public async ChangeBitrate (bitrate: number) {
         if (this.closed) 
@@ -261,7 +268,7 @@ export class RemoteDesktopClient  {
             value: bitrate
         }))
 
-        Log(LogLevel.Debug,`changing bitrate to ${bitrate}`)
+        Log(LogLevel.Infor,`changing bitrate to ${bitrate}`)
     }
 
     public async SwitchDisplay (selection : (displays: string[]) => Promise<{
