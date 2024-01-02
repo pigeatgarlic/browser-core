@@ -29,8 +29,10 @@ export class HID {
             this.touch.mode = 'none'
     }
 
-    private Screen : Screen;
-    private video: HTMLVideoElement
+    last_interact : Date
+    public last_active() : number {
+        return ( new Date().getTime() - this.last_interact.getTime() ) / 1000
+    }
 
     private SendFunc: ((data: string) => void)
 
@@ -47,8 +49,10 @@ export class HID {
         this.disableMouse = false;
         this.scancode = scancode ?? false
 
-        this.touch = new TouchHandler (data => this.SendFunc(data));
-        this.Screen = new Screen();
+        this.touch = new TouchHandler (data => { 
+            this.SendFunc(data)
+            this.last_interact = new Date() 
+        });
         this.intervals = []
         this.pressing_keys = []
 
@@ -155,6 +159,7 @@ export class HID {
                     }).ToString()))
 
                     this.prev_buttons.set(index,pressed);
+                    this.last_interact = new Date() 
                 }
             })
         })
@@ -179,6 +184,7 @@ export class HID {
                     }).ToString()))
 
                     this.prev_sliders.set(index,value)
+                    this.last_interact = new Date() 
                 } 
             })
         })
@@ -199,6 +205,7 @@ export class HID {
                 }).ToString()))
 
                 this.prev_axis.set(index,value)
+                this.last_interact = new Date() 
             })
         })
     };
@@ -299,6 +306,7 @@ export class HID {
             code += 2
         this.SendFunc((new HIDMsg(code,{ key })).ToString());
         this.pressing_keys.push(key)
+        this.last_interact = new Date() 
     }
     private keyup(event: KeyboardEvent) {
         event.preventDefault();
@@ -317,6 +325,7 @@ export class HID {
             code += 2
         this.SendFunc((new HIDMsg(code,{ key })).ToString());
         this.pressing_keys.splice(this.pressing_keys.findIndex(x => x == key))
+        this.last_interact = new Date() 
     }
     private mouseWheel(event: WheelEvent){
         const code = EventCode.MouseWheel
