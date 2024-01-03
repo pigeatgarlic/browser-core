@@ -39,6 +39,7 @@ export class RemoteDesktopClient  {
     // private pipelines           : Map<string,Pipeline>
     private datachannels        : Map<ChannelName,DataChannel>;
 
+    private decoding   : boolean
     private videoConn  : WebRTC
     private audioConn  : WebRTC
     public ready() : boolean {
@@ -61,6 +62,7 @@ export class RemoteDesktopClient  {
                 }) {
 
         this.closed = false
+        this.decoding = false
         this.video = vid;
         this.audio = audio;
         // this.pipelines = new Map<string,Pipeline>();
@@ -88,10 +90,8 @@ export class RemoteDesktopClient  {
         }))
         this.datachannels.set('adaptive', new DataChannel(async (data : string) => {
             const result = JSON.parse(data) as Metrics
-            if (result.type == 'VIDEO' && result.decodefps.every(x => x == 0)) {
-                console.log("black screen detected")
-                this.videoConn.Close()
-            }
+            if (result.type == 'VIDEO')
+                this.decoding = !result.decodefps.every(x => x == 0)
 
             this.HandleMetrics(result)
         }))
@@ -141,7 +141,7 @@ export class RemoteDesktopClient  {
                                     },true,"video");
 
             await new Promise(r => setTimeout(r,20000))
-            if (!this.videoConn.connected) {
+            if (!this.videoConn.connected || !this.decoding) {
                 this.videoConn.Close()
                 return
             } else if (this.audioConn.connected) 
