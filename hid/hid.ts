@@ -48,6 +48,7 @@ export class HID {
         this.disableKeyboard = false;
         this.disableMouse = false;
         this.scancode = scancode ?? false
+        this.last_interact = new Date()
 
         this.touch = new TouchHandler (data => { 
             this.SendFunc(data)
@@ -359,6 +360,8 @@ export class HID {
                 dY: event.movementY * MOUSE_SPEED,
             })).ToString());
         }
+
+        this.last_interact = new Date() 
     }
     private mouseButtonDown(event: MouseEvent){
         if (this.disableMouse) 
