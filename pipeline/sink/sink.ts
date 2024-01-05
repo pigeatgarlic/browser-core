@@ -4,9 +4,10 @@
  * transform.
  * @interface
  */
-export interface MediaStreamSink { // eslint-disable-line no-unused-vars
-    setMediaStream(stream: MediaStream) 
+export interface MediaStreamSink {
+    // eslint-disable-line no-unused-vars
+    setMediaStream(stream: MediaStream);
 
     /** Frees any resources used by this object. */
-    destroy(): void
+    destroy(): void;
 }

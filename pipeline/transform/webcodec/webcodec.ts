@@ -1,17 +1,15 @@
-import { FrameTransform } from "../frametransform"
-
-
+import { FrameTransform } from '../frametransform';
 
 /**
  * Encodes and decodes frames using the WebCodec API.
  * @implements {FrameTransform} in pipeline.js
  */
-export class WebCodecTransform implements FrameTransform{ // eslint-disable-line no-unused-vars
+export class WebCodecTransform implements FrameTransform {
+    // eslint-disable-line no-unused-vars
 
-
-    decoder_ : VideoDecoder
-    encoder_ : VideoEncoder
-    controller_ : TransformStreamDefaultController<VideoFrame>
+    decoder_: VideoDecoder;
+    encoder_: VideoEncoder;
+    controller_: TransformStreamDefaultController<VideoFrame>;
 
     constructor() {
         // Encoder and decoder are initialized in init()
@@ -36,14 +34,14 @@ export class WebCodecTransform implements FrameTransform{ // eslint-disable-line
 
         console.log('[WebCodecTransform] Initializing encoder and decoder');
         this.decoder_ = new VideoDecoder({
-        output: frame => this.handleDecodedFrame(frame),
-        error: this.error
+            output: (frame) => this.handleDecodedFrame(frame),
+            error: this.error
         });
         this.encoder_ = new VideoEncoder({
-        output: frame => this.handleEncodedFrame(frame),
-        error: this.error
+            output: (frame) => this.handleEncodedFrame(frame),
+            error: this.error
         });
-        this.encoder_.configure({codec: 'vp8', width: 640, height: 480});
+        this.encoder_.configure({ codec: 'vp8', width: 640, height: 480 });
 
         // interface VideoDecoderConfig {
         //     codec: string;
@@ -56,17 +54,18 @@ export class WebCodecTransform implements FrameTransform{ // eslint-disable-line
         //     hardwareAcceleration?: HardwarePreference | undefined;
         //     optimizeForLatency?: boolean | undefined;
         // }
-        this.decoder_.configure({codec: 'vp8' });
-
+        this.decoder_.configure({ codec: 'vp8' });
     }
 
     /** @override */
-    async transform(frame: VideoFrame, controller: TransformStreamDefaultController<VideoFrame>) {
+    async transform(
+        frame: VideoFrame,
+        controller: TransformStreamDefaultController<VideoFrame>
+    ) {
         if (!this.encoder_) {
             frame.close();
             return;
         }
-
 
         try {
             this.controller_ = controller;

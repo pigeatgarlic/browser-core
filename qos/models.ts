@@ -1,100 +1,95 @@
 export class VideoMetrics {
-    type : 'video'
+    type: 'video';
     constructor() {
-        this.type = 'video'
+        this.type = 'video';
     }
 
-    frameWidth : number
-    frameHeight : number
+    frameWidth: number;
+    frameHeight: number;
 
-    codecId : string
-    decoderImplementation : string
+    codecId: string;
+    decoderImplementation: string;
 
-    totalSquaredInterFrameDelay : number
-    totalInterFrameDelay : number
+    totalSquaredInterFrameDelay: number;
+    totalInterFrameDelay: number;
 
-    totalProcessingDelay : number
-    totalDecodeTime : number
-    
-    keyFramesDecoded : number
-    framesDecoded : number
-    framesReceived : number
-    
-    headerBytesReceived : number
-    bytesReceived : number
-    packetsReceived : number
-    
-    framesDropped : number
-    packetsLost : number
+    totalProcessingDelay: number;
+    totalDecodeTime: number;
 
-    jitterBufferEmittedCount : number
-    jitterBufferDelay : number
-    jitter : number
+    keyFramesDecoded: number;
+    framesDecoded: number;
+    framesReceived: number;
 
-    timestamp : number
+    headerBytesReceived: number;
+    bytesReceived: number;
+    packetsReceived: number;
+
+    framesDropped: number;
+    packetsLost: number;
+
+    jitterBufferEmittedCount: number;
+    jitterBufferDelay: number;
+    jitter: number;
+
+    timestamp: number;
 }
 
-
 export class AudioMetrics {
-    type : 'audio'
+    type: 'audio';
     constructor() {
-        this.type = 'audio'
+        this.type = 'audio';
     }
 
-    audioLevel : number
-    totalAudioEnergy : number
+    audioLevel: number;
+    totalAudioEnergy: number;
 
-    totalSamplesReceived : number
-    headerBytesReceived : number
+    totalSamplesReceived: number;
+    headerBytesReceived: number;
 
-    bytesReceived : number
-    packetsReceived : number
+    bytesReceived: number;
+    packetsReceived: number;
 
-    packetsLost : number
+    packetsLost: number;
 
-    timestamp : number
+    timestamp: number;
 }
 
 export class NetworkMetrics {
-    type : 'network'
+    type: 'network';
     constructor() {
-        this.type = 'network'
+        this.type = 'network';
     }
 
-    packetsReceived : number
-    packetsSent : number
+    packetsReceived: number;
+    packetsSent: number;
 
-    bytesSent : number
-    bytesReceived : number
+    bytesSent: number;
+    bytesReceived: number;
 
-    availableIncomingBitrate : number
-    availableOutgoingBitrate : number
+    availableIncomingBitrate: number;
+    availableOutgoingBitrate: number;
 
-    currentRoundTripTime : number
-    totalRoundTripTime : number
+    currentRoundTripTime: number;
+    totalRoundTripTime: number;
 
-    localIP : string
-    localPort : number
+    localIP: string;
+    localPort: number;
 
-    remoteIP : string
-    remotePort : number
+    remoteIP: string;
+    remotePort: number;
 
-    priority : number
+    priority: number;
 
-    timestamp : number
+    timestamp: number;
 
-    address : {
-        local : string
-        remote : string
-    }
+    address: {
+        local: string;
+        remote: string;
+    };
 }
-
-
 
 export type MetricCallback = {
-    networkMetricCallback : (data : NetworkMetrics) => Promise<void>,
-    audioMetricCallback   : (data : AudioMetrics) => Promise<void>,
-    videoMetricCallback   : (data : VideoMetrics) => Promise<void>,
-}
-
-
+    networkMetricCallback: (data: NetworkMetrics) => Promise<void>;
+    audioMetricCallback: (data: AudioMetrics) => Promise<void>;
+    videoMetricCallback: (data: VideoMetrics) => Promise<void>;
+};

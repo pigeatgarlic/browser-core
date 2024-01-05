@@ -1,4 +1,4 @@
-import { getBrowser } from "./platform";
+import { getBrowser } from './platform';
 
 declare global {
     interface Document {
@@ -16,30 +16,27 @@ declare global {
     }
 }
 
-
 export function isFullscreen(): boolean {
-    const browser = getBrowser()
+    const browser = getBrowser();
 
-	// TODO return video?.webkitDisplayingFullscreen
-    if (browser == 'Safari') 
-        return false
-	
+    // TODO return video?.webkitDisplayingFullscreen
+    if (browser == 'Safari') return false;
+
     // TODO test on firefox
-    // if (browser == 'Firefox') 
+    // if (browser == 'Firefox')
     //     return document.mozFullScreenElement !== null
 
-    return document.fullscreenElement !== null
+    return document.fullscreenElement !== null;
 }
 
 // TODO figure out on IOS safari
-export async function requestFullscreen()  {
-    const elementToFullscreen = document.documentElement
+export async function requestFullscreen() {
+    const elementToFullscreen = document.documentElement;
     if (!document.fullscreenElement && elementToFullscreen?.requestFullscreen) {
-        elementToFullscreen.requestFullscreen().catch(e => {});
+        elementToFullscreen.requestFullscreen().catch((e) => {});
     } else if (document.exitFullscreen) {
         document.exitFullscreen();
     }
 
-    return
+    return;
 }
-

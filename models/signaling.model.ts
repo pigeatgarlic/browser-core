@@ -1,16 +1,13 @@
 export class UserResponse {
-    Id : number;
+    Id: number;
     Error: string;
-    Data: Map<string,string>
-    constructor(id : number,
-                error: string,
-                data: any)
-    {
-        this.Id = id
-        this.Error = error
-        const Data = new Map<string,string>();
-        Object.keys(data).forEach(function(key) {
-            Data.set(key,data[key]);
+    Data: Map<string, string>;
+    constructor(id: number, error: string, data: any) {
+        this.Id = id;
+        this.Error = error;
+        const Data = new Map<string, string>();
+        Object.keys(data).forEach(function (key) {
+            Data.set(key, data[key]);
         });
         this.Data = Data;
     }
@@ -19,35 +16,36 @@ export class UserResponse {
         const ret = {
             id: this.Id,
             error: this.Error,
-            data: {},
-        }
-        
-        this.Data.forEach((value: string,key: string,map: Map<string,string>) => {
-            ret.data[key] = value;
-        })
+            data: {}
+        };
+
+        this.Data.forEach(
+            (value: string, key: string, map: Map<string, string>) => {
+                ret.data[key] = value;
+            }
+        );
 
         return JSON.stringify(ret);
     }
 }
 
 export class UserRequest {
-    Id : number;
-    Target : string;
-    Headers: Map<string,string>
-    Data: Map<string,string>
+    Id: number;
+    Target: string;
+    Headers: Map<string, string>;
+    Data: Map<string, string>;
 
-    constructor(id : number,
-                target : string,
-                headers: Map<string,string>,
-                data: Map<string,string>)
-    {
-        this.Id = id
-        this.Target = target
-
+    constructor(
+        id: number,
+        target: string,
+        headers: Map<string, string>,
+        data: Map<string, string>
+    ) {
+        this.Id = id;
+        this.Target = target;
 
         this.Headers = headers;
         this.Data = data;
-
     }
 
     public toString(): string {
@@ -55,15 +53,19 @@ export class UserRequest {
             id: this.Id,
             target: this.Target,
             headers: {},
-            data: {},
-        }
-        
-        this.Headers.forEach((value: string,key: string,map: Map<string,string>) => {
-            ret.headers[key] = value;
-        })
-        this.Data.forEach((value: string,key: string,map: Map<string,string>) => {
-            ret.data[key] = value;
-        })
+            data: {}
+        };
+
+        this.Headers.forEach(
+            (value: string, key: string, map: Map<string, string>) => {
+                ret.headers[key] = value;
+            }
+        );
+        this.Data.forEach(
+            (value: string, key: string, map: Map<string, string>) => {
+                ret.data[key] = value;
+            }
+        );
 
         return JSON.stringify(ret);
     }

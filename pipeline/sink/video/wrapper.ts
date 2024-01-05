@@ -1,45 +1,45 @@
-import { Log, LogLevel } from "../../../utils/log";
+import { Log, LogLevel } from '../../../utils/log';
 
 export class VideoWrapper {
-    private isPlaying : boolean;
-    public video : HTMLVideoElement
+    private isPlaying: boolean;
+    public video: HTMLVideoElement;
 
     constructor(vid: HTMLVideoElement) {
-        this.video = vid
-        this.isPlaying = true
+        this.video = vid;
+        this.isPlaying = true;
 
         this.video.onplaying = (() => {
             this.isPlaying = true;
         }).bind(this);
         this.video.onpause = (() => {
             this.isPlaying = false;
-            this.play().catch(e => {
-                Log(LogLevel.Error,`error playing video ${e.message}`)
-            })
+            this.play().catch((e) => {
+                Log(LogLevel.Error, `error playing video ${e.message}`);
+            });
         }).bind(this);
     }
 
     // Play video function
-    async play() {      
+    async play() {
         if (this.video.paused && !this.isPlaying) {
             return await this.video.play();
         }
-    } 
+    }
 
     // Pause video function
-    async pause() {     
+    async pause() {
         if (!this.video.paused && this.isPlaying) {
             this.video.pause();
         }
     }
 
     async assign(provider: MediaProvider) {
-        this.video.srcObject = null
-        this.video.srcObject = provider
-        await this.play()
+        this.video.srcObject = null;
+        this.video.srcObject = provider;
+        await this.play();
     }
 
-    internal() : HTMLVideoElement {
-        return this.video
+    internal(): HTMLVideoElement {
+        return this.video;
     }
 }
