@@ -88,11 +88,10 @@ export class HID {
         this.intervals.push(
             setInterval(
                 () =>
-                (this.relativeMouse =
-                    (document.pointerLockElement != null) ||
-                    ((document as any).mozPointerLockElement != null) ||
-                    ((document as any).webkitPointerLockElement != null)
-                ),
+                    (this.relativeMouse =
+                        document.pointerLockElement != null ||
+                        (document as any).mozPointerLockElement != null ||
+                        (document as any).webkitPointerLockElement != null),
                 100
             )
         );

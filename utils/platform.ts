@@ -51,9 +51,16 @@ export function getBrowser(): Browser {
     return 'unknown';
 }
 
-export function getResolution(): { width: number; height: number } {
+export function getResolution(): {
+    width: number;
+    height: number;
+    screen_width: number;
+    screen_height: number;
+} {
     return {
         width: document.documentElement.scrollWidth,
-        height: document.documentElement.scrollHeight
+        height: document.documentElement.scrollHeight,
+        screen_width: window.screen.width,
+        screen_height: window.screen.height
     };
 }
