@@ -76,7 +76,12 @@ export class HID {
                 ShortcutCode.Fullscreen,
                 [KeyCode.Ctrl, KeyCode.Shift, KeyCode.F],
                 requestFullscreen
-            )
+            ),
+            new Shortcut(
+                ShortcutCode.Fullscreen,
+                [KeyCode.F11],
+                requestFullscreen
+            ),
         );
 
         /**
