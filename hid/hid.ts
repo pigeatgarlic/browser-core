@@ -93,10 +93,10 @@ export class HID {
         this.intervals.push(
             setInterval(
                 () =>
-                    (this.relativeMouse =
-                        document.pointerLockElement != null ||
-                        (document as any).mozPointerLockElement != null ||
-                        (document as any).webkitPointerLockElement != null),
+                (this.relativeMouse =
+                    document.pointerLockElement != null ||
+                    (document as any).mozPointerLockElement != null ||
+                    (document as any).webkitPointerLockElement != null),
                 100
             )
         );
@@ -455,24 +455,19 @@ export class HID {
     }
 
     private disableKeyWhileFullscreen() {
-        const supportsKeyboardLock =
-            //@ts-ignore
-            'keyboard' in navigator && 'lock' in navigator.keyboard;
-
-        if (supportsKeyboardLock) {
-            document.onfullscreenchange = async () => {
-                if (document.fullscreenElement) {
-                    // The magic happens here… 🦄
-                    //@ts-ignore
-                    await navigator.keyboard.lock(['Escape']);
-                    //await navigator.keyboard.lock(['F11']);
-                    console.log('Keyboard locked.');
-                    return;
-                }
-                //@ts-ignore
+        const block = async () => {
+            if (document.fullscreenElement) //@ts-ignore
+                navigator.keyboard.lock(['Escape','F11']);
+            else //@ts-ignore
                 navigator.keyboard.unlock();
-                console.log('Keyboard unlocked.');
-            };
-        } else document.onfullscreenchange = null;
+        }
+
+        try {
+            //@ts-ignore
+            if ('keyboard' in navigator && 'lock' in navigator.keyboard)
+                document.onfullscreenchange = block
+            else
+                document.onfullscreenchange = null;
+        } catch { }
     }
 }
