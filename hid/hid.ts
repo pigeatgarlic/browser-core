@@ -81,7 +81,7 @@ export class HID {
                 ShortcutCode.Fullscreen,
                 [KeyCode.F11],
                 requestFullscreen
-            ),
+            )
         );
 
         /**
@@ -93,10 +93,10 @@ export class HID {
         this.intervals.push(
             setInterval(
                 () =>
-                (this.relativeMouse =
-                    document.pointerLockElement != null ||
-                    (document as any).mozPointerLockElement != null ||
-                    (document as any).webkitPointerLockElement != null),
+                    (this.relativeMouse =
+                        document.pointerLockElement != null ||
+                        (document as any).mozPointerLockElement != null ||
+                        (document as any).webkitPointerLockElement != null),
                 100
             )
         );
@@ -456,18 +456,18 @@ export class HID {
 
     private disableKeyWhileFullscreen() {
         const block = async () => {
-            if (document.fullscreenElement) //@ts-ignore
-                navigator.keyboard.lock(['Escape','F11']);
-            else //@ts-ignore
-                navigator.keyboard.unlock();
-        }
+            if (document.fullscreenElement)
+                //@ts-ignore
+                navigator.keyboard.lock(['Escape', 'F11']);
+            //@ts-ignore
+            else navigator.keyboard.unlock();
+        };
 
         try {
             //@ts-ignore
             if ('keyboard' in navigator && 'lock' in navigator.keyboard)
-                document.onfullscreenchange = block
-            else
-                document.onfullscreenchange = null;
-        } catch { }
+                document.onfullscreenchange = block;
+            else document.onfullscreenchange = null;
+        } catch {}
     }
 }
