@@ -6,14 +6,14 @@ import {
 } from '../utils/log';
 import { Adaptive } from '../qos/qos';
 import { SignalingMessage, SignalingType } from '../signaling/msg';
-import { SignallingClient } from '../signaling/websocket';
+import { SignalingClientTR } from '../signaling/httptr'
 import { MetricCallback } from '../qos/models';
 
 export class WebRTC {
     public connected: boolean;
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
-    private signaling: SignallingClient;
+    private signaling: SignalingClientTR;
     public Ads: Adaptive;
 
     private data: any;
@@ -47,10 +47,9 @@ export class WebRTC {
             LogLevel.Infor,
             `Started connect to signaling server ${signalingURL}`
         );
-        this.signaling = new SignallingClient(
+        this.signaling = new SignalingClientTR(
             signalingURL,
             this.handleIncomingPacket.bind(this),
-            this.SignalingOnClose.bind(this)
         );
     }
 
