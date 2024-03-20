@@ -1,4 +1,3 @@
-import { UserRequest, UserResponse } from '../models/signaling.model';
 import {
     ConnectionEvent,
     Log,
@@ -7,7 +6,7 @@ import {
 } from '../utils/log';
 import { SignalingMessage } from './msg';
 
-export class SignallingClient {
+export class SignalingClient {
     private ping: any;
     private url: string;
     private WebSocketConnection: WebSocket | null;
@@ -25,7 +24,7 @@ export class SignallingClient {
         const internalOnClose = () => {
             this.WebSocketConnection = undefined;
             clearInterval(this.ping);
-            this.PacketHandler = async () => {};
+            this.PacketHandler = async () => { };
             onClose();
         };
 

@@ -1,19 +1,20 @@
+import { MetricCallback } from '../qos/models';
+import { Adaptive } from '../qos/qos';
+import { SignalingClientTR } from '../signaling/httptr';
+import { SignalingMessage, SignalingType } from '../signaling/msg';
+import { SignalingClient } from '../signaling/websocket';
 import {
     ConnectionEvent,
     Log,
     LogConnectionEvent,
     LogLevel
 } from '../utils/log';
-import { Adaptive } from '../qos/qos';
-import { SignalingMessage, SignalingType } from '../signaling/msg';
-import { SignalingClientTR } from '../signaling/httptr'
-import { MetricCallback } from '../qos/models';
 
 export class WebRTC {
     public connected: boolean;
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
-    private signaling: SignalingClientTR;
+    private signaling: SignalingClientTR | SignalingClient;
     public Ads: Adaptive;
 
     private data: any;
@@ -47,10 +48,19 @@ export class WebRTC {
             LogLevel.Infor,
             `Started connect to signaling server ${signalingURL}`
         );
-        this.signaling = new SignalingClientTR(
-            signalingURL,
-            this.handleIncomingPacket.bind(this),
-        );
+
+        const protocol = new URL(signalingURL).protocol
+        if (protocol == 'ws')
+            this.signaling = new SignalingClient(
+                signalingURL,
+                this.handleIncomingPacket.bind(this),
+                this.SignalingOnClose.bind(this)
+            );
+        else if (protocol == 'http' || protocol == 'https')
+            this.signaling = new SignalingClientTR(
+                signalingURL,
+                this.handleIncomingPacket.bind(this),
+            );
     }
 
     private async SignalingOnClose() {
@@ -65,9 +75,9 @@ export class WebRTC {
         this.Ads?.Close();
         this.signaling?.Close();
         this.closeHandler();
-        this.TrackHandler = () => {};
-        this.channelHandler = () => {};
-        this.closeHandler = () => {};
+        this.TrackHandler = () => { };
+        this.channelHandler = () => { };
+        this.closeHandler = () => { };
         LogConnectionEvent(
             ConnectionEvent.WebRTCConnectionClosed,
             'close',
@@ -186,8 +196,8 @@ export class WebRTC {
         };
 
         switch (
-            (eve.target as RTCPeerConnection)
-                .connectionState as RTCPeerConnectionState // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
+        (eve.target as RTCPeerConnection)
+            .connectionState as RTCPeerConnectionState // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
         ) {
             case 'new':
             case 'connecting':
