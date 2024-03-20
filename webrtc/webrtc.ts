@@ -50,7 +50,7 @@ export class WebRTC {
         );
 
         const protocol = new URL(signalingURL).protocol
-        if (protocol == 'ws')
+        if (protocol == 'ws' || protocol == 'wss')
             this.signaling = new SignalingClient(
                 signalingURL,
                 this.handleIncomingPacket.bind(this),
