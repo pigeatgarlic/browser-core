@@ -49,7 +49,7 @@ export class WebRTC {
             `Started connect to signaling server ${signalingURL}`
         );
 
-        const protocol = new URL(signalingURL).protocol
+        const protocol = signalingURL.split('://').at(0)
         if (protocol == 'ws' || protocol == 'wss')
             this.signaling = new SignalingClient(
                 signalingURL,
