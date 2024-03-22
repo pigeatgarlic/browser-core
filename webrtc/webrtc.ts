@@ -1,6 +1,7 @@
 import { MetricCallback } from '../qos/models';
 import { Adaptive } from '../qos/qos';
 import { SignalingClientTR } from '../signaling/httptr';
+import { SignalingClientFetch } from '../signaling/fetch';
 import { SignalingMessage, SignalingType } from '../signaling/msg';
 import { SignalingClient } from '../signaling/websocket';
 import {
@@ -14,7 +15,7 @@ export class WebRTC {
     public connected: boolean;
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
-    private signaling: SignalingClientTR | SignalingClient;
+    private signaling: SignalingClientTR | SignalingClient | SignalingClientFetch;
     public Ads: Adaptive;
 
     private data: any;
@@ -56,7 +57,12 @@ export class WebRTC {
                 this.handleIncomingPacket.bind(this),
                 this.SignalingOnClose.bind(this)
             );
-        else if (protocol == 'http' || protocol == 'https')
+        else if (protocol == 'https')
+            this.signaling = new SignalingClientFetch(
+                signalingURL,
+                this.handleIncomingPacket.bind(this),
+            );
+        else if (protocol == 'http')
             this.signaling = new SignalingClientTR(
                 signalingURL,
                 this.handleIncomingPacket.bind(this),
