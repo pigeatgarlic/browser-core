@@ -1,5 +1,4 @@
 export type SignalingConfig = {
-    audioURL: string;
-    videoURL: string;
-    dataURL: string;
+    audioUrl: string;
+    videoUrl: string;
 };

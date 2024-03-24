@@ -8,12 +8,12 @@ import {
 } from './utils/log';
 import { WebRTC } from './webrtc/webrtc';
 // import { Pipeline } from "./pipeline/pipeline";
-import { getOS, getPlatform } from './utils/platform';
+import { AudioWrapper } from './pipeline/sink/audio/wrapper';
+import { VideoWrapper } from './pipeline/sink/video/wrapper';
 import { AudioMetrics, NetworkMetrics, VideoMetrics } from './qos/models';
 import { SignalingConfig } from './signaling/config';
-import { VideoWrapper } from './pipeline/sink/video/wrapper';
-import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 
+const Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000))
 type ChannelName = 'hid' | 'adaptive' | 'manual';
 
 export type Metrics =
@@ -66,10 +66,8 @@ export class RemoteDesktopClient {
         signalingConfig: SignalingConfig,
         WebRTCConfig: RTCConfiguration,
         {
-            ads_period,
             scancode
         }: {
-            ads_period?: number;
             scancode?: boolean;
         }
     ) {
@@ -118,15 +116,17 @@ export class RemoteDesktopClient {
 
         const webrtcConfig = {
             ...WebRTCConfig,
-            iceTransportPolicy: 'relay' as any
+            iceTransportPolicy: 'all' as any
         };
         const audioEstablishmentLoop = async () => {
             if (this.closed) return;
 
             this.audioConn = new WebRTC(
-                signalingConfig.audioURL,
+                'audio',
+                signalingConfig.audioUrl,
                 webrtcConfig,
-                this.handleIncomingTrack.bind(this),
+                this.AcquireMicrophone.bind(this),
+                this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 audioEstablishmentLoop,
                 {
@@ -134,28 +134,26 @@ export class RemoteDesktopClient {
                     videoMetricCallback: async () => {},
                     networkMetricCallback: this.handleNetworkMetric.bind(this)
                 },
-                false,
-                'audio'
             );
 
-            await new Promise((r) => setTimeout(r, 20000));
+            await Timeout()
             if (!this.audioConn.connected) {
                 this.audioConn.Close();
                 return;
-            } else if (this.videoConn.connected) return;
+            } 
 
-            await new Promise((r) => setTimeout(r, 20000));
-            if (!this.videoConn.connected && this.audioConn.connected)
-                await this.HardReset();
+            Log(LogLevel.Infor, `Successfully establish audio stream`);
         };
 
         const videoEstablishmentLoop = async () => {
             if (this.closed) return;
 
             this.videoConn = new WebRTC(
-                signalingConfig.videoURL,
+                'video',
+                signalingConfig.videoUrl,
                 webrtcConfig,
-                this.handleIncomingTrack.bind(this),
+                async () => { return null },
+                this.handleIncomingVideo.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 videoEstablishmentLoop,
                 {
@@ -163,19 +161,15 @@ export class RemoteDesktopClient {
                     videoMetricCallback: this.handleVideoMetric.bind(this),
                     networkMetricCallback: this.handleNetworkMetric.bind(this)
                 },
-                true,
-                'video'
             );
 
-            await new Promise((r) => setTimeout(r, 20000));
-            if (!this.videoConn.connected || !this.decoding) {
+            await Timeout()
+            if (!this.videoConn.connected) {
                 this.videoConn.Close();
                 return;
-            } else if (this.audioConn.connected) return;
-
-            await new Promise((r) => setTimeout(r, 20000));
-            if (!this.audioConn.connected && this.videoConn.connected)
-                await this.HardReset();
+            } 
+        
+            Log(LogLevel.Infor, `Successfully establish video stream`);
         };
 
         Log(LogLevel.Infor, `Started remote desktop connection`);
@@ -214,13 +208,11 @@ export class RemoteDesktopClient {
             .SetSender(a.channel);
     }
 
-    private async handleIncomingTrack(evt: RTCTrackEvent): Promise<void> {
+    private async handleIncomingVideo(evt: RTCTrackEvent): Promise<void> {
         if (this.closed) return;
         Log(LogLevel.Infor, `Incoming ${evt.track.kind} stream`);
         await LogConnectionEvent(
-            evt.track.kind == 'video'
-                ? ConnectionEvent.ReceivedVideoStream
-                : ConnectionEvent.ReceivedAudioStream,
+            ConnectionEvent.ReceivedVideoStream,
             JSON.stringify(
                 evt.streams.map((x) =>
                     x.getTracks().map((x) => `${x.label} ${x.id}`)
@@ -228,42 +220,64 @@ export class RemoteDesktopClient {
             )
         );
 
-        if (evt.track.kind == 'video') {
-            const stream = evt.streams.find(
-                (val) => val.getVideoTracks().length > 0
-            );
-            if (Number.isNaN(parseInt(stream.id))) {
-                console.log(`blocked video stream ${stream.id}`);
-                return;
-            } // RISK / black screen
+        if (evt.track.kind != 'video') 
+            return
+        
+        const stream = evt.streams.find(
+            (val) => val.getVideoTracks().length > 0
+        );
 
-            await this.video.assign(stream);
-        } else if (evt.track.kind == 'audio') {
-            await this.audio.assign(
-                evt.streams.find((val) => val.getAudioTracks().length > 0)
-            );
+        await this.video.assign(stream);
+        this.ResetVideo();
+    }
+    private async handleIncomingAudio(evt: RTCTrackEvent): Promise<void> {
+        if (this.closed) return;
+        Log(LogLevel.Infor, `Incoming ${evt.track.kind} stream`);
+        await LogConnectionEvent(
+                ConnectionEvent.ReceivedAudioStream,
+            JSON.stringify(
+                evt.streams.map((x) =>
+                    x.getTracks().map((x) => `${x.label} ${x.id}`)
+                )
+            )
+        );
+
+        if (evt.track.kind != 'audio')
+            return
+        
+        await this.audio.assign(
+            evt.streams.find((val) => val.getAudioTracks().length > 0)
+        );
+    }    
+    
+    private async AcquireMicrophone() {
+        // Handles being called several times to update labels. Preserve values.
+        let localStream: MediaStream = null;
+        try {
+            localStream = await navigator.mediaDevices.getUserMedia({
+                audio: true
+            });
+        } catch {
+            console.log(`failed to acquire microphone`);
+            return null;
         }
 
-        if (evt.track.kind == 'video') {
-            this.ResetVideo();
-            // let pipeline = new Pipeline('h264'); // TODO
-            // pipeline.updateSource(evt.streams[0])
-            // pipeline.updateTransform(new WebGLTransform());
-            // pipeline.updateSink(new VideoSink(this.video.current as HTMLVideoElement))
-            // this.pipelines.set(evt.track.id,pipeline);
+        const audioTracks = localStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+            console.log(`Using Audio device: ${audioTracks[0].label}`);
         }
+
+        return localStream
     }
 
     private async handleAudioMetric(a: AudioMetrics): Promise<void> {
         if (this.closed) return;
         await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
-        Log(LogLevel.Debug, `sending ${a.type} metric`);
         this.HandleMetricRaw(a);
     }
     private async handleVideoMetric(a: VideoMetrics): Promise<void> {
         if (this.closed) return;
         await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
-        Log(LogLevel.Debug, `sending ${a.type} metric`);
         this.HandleMetricRaw(a);
     }
     private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {

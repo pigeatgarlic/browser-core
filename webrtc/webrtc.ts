@@ -1,8 +1,8 @@
 import { MetricCallback } from '../qos/models';
 import { Adaptive } from '../qos/qos';
-import { SignalingClientTR } from '../signaling/httptr';
 import { SignalingClientFetch } from '../signaling/fetch';
-import { SignalingMessage, SignalingType } from '../signaling/msg';
+import { SignalingClientTR } from '../signaling/httptr';
+import { msgString, SignalingMessage, SignalingType } from '../signaling/msg';
 import { SignalingClient } from '../signaling/websocket';
 import {
     ConnectionEvent,
@@ -12,42 +12,41 @@ import {
 } from '../utils/log';
 
 export class WebRTC {
+    private id: string;
     public connected: boolean;
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
     private signaling: SignalingClientTR | SignalingClient | SignalingClientFetch;
     public Ads: Adaptive;
 
-    private data: any;
-    private microphone: boolean;
-
     private MetricHandler: MetricCallback;
-    private TrackHandler: (a: RTCTrackEvent) => any;
+    private rtrackHandler: (a: RTCTrackEvent) => any;
+    private ltrackHandler: () => Promise<MediaStream | null>;
     private channelHandler: (a: RTCDataChannelEvent) => any;
     private closeHandler: () => void;
 
     constructor(
+        id: string,
         signalingURL: string,
         webrtcConfig: RTCConfiguration,
+        localTrack: () => Promise<MediaStream | null>,
         TrackHandler: (a: RTCTrackEvent) => Promise<void>,
         channelHandler: (a: RTCDataChannelEvent) => Promise<void>,
         CloseHandler: () => void,
         metricHandler: MetricCallback,
-        no_microphone: boolean,
-        data?: any
     ) {
         this.connected = false;
         this.closeHandler = CloseHandler;
         this.MetricHandler = metricHandler;
-        this.TrackHandler = TrackHandler;
+        this.rtrackHandler = TrackHandler;
+        this.ltrackHandler = localTrack;
         this.channelHandler = channelHandler;
         this.webrtcConfig = webrtcConfig;
-        this.data = data;
-        this.microphone = !no_microphone;
+        this.id = id;
 
         Log(
             LogLevel.Infor,
-            `Started connect to signaling server ${signalingURL}`
+            `Started connect to signaling server ${id}`
         );
 
         const protocol = signalingURL.split('://').at(0)
@@ -76,22 +75,28 @@ export class WebRTC {
     }
 
     public Close() {
+        Log(
+            LogLevel.Infor,
+            `Closed webrtc connection ${this.id}`
+        );
         this.connected = false;
         this.Conn?.close();
         this.Ads?.Close();
         this.signaling?.Close();
-        this.closeHandler();
-        this.TrackHandler = () => { };
+        const close = this.closeHandler;
+        this.rtrackHandler = () => { };
         this.channelHandler = () => { };
         this.closeHandler = () => { };
+        close()
         LogConnectionEvent(
             ConnectionEvent.WebRTCConnectionClosed,
             'close',
-            this.data as string
+            this.id as string
         );
     }
 
     private async handleIncomingPacket(pkt: SignalingMessage) {
+        Log(LogLevel.Debug,this.id +' signaling out : ' + msgString(pkt))
         switch (pkt.type) {
             case SignalingType.TYPE_SDP:
                 LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage);
@@ -127,37 +132,18 @@ export class WebRTC {
         this.Ads = new Adaptive(this.Conn, this.MetricHandler);
 
         this.Conn.ondatachannel = this.channelHandler;
-        this.Conn.ontrack = this.TrackHandler;
+        this.Conn.ontrack = this.rtrackHandler;
         this.Conn.onicecandidate = this.onICECandidates.bind(this);
         this.Conn.onconnectionstatechange =
             this.onConnectionStateChange.bind(this);
     }
 
-    private async AcquireMicrophone() {
-        // Handles being called several times to update labels. Preserve values.
-        let localStream: MediaStream = null;
-        try {
-            localStream = await navigator.mediaDevices.getUserMedia({
-                audio: true
-            });
-        } catch {
-            console.log(`failed to acquire microphone`);
-            return;
-        }
 
-        const audioTracks = localStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-            console.log(`Using Audio device: ${audioTracks[0].label}`);
-        }
-
-        const tracks = localStream.getTracks();
-        await this.AddLocalTrack(localStream, tracks);
-    }
 
     private async AddLocalTrack(
         stream: MediaStream,
-        tracks: MediaStreamTrack[]
     ) {
+        const tracks = stream.getTracks();
         console.log('Adding Local Stream to peer connection');
 
         tracks.forEach((track) => this.Conn.addTrack(track, stream));
@@ -176,7 +162,6 @@ export class WebRTC {
         const selected = codecs.find((x) => x.mimeType == codec.mimeType);
 
         transceiver.setCodecPreferences([selected]);
-        console.log('Preferred microphone codec', selected);
     }
 
     private onConnectionStateChange(eve: Event) {
@@ -187,18 +172,18 @@ export class WebRTC {
             LogConnectionEvent(
                 ConnectionEvent.WebRTCConnectionDoneChecking,
                 'done',
-                this.data as string
+                this.id as string
             );
-            Log(LogLevel.Infor, 'webrtc connection established');
+            Log(LogLevel.Infor, this.id +' webrtc connection established');
         };
 
         const connectingHandler = () => {
             LogConnectionEvent(
                 ConnectionEvent.WebRTCConnectionChecking,
                 'connecting',
-                this.data as string
+                this.id as string
             );
-            Log(LogLevel.Infor, 'webrtc connection checking');
+            Log(LogLevel.Infor, this.id +' webrtc connection checking');
         };
 
         switch (
@@ -227,7 +212,7 @@ export class WebRTC {
             const candidate = new RTCIceCandidate(ice);
             await this.Conn.addIceCandidate(candidate);
         } catch (error) {
-            Log(LogLevel.Error, error);
+            Log(LogLevel.Error, this.id + ' ' + error);
         }
     }
 
@@ -236,17 +221,14 @@ export class WebRTC {
 
         try {
             await this.Conn.setRemoteDescription(sdp);
-            if (this.microphone)
-                try {
-                    await this.AcquireMicrophone();
-                } catch {
-                    console.log('failed to acquire microphone');
-                }
-
+            const track = await this.ltrackHandler();
+            if (track != null) 
+                await this.AddLocalTrack(track)
+                
             const ans = await this.Conn.createAnswer();
             await this.onLocalDescription(ans);
         } catch (error) {
-            Log(LogLevel.Error, error);
+            Log(LogLevel.Error, this.id + ' ' + error);
         }
     }
 
@@ -256,35 +238,43 @@ export class WebRTC {
         if (!this.Conn.localDescription) return;
 
         const init = this.Conn.localDescription;
-        this.signaling.SignallingSend({
+        const out : SignalingMessage = {
             type: SignalingType.TYPE_SDP,
             sdp: {
                 Type: init.type,
                 SDPData: init.sdp
             }
-        });
+        }
+        Log(LogLevel.Debug,this.id + ' signaling out : ' + msgString(out))
+        this.signaling.SignallingSend(out);
     }
 
     private onICECandidates(event: RTCPeerConnectionIceEvent) {
         if (event.candidate == null) {
-            Log(LogLevel.Infor, 'ICE Candidate was null, done');
+            Log(LogLevel.Infor, this.id +' ICE Candidate was null, done');
             return;
         }
 
         const init = event.candidate.toJSON();
-        this.signaling.SignallingSend({
+        const out : SignalingMessage = {
             type: SignalingType.TYPE_ICE,
             ice: {
                 SDPMid: init.sdpMid,
                 Candidate: init.candidate,
                 SDPMLineIndex: init.sdpMLineIndex
             }
-        });
+        }
+        Log(LogLevel.Debug,this.id + ' signaling out : ' + msgString(out))
+        this.signaling.SignallingSend(out);
     }
 
-    private DoneHandshake() {
-        this.signaling.SignallingSend({
+    private async DoneHandshake() {
+        const out : SignalingMessage = {
             type: SignalingType.END
-        });
+        }
+        Log(LogLevel.Debug,this.id + ' signaling out : ' + msgString(out))
+        this.signaling.SignallingSend(out);
+        await new Promise(r => setTimeout(r,1000))
+        this.signaling.Close()
     }
 }

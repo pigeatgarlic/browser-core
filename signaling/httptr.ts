@@ -1,4 +1,4 @@
-import { Body, ResponseType, getClient } from '@tauri-apps/api/http';
+import { Body, getClient, ResponseType } from '@tauri-apps/api/http';
 import {
     ConnectionEvent,
     Log,
@@ -27,7 +27,7 @@ export class SignalingClientTR {
         (async () => {
             const client = await getClient()
             while (this.run) {
-                await new Promise(r => setTimeout(r, 1000))
+                await new Promise(r => setTimeout(r, 300))
                 const copy = this.outcoming
                 this.outcoming = []
 
