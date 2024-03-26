@@ -147,7 +147,7 @@ export class RemoteDesktopClient {
             this.videoConn = new WebRTC(
                 'video',
                 signalingConfig.videoUrl,
-                webrtcConfig,
+                WebRTCConfig,
                 async () => { return null },
                 this.handleIncomingVideo.bind(this),
                 this.handleIncomingDataChannel.bind(this),
