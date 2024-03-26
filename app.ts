@@ -114,17 +114,13 @@ export class RemoteDesktopClient {
             })
         );
 
-        const webrtcConfig = {
-            ...WebRTCConfig,
-            iceTransportPolicy: 'all' as any
-        };
         const audioEstablishmentLoop = async () => {
             if (this.closed) return;
 
             this.audioConn = new WebRTC(
                 'audio',
                 signalingConfig.audioUrl,
-                webrtcConfig,
+                WebRTCConfig,
                 this.AcquireMicrophone.bind(this),
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
