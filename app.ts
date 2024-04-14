@@ -7,59 +7,59 @@ import {
     LogLevel
 } from './utils/log';
 import { WebRTC } from './webrtc/webrtc';
-// import { Pipeline } from "./pipeline/pipeline";
 import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 import { VideoWrapper } from './pipeline/sink/video/wrapper';
-import { AudioMetrics, NetworkMetrics, VideoMetrics } from './qos/models';
 import { SignalingConfig } from './signaling/config';
 
 const Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000))
-type ChannelName = 'hid' | 'adaptive' | 'manual';
+type ChannelName = 'hid' | 'manual';
 
 export type Metrics =
     | {
-          type: 'VIDEO';
-          receivefps: number[];
-          decodefps: number[];
-          packetloss: number[];
-          bandwidth: number[];
-          buffer: number[];
-      }
+        type: 'VIDEO';
+        receivefps: number[];
+        decodefps: number[];
+        packetloss: number[];
+        bandwidth: number[];
+        buffer: number[];
+    }
     | {
-          type: 'AUDIO';
-      }
+        type: 'AUDIO';
+    }
     | {
-          type: 'NETWORK';
-      }
+        type: 'NETWORK';
+    }
     | {
-          type: 'FRAME_LOSS';
-      };
-
-export class RemoteDesktopClient {
-    private displays: {
-        timestamp: Date;
-        value: string[];
+        type: 'FRAME_LOSS';
     };
 
+export class RemoteDesktopClient {
     public hid: HID;
     public video: VideoWrapper;
     public audio: AudioWrapper;
-    // private pipelines           : Map<string,Pipeline>
-    private datachannels: Map<ChannelName, DataChannel>;
+    private missing_frame : any 
+    private waitForNewFrame() {
+        if (this.missing_frame != undefined) 
+            clearTimeout(this.missing_frame)
 
-    private decoding: boolean;
+        const IDR = () => {
+            this.ResetVideo.bind(this)
+            this.waitForNewFrame()
+        }
+
+        this.missing_frame = setTimeout(IDR.bind(this), 200)
+    }
+
     private videoConn: WebRTC;
     private audioConn: WebRTC;
+    private datachannels: Map<ChannelName, DataChannel>;
+
     public ready(): boolean {
         return this.videoConn.connected && this.audioConn.connected;
     }
 
     private closed: boolean;
 
-    public HandleMetrics: (metrics: Metrics) => Promise<void>;
-    public HandleMetricRaw: (
-        data: NetworkMetrics | VideoMetrics | AudioMetrics
-    ) => Promise<void>;
     constructor(
         vid: VideoWrapper,
         audio: AudioWrapper,
@@ -72,47 +72,26 @@ export class RemoteDesktopClient {
         }
     ) {
         this.closed = false;
-        this.decoding = false;
         this.video = vid;
         this.audio = audio;
-        // this.pipelines = new Map<string,Pipeline>();
-        this.HandleMetrics = async () => {};
-        this.HandleMetricRaw = async () => {};
-        this.displays = {
-            timestamp: new Date(),
-            value: []
-        };
 
         this.hid = null;
         this.datachannels = new Map<ChannelName, DataChannel>();
-        this.datachannels.set(
-            'manual',
-            new DataChannel(async (data: string) => {
-                const result = JSON.parse(data) as {
-                    type: 'displays';
-                    value: any;
-                };
-
-                if ((result.type = 'displays')) {
-                    this.displays = {
-                        timestamp: new Date(),
-                        value: result.value.filter(
-                            (x) => x.length > 0
-                        ) as string[]
-                    };
-                }
-            })
+        this.datachannels.set( 'manual',
+            new DataChannel(async (data: string) => { })
         );
-        this.datachannels.set(
-            'adaptive',
+        this.datachannels.set( 'hid',
             new DataChannel(async (data: string) => {
-                const result = JSON.parse(data) as Metrics;
-                if (result.type == 'VIDEO')
-                    this.decoding = !result.decodefps.every((x) => x == 0);
-
-                this.HandleMetrics(result);
+                if (this.closed) return;
+                this.hid.handleIncomingData(data);
             })
-        );
+        );        
+
+        const hid_channel = this.datachannels.get('hid');
+        this.hid = new HID((data: string) => {
+            if (this.closed) return;
+            hid_channel.sendMessage(data);
+        }, scancode);
 
         const audioEstablishmentLoop = async () => {
             if (this.closed) return;
@@ -124,19 +103,14 @@ export class RemoteDesktopClient {
                 this.AcquireMicrophone.bind(this),
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
-                audioEstablishmentLoop,
-                {
-                    audioMetricCallback: this.handleAudioMetric.bind(this),
-                    videoMetricCallback: async () => {},
-                    networkMetricCallback: this.handleNetworkMetric.bind(this)
-                },
+                audioEstablishmentLoop, 
             );
 
             await Timeout()
             if (!this.audioConn.connected) {
                 this.audioConn.Close();
                 return;
-            } 
+            }
 
             Log(LogLevel.Infor, `Successfully establish audio stream`);
         };
@@ -152,41 +126,20 @@ export class RemoteDesktopClient {
                 this.handleIncomingVideo.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 videoEstablishmentLoop,
-                {
-                    audioMetricCallback: async () => {},
-                    videoMetricCallback: this.handleVideoMetric.bind(this),
-                    networkMetricCallback: this.handleNetworkMetric.bind(this)
-                },
             );
 
             await Timeout()
             if (!this.videoConn.connected) {
                 this.videoConn.Close();
                 return;
-            } 
-        
+            }
+
             Log(LogLevel.Infor, `Successfully establish video stream`);
         };
 
         Log(LogLevel.Infor, `Started remote desktop connection`);
         audioEstablishmentLoop();
         videoEstablishmentLoop();
-
-        this.datachannels.set(
-            'hid',
-            new DataChannel(async (data: string) => {
-                if (this.closed) return;
-
-                this.hid.handleIncomingData(data);
-            })
-        );
-
-        const hid_channel = this.datachannels.get('hid');
-        this.hid = new HID((data: string) => {
-            if (this.closed) return;
-
-            hid_channel.sendMessage(data);
-        }, scancode);
     }
 
     private async handleIncomingDataChannel(
@@ -204,6 +157,11 @@ export class RemoteDesktopClient {
             .SetSender(a.channel);
     }
 
+    private async videoTransform(encodedFrame: RTCEncodedVideoFrame, controller: TransformStreamDefaultController<RTCEncodedVideoFrame>) {
+        controller.enqueue(encodedFrame)
+        this.waitForNewFrame()
+    }
+
     private async handleIncomingVideo(evt: RTCTrackEvent): Promise<void> {
         if (this.closed) return;
         Log(LogLevel.Infor, `Incoming ${evt.track.kind} stream`);
@@ -216,21 +174,35 @@ export class RemoteDesktopClient {
             )
         );
 
-        if (evt.track.kind != 'video') 
+        if (evt.track.kind != 'video')
             return
-        
+
         const stream = evt.streams.find(
             (val) => val.getVideoTracks().length > 0
         );
 
+        console.log(`incoming video stream ${stream.id}`);
+        if (Number.isNaN(parseInt(stream.id))) {
+            console.log(`blocked video stream ${stream.id}`);
+            return;
+        } // RISK / black screen
+
+        const frameStreams = (evt.receiver as any).createEncodedStreams();
+        frameStreams.readable
+            .pipeThrough(new TransformStream({ transform : this.videoTransform.bind(this) }))
+            .pipeTo(frameStreams.writable);
+
         await this.video.assign(stream);
-        this.ResetVideo();
+        await new Promise(x => setTimeout(x,1000))
+        this.waitForNewFrame()
+        this.ResetVideo()
     }
+
     private async handleIncomingAudio(evt: RTCTrackEvent): Promise<void> {
         if (this.closed) return;
         Log(LogLevel.Infor, `Incoming ${evt.track.kind} stream`);
         await LogConnectionEvent(
-                ConnectionEvent.ReceivedAudioStream,
+            ConnectionEvent.ReceivedAudioStream,
             JSON.stringify(
                 evt.streams.map((x) =>
                     x.getTracks().map((x) => `${x.label} ${x.id}`)
@@ -240,12 +212,12 @@ export class RemoteDesktopClient {
 
         if (evt.track.kind != 'audio')
             return
-        
+
         await this.audio.assign(
             evt.streams.find((val) => val.getAudioTracks().length > 0)
         );
-    }    
-    
+    }
+
     private async AcquireMicrophone() {
         // Handles being called several times to update labels. Preserve values.
         let localStream: MediaStream = null;
@@ -266,29 +238,6 @@ export class RemoteDesktopClient {
         return localStream
     }
 
-    private async handleAudioMetric(a: AudioMetrics): Promise<void> {
-        if (this.closed) return;
-        await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
-        this.HandleMetricRaw(a);
-    }
-    private async handleVideoMetric(a: VideoMetrics): Promise<void> {
-        if (this.closed) return;
-        await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
-        this.HandleMetricRaw(a);
-    }
-    private async handleNetworkMetric(a: NetworkMetrics): Promise<void> {
-        if (this.closed) return;
-        // await this.datachannels.get('adaptive').sendMessage(JSON.stringify(a));
-        // Log(LogLevel.Debug,`sending ${a.type} metric`)
-        this.HandleMetricRaw(a);
-    }
-
-    public async SetPeriod(period: number) {
-        if (this.closed) return;
-
-        Log(LogLevel.Infor, `changing period to ${period}`);
-        this.videoConn?.Ads?.SetPeriod(period);
-    }
     public async ChangeFramerate(framerate: number) {
         if (this.closed) return;
         await this.datachannels.get('manual').sendMessage(
@@ -312,35 +261,6 @@ export class RemoteDesktopClient {
         Log(LogLevel.Infor, `changing bitrate to ${bitrate}`);
     }
 
-    public async SwitchDisplay(
-        selection: (displays: string[]) => Promise<{
-            display: string;
-            width: number;
-            height: number;
-            framerate: number;
-        }>
-    ) {
-        if (this.closed) return;
-        const timestamp = new Date();
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'displays',
-                value: ''
-            })
-        );
-
-        while (this.displays.timestamp < timestamp)
-            await new Promise((r) => setTimeout(r, 100));
-
-        const result = await selection(this.displays.value);
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'display',
-                value: result
-            })
-        );
-    }
-
     public async PointerVisible(enable: boolean) {
         if (this.closed) return;
         await this.datachannels.get('manual').sendMessage(
@@ -355,22 +275,12 @@ export class RemoteDesktopClient {
         if (this.closed) return;
         await this.datachannels.get('manual').sendMessage(
             JSON.stringify({
-                type: 'reset'
+                type: 'reset',
+                value: 1
             })
         );
 
-        Log(LogLevel.Debug, `gen I frame`);
-    }
-
-    public async ResetAudio() {
-        if (this.closed) return;
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'audio-reset'
-            })
-        );
-
-        Log(LogLevel.Debug, `reset audio pipeline`);
+        Log(LogLevel.Infor, `gen I frame`);
     }
 
     public async HardReset() {
@@ -388,6 +298,7 @@ export class RemoteDesktopClient {
 
     public Close() {
         this.closed = true;
+        clearTimeout(this.missing_frame)
         this.hid?.Close();
         this.videoConn?.Close();
         this.audioConn?.Close();

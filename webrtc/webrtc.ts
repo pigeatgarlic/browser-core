@@ -1,5 +1,3 @@
-import { MetricCallback } from '../qos/models';
-import { Adaptive } from '../qos/qos';
 import { SignalingClientFetch } from '../signaling/fetch';
 import { SignalingClientTR } from '../signaling/httptr';
 import { msgString, SignalingMessage, SignalingType } from '../signaling/msg';
@@ -17,9 +15,7 @@ export class WebRTC {
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
     private signaling: SignalingClientTR | SignalingClient | SignalingClientFetch;
-    public Ads: Adaptive;
 
-    private MetricHandler: MetricCallback;
     private rtrackHandler: (a: RTCTrackEvent) => any;
     private ltrackHandler: () => Promise<MediaStream | null>;
     private channelHandler: (a: RTCDataChannelEvent) => any;
@@ -33,11 +29,9 @@ export class WebRTC {
         TrackHandler: (a: RTCTrackEvent) => Promise<void>,
         channelHandler: (a: RTCDataChannelEvent) => Promise<void>,
         CloseHandler: () => void,
-        metricHandler: MetricCallback,
     ) {
         this.connected = false;
         this.closeHandler = CloseHandler;
-        this.MetricHandler = metricHandler;
         this.rtrackHandler = TrackHandler;
         this.ltrackHandler = localTrack;
         this.channelHandler = channelHandler;
@@ -62,7 +56,7 @@ export class WebRTC {
                 this.handleIncomingPacket.bind(this),
             );
         else if (protocol == 'http')
-            this.signaling = new SignalingClientTR(
+            this.signaling = new SignalingClientFetch(
                 signalingURL,
                 this.handleIncomingPacket.bind(this),
             );
@@ -81,7 +75,6 @@ export class WebRTC {
         );
         this.connected = false;
         this.Conn?.close();
-        this.Ads?.Close();
         this.signaling?.Close();
         const close = this.closeHandler;
         this.rtrackHandler = () => { };
@@ -129,8 +122,6 @@ export class WebRTC {
 
     public SetupConnection(config: RTCConfiguration) {
         this.Conn = new RTCPeerConnection(config);
-        this.Ads = new Adaptive(this.Conn, this.MetricHandler);
-
         this.Conn.ondatachannel = this.channelHandler;
         this.Conn.ontrack = this.rtrackHandler;
         this.Conn.onicecandidate = this.onICECandidates.bind(this);
