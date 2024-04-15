@@ -38,16 +38,16 @@ export class RemoteDesktopClient {
     public video: VideoWrapper;
     public audio: AudioWrapper;
     private missing_frame : any 
-    private waitForNewFrame() {
+    private async waitForNewFrame() {
         if (this.missing_frame != undefined) 
             clearTimeout(this.missing_frame)
 
         const IDR = () => {
-            this.ResetVideo.bind(this)
+            this.ResetVideo()
             this.waitForNewFrame()
         }
 
-        this.missing_frame = setTimeout(IDR.bind(this), 200)
+        this.missing_frame = setTimeout(IDR, 200)
     }
 
     private videoConn: WebRTC;
@@ -158,8 +158,8 @@ export class RemoteDesktopClient {
     }
 
     private async videoTransform(encodedFrame: RTCEncodedVideoFrame, controller: TransformStreamDefaultController<RTCEncodedVideoFrame>) {
-        controller.enqueue(encodedFrame)
         this.waitForNewFrame()
+        controller.enqueue(encodedFrame)
     }
 
     private async handleIncomingVideo(evt: RTCTrackEvent): Promise<void> {
