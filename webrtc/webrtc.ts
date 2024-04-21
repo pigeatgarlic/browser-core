@@ -15,6 +15,7 @@ export class WebRTC {
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
     private signaling: SignalingClientTR | SignalingClient | SignalingClientFetch;
+    private watch_loop : any
 
     private rtrackHandler: (a: RTCTrackEvent) => any;
     private ltrackHandler: () => Promise<MediaStream | null>;
@@ -28,6 +29,7 @@ export class WebRTC {
         localTrack: () => Promise<MediaStream | null>,
         TrackHandler: (a: RTCTrackEvent) => Promise<void>,
         channelHandler: (a: RTCDataChannelEvent) => Promise<void>,
+        MetricsHandler: (val: any) => void,
         CloseHandler: () => void,
     ) {
         this.connected = false;
@@ -60,6 +62,16 @@ export class WebRTC {
                 signalingURL,
                 this.handleIncomingPacket.bind(this),
             );
+
+        this.watch_loop = setInterval(async () => {
+            if (this.Conn == undefined) 
+                return
+            
+            const stats = await this.Conn.getStats()
+            stats.forEach(val => val.type == 'inbound-rtp' 
+                ?  MetricsHandler(val) 
+                : () => {})
+        },1000)
     }
 
     private async SignalingOnClose() {
@@ -76,16 +88,17 @@ export class WebRTC {
         this.connected = false;
         this.Conn?.close();
         this.signaling?.Close();
-        const close = this.closeHandler;
         this.rtrackHandler = () => { };
         this.channelHandler = () => { };
-        this.closeHandler = () => { };
-        close()
+        clearInterval(this.watch_loop)
         LogConnectionEvent(
             ConnectionEvent.WebRTCConnectionClosed,
             'close',
             this.id as string
         );
+        const close = this.closeHandler;
+        this.closeHandler = () => { };
+        close()
     }
 
     private async handleIncomingPacket(pkt: SignalingMessage) {
@@ -179,7 +192,7 @@ export class WebRTC {
 
         switch (
         (eve.target as RTCPeerConnection)
-            .connectionState as RTCPeerConnectionState // "closed" | "connected" | "connecting" | "disconnected" | "failed" | "new";
+            .connectionState as RTCPeerConnectionState 
         ) {
             case 'new':
             case 'connecting':

@@ -1,5 +1,8 @@
 import { DataChannel } from './datachannel/datachannel';
 import { HID } from './hid/hid';
+import { AudioWrapper } from './pipeline/sink/audio/wrapper';
+import { VideoWrapper } from './pipeline/sink/video/wrapper';
+import { SignalingConfig } from './signaling/config';
 import {
     ConnectionEvent,
     Log,
@@ -7,9 +10,6 @@ import {
     LogLevel
 } from './utils/log';
 import { WebRTC } from './webrtc/webrtc';
-import { AudioWrapper } from './pipeline/sink/audio/wrapper';
-import { VideoWrapper } from './pipeline/sink/video/wrapper';
-import { SignalingConfig } from './signaling/config';
 
 const Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000))
 type ChannelName = 'hid' | 'manual';
@@ -93,6 +93,9 @@ export class RemoteDesktopClient {
             hid_channel.sendMessage(data);
         }, scancode);
 
+        const handle_metrics = (val: any) =>{
+        }
+
         const audioEstablishmentLoop = async () => {
             if (this.closed) return;
 
@@ -103,6 +106,7 @@ export class RemoteDesktopClient {
                 this.AcquireMicrophone.bind(this),
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
+                handle_metrics.bind(this),
                 audioEstablishmentLoop, 
             );
 
@@ -125,6 +129,7 @@ export class RemoteDesktopClient {
                 async () => { return null },
                 this.handleIncomingVideo.bind(this),
                 this.handleIncomingDataChannel.bind(this),
+                handle_metrics.bind(this),
                 videoEstablishmentLoop,
             );
 
