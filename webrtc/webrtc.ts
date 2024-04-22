@@ -134,7 +134,7 @@ export class WebRTC {
     }
 
     public SetupConnection(config: RTCConfiguration) {
-        this.Conn = new RTCPeerConnection(config);
+        this.Conn = new RTCPeerConnection({...config,encodedInsertableStreams: true} as any);
         this.Conn.ondatachannel = this.channelHandler;
         this.Conn.ontrack = this.rtrackHandler;
         this.Conn.onicecandidate = this.onICECandidates.bind(this);

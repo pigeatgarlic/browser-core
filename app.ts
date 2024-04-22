@@ -198,9 +198,11 @@ export class RemoteDesktopClient {
             .pipeTo(frameStreams.writable);
 
         await this.video.assign(stream);
-        await new Promise(x => setTimeout(x,1000))
         this.waitForNewFrame()
-        this.ResetVideo()
+        for (let index = 0; index < 5; index++) {
+            await new Promise(x => setTimeout(x,2000))
+            this.ResetVideo()
+        }
     }
 
     private async handleIncomingAudio(evt: RTCTrackEvent): Promise<void> {
