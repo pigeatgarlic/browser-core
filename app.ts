@@ -162,6 +162,9 @@ export class RemoteDesktopClient {
             .SetSender(a.channel);
     }
 
+    private async audioTransform(encodedFrame: RTCEncodedAudioFrame, controller: TransformStreamDefaultController<RTCEncodedAudioFrame>) {
+        controller.enqueue(encodedFrame)
+    }
     private async videoTransform(encodedFrame: RTCEncodedVideoFrame, controller: TransformStreamDefaultController<RTCEncodedVideoFrame>) {
         this.waitForNewFrame()
         controller.enqueue(encodedFrame)
@@ -220,9 +223,13 @@ export class RemoteDesktopClient {
         if (evt.track.kind != 'audio')
             return
 
-        await this.audio.assign(
-            evt.streams.find((val) => val.getAudioTracks().length > 0)
-        );
+        const stream = evt.streams.find((val) => val.getAudioTracks().length > 0)
+        const frameStreams = (evt.receiver as any).createEncodedStreams();
+        frameStreams.readable
+            .pipeThrough(new TransformStream({ transform : this.audioTransform.bind(this) }))
+            .pipeTo(frameStreams.writable);
+
+        await this.audio.assign(stream);
     }
 
     private async AcquireMicrophone() {
