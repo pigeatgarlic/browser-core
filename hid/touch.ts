@@ -14,17 +14,19 @@ export class TouchHandler {
 
     public mode: 'gamepad' | 'trackpad' | 'none';
 
-    private running : any;
-    public SendFunc: (data: string) => void;
-    constructor(mode : 'gamepad' | 'trackpad' | 'none', Sendfunc: (data: string) => void) {
+    private running: any;
+    private SendFunc: (data: string) => void;
+    private video: HTMLVideoElement
+    constructor(mode: 'gamepad' | 'trackpad' | 'none', video: HTMLVideoElement, Sendfunc: (data: string) => void) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
         this.mode = mode
+        this.video = video
         document.ontouchstart = this.handleStart.bind(this);
         document.ontouchend = this.handleEnd.bind(this);
         document.ontouchmove = this.handleMove.bind(this);
-        this.running = setInterval(this.ListenEvents.bind(this),100);
+        this.running = setInterval(this.ListenEvents.bind(this), 100);
     }
 
     public Close() {
@@ -37,28 +39,28 @@ export class TouchHandler {
     private async ListenEvents() {
         switch (this.events.pop()) {
             case 'short_right':
-            this.SendFunc(
-                new HIDMsg(EventCode.MouseDown, {
-                    button: '2'
-                }).ToString()
-            );
-            this.SendFunc(
-                new HIDMsg(EventCode.MouseUp, {
-                    button: '2'
-                }).ToString()
-            );
+                this.SendFunc(
+                    new HIDMsg(EventCode.MouseDown, {
+                        button: '2'
+                    }).ToString()
+                );
+                this.SendFunc(
+                    new HIDMsg(EventCode.MouseUp, {
+                        button: '2'
+                    }).ToString()
+                );
                 break;
             case 'short_generic':
-            this.SendFunc(
-                new HIDMsg(EventCode.MouseDown, {
-                    button: '0'
-                }).ToString()
-            );
-            this.SendFunc(
-                new HIDMsg(EventCode.MouseUp, {
-                    button: '0'
-                }).ToString()
-            );
+                this.SendFunc(
+                    new HIDMsg(EventCode.MouseDown, {
+                        button: '0'
+                    }).ToString()
+                );
+                this.SendFunc(
+                    new HIDMsg(EventCode.MouseUp, {
+                        button: '0'
+                    }).ToString()
+                );
                 break;
             default:
                 break;
@@ -66,6 +68,9 @@ export class TouchHandler {
     }
 
     private handleStart = (evt: TouchEvent) => {
+        if (evt.target == this.video)
+            evt.preventDefault()
+
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
             const key = touches[i].identifier;
@@ -73,6 +78,9 @@ export class TouchHandler {
         }
     };
     private handleEnd = (evt: TouchEvent) => {
+        if (evt.target == this.video)
+            evt.preventDefault()
+
         const touches = evt.changedTouches;
 
         for (let i = 0; i < touches.length; i++) {
@@ -163,13 +171,10 @@ export class TouchHandler {
                     deltaX: -wheelValue
                 }).ToString()
             );
-            await new Promise((r) => setTimeout(r, 30));
         } else {
             // Calculate the vertical scroll amount based on touch movement
-            console.log(touches);
             const deltaY = (touches[0].clientY - touches[1].clientY) * 0.7;
             const wheelValue = deltaY; // You can adjust the value as needed
-            console.log(deltaY);
 
             // Send a mouse wheel event with the vertical scroll value
             this.SendFunc(
@@ -177,7 +182,6 @@ export class TouchHandler {
                     deltaY: -wheelValue
                 }).ToString()
             );
-            await new Promise((r) => setTimeout(r, 30));
         }
     }
 
@@ -199,7 +203,7 @@ export class TouchHandler {
 
         const group =
             prev_touch.touchStart.clientX >
-            document.documentElement.clientWidth / 2
+                document.documentElement.clientWidth / 2
                 ? 'right'
                 : 'left';
 
@@ -262,7 +266,6 @@ export class TouchHandler {
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseWheel, { deltaY: 40 }).ToString()
                 );
-                await new Promise((r) => setTimeout(r, 30));
             }
         } else if (
             -deltaY > thresholdDistance &&
@@ -273,7 +276,6 @@ export class TouchHandler {
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseWheel, { deltaY: -40 }).ToString()
                 );
-                await new Promise((r) => setTimeout(r, 30));
             }
         }
     }
