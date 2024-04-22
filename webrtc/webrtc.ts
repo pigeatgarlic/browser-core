@@ -58,7 +58,7 @@ export class WebRTC {
                 this.handleIncomingPacket.bind(this),
             );
         else if (protocol == 'http')
-            this.signaling = new SignalingClientFetch(
+            this.signaling = new SignalingClientTR(
                 signalingURL,
                 this.handleIncomingPacket.bind(this),
             );

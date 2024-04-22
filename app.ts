@@ -310,6 +310,11 @@ export class RemoteDesktopClient {
         Log(LogLevel.Debug, `hard reset video stream`);
     }
 
+    public async SendRawHID(data: string) {
+        if (this.closed) return;
+        await this.datachannels.get('hid').sendMessage(data);
+    }
+
     public Close() {
         this.closed = true;
         clearTimeout(this.missing_frame)

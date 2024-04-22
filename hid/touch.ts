@@ -1,10 +1,9 @@
-import { EventCode, HIDMsg } from '../models/keys.model';
-import { isFullscreen, requestFullscreen } from '../utils/screen';
 import {
     thresholdDistance,
     thresholdTime,
     TouchData
 } from '../models/hid.model';
+import { EventCode, HIDMsg } from '../models/keys.model';
 
 const RADIUS = 50;
 const BOTTOM_THRESHOLD_PERCENT = 25;
@@ -15,105 +14,54 @@ export class TouchHandler {
 
     public mode: 'gamepad' | 'trackpad' | 'none';
 
-    private lastTimeTouch: number;
-
-    private running = true;
+    private running : any;
     public SendFunc: (data: string) => void;
-    constructor(Sendfunc: (data: string) => void) {
+    constructor(mode : 'gamepad' | 'trackpad' | 'none', Sendfunc: (data: string) => void) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
+        this.mode = mode
         document.ontouchstart = this.handleStart.bind(this);
         document.ontouchend = this.handleEnd.bind(this);
         document.ontouchmove = this.handleMove.bind(this);
-        this.ListenEvents();
+        this.running = setInterval(this.ListenEvents.bind(this),100);
     }
 
     public Close() {
         document.ontouchstart = null;
         document.ontouchend = null;
         document.ontouchmove = null;
-        this.running = false;
+        clearInterval(this.running)
     }
 
     private async ListenEvents() {
-        while (this.running) {
-            const first = this.events.pop();
-            if (this.mode != 'trackpad') {
-                await new Promise((r) => setTimeout(r, 100));
-                continue;
-            }
-
-            if (first == 'two_start') {
-                //this.SendFunc((new HIDMsg(code,{
-                //    deltaY: -Math.round(event.deltaY),
-                //})).ToString())
-                //await new Promise(r => setTimeout(r,200))
-                //const sec   = this.events.pop()
-                //const third = this.events.pop()
-                //if (sec == "short" && third == "short") {
-                //    this.SendFunc((new HIDMsg(EventCode.MouseDown, { button: '2' })).ToString());
-                //    this.SendFunc((new HIDMsg(EventCode.MouseUp  , { button: '2' })).ToString());
-                //}
-            } else if (first == 'short_right' || first == 'short_left') {
-                await new Promise((r) => setTimeout(r, 100));
-                const sec = this.events.pop();
-                //Double click
-                if (first == 'short_left' && sec == 'short_left') {
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseDown, {
-                            button: '0'
-                        }).ToString()
-                    );
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseUp, {
-                            button: '0'
-                        }).ToString()
-                    );
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseDown, {
-                            button: '0'
-                        }).ToString()
-                    );
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseUp, {
-                            button: '0'
-                        }).ToString()
-                    );
-                }
-                //Click & hold
-                else if (sec == 'long') {
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseDown, {
-                            button: '0'
-                        }).ToString()
-                    );
-                }
-                //Right click
-                else if (first == 'short_right') {
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseDown, {
-                            button: '2'
-                        }).ToString()
-                    );
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseUp, {
-                            button: '2'
-                        }).ToString()
-                    );
-                } else {
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseDown, {
-                            button: '0'
-                        }).ToString()
-                    );
-                    this.SendFunc(
-                        new HIDMsg(EventCode.MouseUp, {
-                            button: '0'
-                        }).ToString()
-                    );
-                }
-            } else await new Promise((r) => setTimeout(r, 100));
+        switch (this.events.pop()) {
+            case 'short_right':
+            this.SendFunc(
+                new HIDMsg(EventCode.MouseDown, {
+                    button: '2'
+                }).ToString()
+            );
+            this.SendFunc(
+                new HIDMsg(EventCode.MouseUp, {
+                    button: '2'
+                }).ToString()
+            );
+                break;
+            case 'short_generic':
+            this.SendFunc(
+                new HIDMsg(EventCode.MouseDown, {
+                    button: '0'
+                }).ToString()
+            );
+            this.SendFunc(
+                new HIDMsg(EventCode.MouseUp, {
+                    button: '0'
+                }).ToString()
+            );
+                break;
+            default:
+                break;
         }
     }
 
@@ -123,18 +71,9 @@ export class TouchHandler {
             const key = touches[i].identifier;
             this.onGoingTouchs.set(key, new TouchData(touches[i]));
         }
-        if (new Date().getTime() - this.lastTimeTouch < 300) {
-            this.events.push('long');
-        }
-        if (evt.touches.length == 2) this.events.push('two_start');
     };
     private handleEnd = (evt: TouchEvent) => {
         const touches = evt.changedTouches;
-        if (touches.length == 1) {
-            const key = touches[0].identifier;
-            const touch = this.onGoingTouchs.get(key);
-            this.lastTimeTouch = touch?.startTime?.getTime();
-        }
 
         for (let i = 0; i < touches.length; i++) {
             const key = touches[i].identifier;
@@ -152,7 +91,7 @@ export class TouchHandler {
                 new Date().getTime() - touch.startTime.getTime() > 30 &&
                 touches.length == 1
             ) {
-                this.events.push('short_left');
+                this.events.push('short_generic');
             }
 
             if (this.mode == 'gamepad')
@@ -179,15 +118,6 @@ export class TouchHandler {
             const prev_touch = this.onGoingTouchs.get(identifier);
             if (prev_touch == null) continue;
 
-            //if (new Date().getTime() - prev_touch.startTime.getTime() > 0 &&
-            //    new Date().getTime() - prev_touch.startTime.getTime() < 200 &&
-            //    //curr_touch.clientX   - prev_touch.touchStart.clientX < 10 &&
-            //    //curr_touch.clientY   - prev_touch.touchStart.clientY < 10 &&
-            //    !prev_touch.doMove
-            //) {
-            //    prev_touch.doMove = true
-            //    this.events.push('long')
-            //}
 
             // one finger only
             if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad')
@@ -206,8 +136,6 @@ export class TouchHandler {
 
             prev_touch.copyFromTouch(curr_touch);
         }
-
-        if (this.mode == 'trackpad') this.handleSwipe();
     };
 
     private isTwoFingerScrollingHorizontally(touches: TouchList): boolean {
@@ -303,44 +231,6 @@ export class TouchHandler {
         );
     }
 
-    private async handleSwipe() {
-        if (this.onGoingTouchs.size != 2) return;
-
-        const firstFinger = this.onGoingTouchs.get(0);
-        const secondFinger = this.onGoingTouchs.get(1);
-
-        // Calculate the difference between the start and move coordinates
-        const move = {
-            first: firstFinger.clientX - firstFinger.touchStart.clientX,
-            second: secondFinger.clientX - secondFinger.touchStart.clientX
-        };
-        const distance = {
-            now: firstFinger.clientX - secondFinger.clientX,
-            prev:
-                firstFinger.touchStart.clientX - secondFinger.touchStart.clientX
-        };
-
-        // This threshold is device dependent as well as application specific
-        const PINCH_THRESHOLD = document.documentElement.clientWidth / 10;
-
-        // zoom
-        if (
-            !(
-                Math.abs(move.first) > PINCH_THRESHOLD &&
-                Math.abs(move.second) > PINCH_THRESHOLD
-            )
-        )
-            return;
-
-        // zoom in
-        if (Math.abs(distance.now) > Math.abs(distance.prev) && !isFullscreen())
-            requestFullscreen();
-
-        // zoom out
-        if (Math.abs(distance.now) < Math.abs(distance.prev) && isFullscreen())
-            document.exitFullscreen().catch((e) => {});
-    }
-
     private async handleScroll(touch: TouchData) {
         const now = new Date().getTime();
         const deltaTime = now - touch.startTime.getTime();
@@ -388,15 +278,6 @@ export class TouchHandler {
         }
     }
 
-    private isTouchInBottomLeft(touch: Touch): boolean {
-        const screenHeight = document.documentElement.clientHeight;
-        const screenBottom =
-            screenHeight * (1 - BOTTOM_THRESHOLD_PERCENT / 100);
-        return (
-            touch.clientY >= screenBottom &&
-            touch.clientX < document.documentElement.clientWidth / 2
-        );
-    }
 
     private isTouchInBottomRight(touch: Touch): boolean {
         const screenHeight = document.documentElement.clientHeight;

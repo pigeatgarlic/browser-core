@@ -8,7 +8,6 @@ import {
 } from '../models/keys.model';
 import { convertJSKey } from '../utils/convert';
 import { requestFullscreen } from '../utils/screen';
-import { TouchHandler } from './touch';
 
 const MOUSE_SPEED = 1.07;
 
@@ -24,11 +23,6 @@ export class HID {
     private relativeMouse: boolean;
     public scancode: boolean;
 
-    public setTouchMode(mode: 'gamepad' | 'trackpad' | 'mouse' | 'none') {
-        if (mode == 'gamepad' || mode == 'trackpad') this.touch.mode = mode;
-        else this.touch.mode = 'none';
-    }
-
     last_interact: Date;
     public last_active(): number {
         return (new Date().getTime() - this.last_interact.getTime()) / 1000;
@@ -36,7 +30,6 @@ export class HID {
 
     private SendFunc: (data: string) => void;
 
-    private touch: TouchHandler;
     private intervals: any[];
 
     constructor(Sendfunc: (data: string) => void, scancode?: boolean) {
@@ -48,10 +41,6 @@ export class HID {
         this.scancode = scancode ?? false;
         this.last_interact = new Date();
 
-        this.touch = new TouchHandler((data) => {
-            this.SendFunc(data);
-            this.last_interact = new Date();
-        });
         this.intervals = [];
         this.pressing_keys = [];
 
@@ -100,8 +89,6 @@ export class HID {
                 100
             )
         );
-
-        this.setTouchMode('trackpad');
     }
 
     public Close() {
@@ -112,7 +99,6 @@ export class HID {
         document.onmouseup = null;
         document.onkeydown = null;
         this.shortcuts = new Array<Shortcut>();
-        this.touch?.Close();
     }
 
     public SetClipboard(val: string) {
