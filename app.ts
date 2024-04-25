@@ -67,7 +67,7 @@ export class RemoteDesktopClient {
                 IDR()
 
             last_decoded_frame = this.framesDecoded
-        }, 3000)
+        }, 1000)
     }
 
     private videoConn: WebRTC;
