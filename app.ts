@@ -37,9 +37,12 @@ export class RemoteDesktopClient {
     public hid: HID;
     public video: VideoWrapper;
     public audio: AudioWrapper;
-    private missing_frame : any 
+
+    private missing_frame: any
+    private framesDecoded: number = 0
+    private countThread: any
     private async waitForNewFrame() {
-        if (this.missing_frame != undefined) 
+        if (this.missing_frame != undefined)
             clearTimeout(this.missing_frame)
 
         const IDR = () => {
@@ -48,6 +51,23 @@ export class RemoteDesktopClient {
         }
 
         this.missing_frame = setTimeout(IDR, 200)
+    }
+
+    private countDecodedFrame() {
+        if (this.countThread != undefined)
+            clearInterval(this.countThread)
+
+        const IDR = () => {
+            this.ResetVideo()
+        }
+
+        let last_decoded_frame = this.framesDecoded
+        this.countThread = setInterval(() => {
+            if (this.framesDecoded == last_decoded_frame)
+                IDR()
+
+            last_decoded_frame = this.framesDecoded
+        }, 3000)
     }
 
     private videoConn: WebRTC;
@@ -59,7 +79,6 @@ export class RemoteDesktopClient {
     }
 
     private closed: boolean;
-
     constructor(
         vid: VideoWrapper,
         audio: AudioWrapper,
@@ -77,15 +96,15 @@ export class RemoteDesktopClient {
 
         this.hid = null;
         this.datachannels = new Map<ChannelName, DataChannel>();
-        this.datachannels.set( 'manual',
+        this.datachannels.set('manual',
             new DataChannel(async (data: string) => { })
         );
-        this.datachannels.set( 'hid',
+        this.datachannels.set('hid',
             new DataChannel(async (data: string) => {
                 if (this.closed) return;
                 this.hid.handleIncomingData(data);
             })
-        );        
+        );
 
         const hid_channel = this.datachannels.get('hid');
         this.hid = new HID((data: string) => {
@@ -93,7 +112,9 @@ export class RemoteDesktopClient {
             hid_channel.sendMessage(data);
         }, scancode);
 
-        const handle_metrics = (val: any) =>{
+        const handle_metrics = (val: any) => {
+            if (val.kind == 'video')
+                this.framesDecoded = val.framesDecoded
         }
 
         const audioEstablishmentLoop = async () => {
@@ -107,7 +128,7 @@ export class RemoteDesktopClient {
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 handle_metrics.bind(this),
-                audioEstablishmentLoop, 
+                audioEstablishmentLoop,
             );
 
             await Timeout()
@@ -166,8 +187,8 @@ export class RemoteDesktopClient {
         controller.enqueue(encodedFrame)
     }
     private async videoTransform(encodedFrame: RTCEncodedVideoFrame, controller: TransformStreamDefaultController<RTCEncodedVideoFrame>) {
-        this.waitForNewFrame()
         controller.enqueue(encodedFrame)
+        this.waitForNewFrame()
     }
 
     private async handleIncomingVideo(evt: RTCTrackEvent): Promise<void> {
@@ -195,17 +216,17 @@ export class RemoteDesktopClient {
             return;
         } // RISK / black screen
 
-        const frameStreams = (evt.receiver as any).createEncodedStreams();
-        frameStreams.readable
-            .pipeThrough(new TransformStream({ transform : this.videoTransform.bind(this) }))
-            .pipeTo(frameStreams.writable);
+        try {
+            const frameStreams = (evt.receiver as any).createEncodedStreams();
+            frameStreams.readable
+                .pipeThrough(new TransformStream({ transform: this.videoTransform.bind(this) }))
+                .pipeTo(frameStreams.writable);
 
+            this.waitForNewFrame()
+        } catch { }
+
+        this.countDecodedFrame()
         await this.video.assign(stream);
-        this.waitForNewFrame()
-        for (let index = 0; index < 5; index++) {
-            await new Promise(x => setTimeout(x,2000))
-            this.ResetVideo()
-        }
     }
 
     private async handleIncomingAudio(evt: RTCTrackEvent): Promise<void> {
@@ -224,10 +245,12 @@ export class RemoteDesktopClient {
             return
 
         const stream = evt.streams.find((val) => val.getAudioTracks().length > 0)
-        const frameStreams = (evt.receiver as any).createEncodedStreams();
-        frameStreams.readable
-            .pipeThrough(new TransformStream({ transform : this.audioTransform.bind(this) }))
-            .pipeTo(frameStreams.writable);
+        try {
+            const frameStreams = (evt.receiver as any).createEncodedStreams();
+            frameStreams.readable
+                .pipeThrough(new TransformStream({ transform: this.audioTransform.bind(this) }))
+                .pipeTo(frameStreams.writable);
+        } catch { }
 
         await this.audio.assign(stream);
     }
@@ -318,6 +341,7 @@ export class RemoteDesktopClient {
     public Close() {
         this.closed = true;
         clearTimeout(this.missing_frame)
+        clearInterval(this.countThread)
         this.hid?.Close();
         this.videoConn?.Close();
         this.audioConn?.Close();
