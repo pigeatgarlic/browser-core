@@ -45,6 +45,7 @@ export class WebRTC {
             `Started connect to signaling server ${id}`
         );
 
+        const using_tauri = (window as any).__TAURI_IPC__ != undefined
         const protocol = signalingURL.split('://').at(0)
         if (protocol == 'ws' || protocol == 'wss')
             this.signaling = new SignalingClient(
@@ -52,13 +53,13 @@ export class WebRTC {
                 this.handleIncomingPacket.bind(this),
                 this.SignalingOnClose.bind(this)
             );
-        else if (protocol == 'https')
-            this.signaling = new SignalingClientFetch(
+        else if (using_tauri)
+            this.signaling = new SignalingClientTR(
                 signalingURL,
                 this.handleIncomingPacket.bind(this),
             );
-        else if (protocol == 'http')
-            this.signaling = new SignalingClientTR(
+        else 
+            this.signaling = new SignalingClientFetch(
                 signalingURL,
                 this.handleIncomingPacket.bind(this),
             );
