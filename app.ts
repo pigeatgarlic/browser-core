@@ -110,7 +110,7 @@ export class RemoteDesktopClient {
         this.hid = new HID(((data: string) => {
             if (this.closed) return;
             hid_channel.sendMessage(data);
-        }).bind(this), scancode);
+        }).bind(this), scancode, vid.video);
 
         const handle_metrics = (val: any) => {
             if (val.kind == 'video')

@@ -87,6 +87,7 @@ export class TouchHandler {
             const key = touches[i].identifier;
             const touch = this.onGoingTouchs.get(key);
             if (touch == null) continue;
+            else if (this.mode == 'gamepad') this.handleGamepad(touch.touchStart, touch);
             else if (
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
                 new Date().getTime() - touch.startTime.getTime() > 30 &&
@@ -98,14 +99,11 @@ export class TouchHandler {
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
                 new Date().getTime() - touch.startTime.getTime() > 30 &&
                 touches.length == 1
-            ) {
+            ) 
                 this.events.push('short_generic');
-            }
-
-            if (this.mode == 'gamepad')
-                this.handleGamepad(touch.touchStart, touch);
-            else if (this.mode == 'trackpad') this.handleScroll(touch);
-
+            
+            if (this.mode == 'trackpad') 
+                this.handleScroll(touch);
             this.onGoingTouchs.delete(key);
         }
 

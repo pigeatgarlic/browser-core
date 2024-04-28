@@ -33,8 +33,10 @@ export class HID {
 
     private intervals: any[];
 
-    constructor(Sendfunc: (data: string) => void, scancode?: boolean) {
+    private video : HTMLVideoElement
+    constructor(Sendfunc: (data: string) => void, scancode?: boolean, video?: HTMLVideoElement) {
         this.SendFunc = (data: string) => !this.disable ? Sendfunc(data) : null;
+        this.video = video
 
         this.prev_buttons = new Map<number, boolean>();
         this.prev_sliders = new Map<number, number>();
@@ -378,6 +380,9 @@ export class HID {
         );
     }
     private mouseButtonMovement(event: MouseEvent) {
+        if (event.target != this.video)
+            return;
+
         if (!this.relativeMouse) {
             this.SendFunc(
                 new HIDMsg(EventCode.MouseMoveAbs, {
