@@ -88,10 +88,10 @@ export class RemoteDesktopClient {
         );        
 
         const hid_channel = this.datachannels.get('hid');
-        this.hid = new HID((data: string) => {
+        this.hid = new HID(((data: string) => {
             if (this.closed) return;
             hid_channel.sendMessage(data);
-        }, scancode);
+        }).bind(this), scancode);
 
         const handle_metrics = (val: any) =>{
         }

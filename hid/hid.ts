@@ -29,11 +29,13 @@ export class HID {
     }
 
     private SendFunc: (data: string) => void;
+    public disable: boolean;
 
     private intervals: any[];
 
     constructor(Sendfunc: (data: string) => void, scancode?: boolean) {
-        this.SendFunc = Sendfunc;
+        this.SendFunc = (data: string) => !this.disable ? Sendfunc(data) : null;
+
         this.prev_buttons = new Map<number, boolean>();
         this.prev_sliders = new Map<number, number>();
         this.prev_axis = new Map<number, number>();
