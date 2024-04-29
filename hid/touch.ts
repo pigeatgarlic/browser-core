@@ -17,11 +17,11 @@ export class TouchHandler {
     private running: any;
     private SendFunc: (data: string) => void;
     private video: HTMLVideoElement
-    constructor(mode: 'gamepad' | 'trackpad' | 'none', video: HTMLVideoElement, Sendfunc: (data: string) => void) {
+    constructor(video: HTMLVideoElement, Sendfunc: (data: string) => void) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
-        this.mode = mode
+        this.mode = 'none' 
         this.video = video
         document.ontouchstart = this.handleStart.bind(this);
         document.ontouchend = this.handleEnd.bind(this);

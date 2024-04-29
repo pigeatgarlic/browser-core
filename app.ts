@@ -1,5 +1,6 @@
 import { DataChannel } from './datachannel/datachannel';
 import { HID } from './hid/hid';
+import { TouchHandler } from './hid/touch';
 import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 import { VideoWrapper } from './pipeline/sink/video/wrapper';
 import { SignalingConfig } from './signaling/config';
@@ -35,6 +36,7 @@ export type Metrics =
 
 export class RemoteDesktopClient {
     public hid: HID;
+    public touch: TouchHandler;
     public video: VideoWrapper;
     public audio: AudioWrapper;
 
@@ -111,6 +113,9 @@ export class RemoteDesktopClient {
             if (this.closed) return;
             hid_channel.sendMessage(data);
         }).bind(this), scancode, vid.video);
+        this.touch = new TouchHandler( vid.video, 
+            val => this.SendRawHID(val)
+        );
 
         const handle_metrics = (val: any) => {
             if (val.kind == 'video')
@@ -343,6 +348,7 @@ export class RemoteDesktopClient {
         clearTimeout(this.missing_frame)
         clearInterval(this.countThread)
         this.hid?.Close();
+        this.touch?.Close();
         this.videoConn?.Close();
         this.audioConn?.Close();
         this.video.video.srcObject = null;
