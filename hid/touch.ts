@@ -47,7 +47,6 @@ export class TouchHandler {
 
         switch (this.events.pop()) {
             case 'short_right':
-                this.last_interact = new Date()
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '2'
@@ -60,7 +59,6 @@ export class TouchHandler {
                 );
                 break;
             case 'short_generic':
-                this.last_interact = new Date()
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '0'
@@ -78,6 +76,7 @@ export class TouchHandler {
     }
 
     private handleStart = (evt: TouchEvent) => {
+        this.last_interact = new Date()
         if (evt.target == this.video)
             evt.preventDefault()
 
