@@ -28,6 +28,7 @@ export class TouchHandler {
 
         this.mode = 'none' 
         this.video = video
+        this.last_interact = new Date()
         document.ontouchstart = this.handleStart.bind(this);
         document.ontouchend = this.handleEnd.bind(this);
         document.ontouchmove = this.handleMove.bind(this);
