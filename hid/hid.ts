@@ -105,14 +105,6 @@ export class HID {
         this.shortcuts = new Array<Shortcut>();
     }
 
-    public SetClipboard(val: string) {
-        const code = EventCode.ClipboardSet;
-        this.SendFunc(
-            new HIDMsg(code, {
-                val: btoa(val)
-            }).ToString()
-        );
-    }
     public PasteClipboard() {
         const code = EventCode.ClipboardPaste;
         this.SendFunc(new HIDMsg(code, {}).ToString());
@@ -236,59 +228,6 @@ export class HID {
             });
     }
 
-    public VirtualGamepadButtonSlider(isDown: boolean, index: number) {
-        if (index == 6 || index == 7) {
-            // slider
-            this.SendFunc(
-                new HIDMsg(EventCode.GamepadSlide, {
-                    gamepad_id: 0,
-                    index: index,
-                    val: !isDown ? 0 : 1
-                }).ToString()
-            );
-            return;
-        }
-        this.SendFunc(
-            new HIDMsg(
-                !isDown
-                    ? EventCode.GamepadButtonDown
-                    : EventCode.GamepadButtonUp,
-                {
-                    gamepad_id: 0,
-                    index: index
-                }
-            ).ToString()
-        );
-    }
-
-    public VirtualGamepadAxis(x: number, y: number, type: AxisType) {
-        let axisx, axisy: number;
-        switch (type) {
-            case 'left':
-                axisx = 0;
-                axisy = 1;
-                break;
-            case 'right':
-                axisx = 2;
-                axisy = 3;
-                break;
-        }
-
-        this.SendFunc(
-            new HIDMsg(EventCode.GamepadAxis, {
-                gamepad_id: 0,
-                index: axisx,
-                val: x
-            }).ToString()
-        );
-        this.SendFunc(
-            new HIDMsg(EventCode.GamepadAxis, {
-                gamepad_id: 0,
-                index: axisy,
-                val: y
-            }).ToString()
-        );
-    }
 
     public ResetKeyStuck() {
         this.SendFunc(new HIDMsg(EventCode.KeyReset, {}).ToString());

@@ -1,6 +1,7 @@
 import { DataChannel } from './datachannel/datachannel';
 import { HID } from './hid/hid';
 import { TouchHandler } from './hid/touch';
+import { EventCode, HIDMsg } from './models/keys.model';
 import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 import { VideoWrapper } from './pipeline/sink/video/wrapper';
 import { SignalingConfig } from './signaling/config';
@@ -341,6 +342,14 @@ export class RemoteDesktopClient {
     public async SendRawHID(data: string) {
         if (this.closed) return;
         await this.datachannels.get('hid').sendMessage(data);
+    }
+    public SetClipboard(val: string) {
+        const code = EventCode.ClipboardSet;
+        this.SendRawHID(
+            new HIDMsg(code, {
+                val: btoa(val)
+            }).ToString()
+        );
     }
 
     public Close() {
