@@ -293,15 +293,6 @@ export class HID {
     public ResetKeyStuck() {
         this.SendFunc(new HIDMsg(EventCode.KeyReset, {}).ToString());
     }
-    public TriggerKey(
-        code: EventCode.KeyUp | EventCode.KeyDown,
-        jsKey: string
-    ) {
-        const key = convertJSKey(jsKey, 0);
-        if (key == undefined) return;
-
-        this.SendFunc(new HIDMsg(code, { key }).ToString());
-    }
 
     private keydown(event: KeyboardEvent) {
         if (
