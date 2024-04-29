@@ -42,10 +42,12 @@ export class TouchHandler {
     }
 
     private async ListenEvents() {
-        const event = this.events.pop()
-        this.last_interact = new Date()
-        switch (event) {
+        if (this.mode == 'none')
+            return
+
+        switch (this.events.pop()) {
             case 'short_right':
+                this.last_interact = new Date()
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '2'
@@ -58,6 +60,7 @@ export class TouchHandler {
                 );
                 break;
             case 'short_generic':
+                this.last_interact = new Date()
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '0'
@@ -96,6 +99,7 @@ export class TouchHandler {
             if (touch == null) continue;
             else if (this.mode == 'gamepad') this.handleGamepad(touch.touchStart, touch);
             else if (
+                this.mode == 'trackpad' &&
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
                 new Date().getTime() - touch.startTime.getTime() > 30 &&
                 touches.length == 1 &&
@@ -103,20 +107,15 @@ export class TouchHandler {
             )
                 this.events.push('short_right');
             else if (
+                this.mode == 'trackpad' &&
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
                 new Date().getTime() - touch.startTime.getTime() > 30 &&
                 touches.length == 1
             ) 
                 this.events.push('short_generic');
-            
-            if (this.mode == 'trackpad') 
-                this.handleScroll(touch);
+
             this.onGoingTouchs.delete(key);
         }
-
-        this.SendFunc(
-            new HIDMsg(EventCode.MouseUp, { button: '0' }).ToString()
-        );
     };
 
     private handleMove = async (evt: TouchEvent) => {
@@ -240,50 +239,6 @@ export class TouchHandler {
         );
     }
 
-    private async handleScroll(touch: TouchData) {
-        const now = new Date().getTime();
-        const deltaTime = now - touch.startTime.getTime();
-        const deltaX = touch.clientX - touch.touchStart.clientX;
-        const deltaY = touch.clientY - touch.touchStart.clientY;
-
-        /* work out what the movement was */
-        if (deltaTime > thresholdTime) return;
-        else if (
-            deltaX > thresholdDistance &&
-            Math.abs(deltaY) < thresholdDistance
-        ) {
-            // 'swipe right';
-            return;
-        } else if (
-            -deltaX > thresholdDistance &&
-            Math.abs(deltaY) < thresholdDistance
-        ) {
-            // 'swipe left';
-            return;
-        }
-
-        if (
-            deltaY > thresholdDistance &&
-            Math.abs(deltaX) < thresholdDistance
-        ) {
-            // 'swipe down';
-            for (let index = 0; index < 10; index++) {
-                this.SendFunc(
-                    new HIDMsg(EventCode.MouseWheel, { deltaY: 40 }).ToString()
-                );
-            }
-        } else if (
-            -deltaY > thresholdDistance &&
-            Math.abs(deltaX) < thresholdDistance
-        ) {
-            // 'swipe up';
-            for (let index = 0; index < 10; index++) {
-                this.SendFunc(
-                    new HIDMsg(EventCode.MouseWheel, { deltaY: -40 }).ToString()
-                );
-            }
-        }
-    }
 
 
     private isTouchInBottomRight(touch: Touch): boolean {
