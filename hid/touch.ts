@@ -14,6 +14,11 @@ export class TouchHandler {
 
     public mode: 'gamepad' | 'trackpad' | 'none';
 
+    private last_interact: Date;
+    public last_active(): number {
+        return (new Date().getTime() - this.last_interact.getTime()) / 1000;
+    }
+
     private running: any;
     private SendFunc: (data: string) => void;
     private video: HTMLVideoElement
@@ -37,7 +42,9 @@ export class TouchHandler {
     }
 
     private async ListenEvents() {
-        switch (this.events.pop()) {
+        const event = this.events.pop()
+        this.last_interact = new Date()
+        switch (event) {
             case 'short_right':
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
