@@ -234,6 +234,7 @@ export class HID {
     }
 
     private keydown(event: KeyboardEvent) {
+        this.last_interact = new Date();
         if (
             getComputedStyle(event.target as HTMLElement).getPropertyValue(
                 '--prefix'
@@ -260,7 +261,6 @@ export class HID {
         if (this.scancode) code += 2;
         this.SendFunc(new HIDMsg(code, { key }).ToString());
         this.pressing_keys.push(key);
-        this.last_interact = new Date();
     }
     private keyup(event: KeyboardEvent) {
         if (
@@ -283,7 +283,6 @@ export class HID {
         this.pressing_keys.splice(
             this.pressing_keys.findIndex((x) => x == key)
         );
-        this.last_interact = new Date();
     }
     private mouseWheel(event: WheelEvent) {
         if (
@@ -310,6 +309,7 @@ export class HID {
         );
     }
     private mouseButtonMovement(event: MouseEvent) {
+        this.last_interact = new Date();
         if (event.target != this.video)
             return;
 
@@ -328,8 +328,6 @@ export class HID {
                 }).ToString()
             );
         }
-
-        this.last_interact = new Date();
     }
     private mouseButtonDown(event: MouseEvent) {
         if (
