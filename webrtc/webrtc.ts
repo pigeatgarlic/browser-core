@@ -18,7 +18,6 @@ export class WebRTC {
     private watch_loop : any
 
     private rtrackHandler: (a: RTCTrackEvent) => any;
-    private ltrackHandler: () => Promise<MediaStream | null>;
     private channelHandler: (a: RTCDataChannelEvent) => any;
     private closeHandler: () => void;
 
@@ -26,7 +25,6 @@ export class WebRTC {
         id: string,
         signalingURL: string,
         webrtcConfig: RTCConfiguration,
-        localTrack: () => Promise<MediaStream | null>,
         TrackHandler: (a: RTCTrackEvent) => Promise<void>,
         channelHandler: (a: RTCDataChannelEvent) => Promise<void>,
         MetricsHandler: (val: any) => void,
@@ -35,7 +33,6 @@ export class WebRTC {
         this.connected = false;
         this.closeHandler = CloseHandler;
         this.rtrackHandler = TrackHandler;
-        this.ltrackHandler = localTrack;
         this.channelHandler = channelHandler;
         this.webrtcConfig = webrtcConfig;
         this.id = id;
@@ -157,15 +154,8 @@ export class WebRTC {
             (t) => t?.sender?.track === stream.getAudioTracks()[0]
         );
 
-        const codec = {
-            clockRate: 48000,
-            channels: 2,
-            mimeType: 'audio/opus'
-        };
-
         const { codecs } = RTCRtpSender.getCapabilities('audio');
-        const selected = codecs.find((x) => x.mimeType == codec.mimeType);
-
+        const selected = codecs.find((x) => x.mimeType == 'audio/opus');
         transceiver.setCodecPreferences([selected]);
     }
 
@@ -226,10 +216,6 @@ export class WebRTC {
 
         try {
             await this.Conn.setRemoteDescription(sdp);
-            const track = await this.ltrackHandler();
-            if (track != null) 
-                await this.AddLocalTrack(track)
-                
             const ans = await this.Conn.createAnswer();
             await this.onLocalDescription(ans);
         } catch (error) {

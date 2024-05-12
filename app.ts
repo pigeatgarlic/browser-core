@@ -130,7 +130,6 @@ export class RemoteDesktopClient {
                 'audio',
                 signalingConfig.audioUrl,
                 WebRTCConfig,
-                this.AcquireMicrophone.bind(this),
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 handle_metrics.bind(this),
@@ -153,7 +152,6 @@ export class RemoteDesktopClient {
                 'video',
                 signalingConfig.videoUrl,
                 WebRTCConfig,
-                async () => { return null },
                 this.handleIncomingVideo.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 handle_metrics.bind(this),
@@ -172,6 +170,7 @@ export class RemoteDesktopClient {
         Log(LogLevel.Infor, `Started remote desktop connection`);
         audioEstablishmentLoop();
         videoEstablishmentLoop();
+        this.AcquireMicrophone()
     }
 
     private async handleIncomingDataChannel(
@@ -278,6 +277,15 @@ export class RemoteDesktopClient {
             console.log(`Using Audio device: ${audioTracks[0].label}`);
         }
 
+        const recoder = new MediaRecorder(localStream,{
+            mimeType: 'audio/opus'
+        })
+
+        recoder.start()
+        recoder.ondataavailable = async ev => {
+            const result = await ev.data.stream().getReader().read()
+            console.log(result)
+        }
         return localStream
     }
 
