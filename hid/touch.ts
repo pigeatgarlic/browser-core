@@ -1,6 +1,4 @@
 import {
-    thresholdDistance,
-    thresholdTime,
     TouchData
 } from '../models/hid.model';
 import { EventCode, HIDMsg } from '../models/keys.model';
@@ -26,7 +24,7 @@ export class TouchHandler {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
-        this.mode = 'none' 
+        this.mode = 'none'
         this.video = video
         this.last_interact = new Date()
         document.ontouchstart = this.handleStart.bind(this);
@@ -111,7 +109,7 @@ export class TouchHandler {
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
                 new Date().getTime() - touch.startTime.getTime() > 30 &&
                 touches.length == 1
-            ) 
+            )
                 this.events.push('short_generic');
 
             this.onGoingTouchs.delete(key);
@@ -190,7 +188,7 @@ export class TouchHandler {
     }
 
     private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
-        //return
+        return
         const pos = {
             x: curr_touch.clientX - prev_touch.touchStart.clientX,
             y: curr_touch.clientY - prev_touch.touchStart.clientY
