@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from 'uuid';
 import {
     ConnectionEvent,
     Log,
@@ -17,7 +18,7 @@ export class SignalingClientFetch {
         PacketHandler: (Data: SignalingMessage) => Promise<void>,
     ) {
         const u = new URL(url)
-        u.searchParams.append("uniqueid", crypto.randomUUID())
+        u.searchParams.append("uniqueid", uuidv4())
 
         this.url = u.toString();
         this.run = true
@@ -29,11 +30,11 @@ export class SignalingClientFetch {
                 const copy = this.outcoming
                 this.outcoming = []
 
-                const resp = await fetch(this.url,{
+                const resp = await fetch(this.url, {
                     method: 'POST',
                     body: JSON.stringify(copy)
                 })
-                const {ok} = resp
+                const { ok } = resp
 
                 if (!ok) {
                     Log(LogLevel.Error, await resp.text())

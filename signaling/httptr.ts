@@ -1,4 +1,5 @@
 import { Body, getClient, ResponseType } from '@tauri-apps/api/http';
+import { v4 as uuidv4 } from 'uuid';
 import {
     ConnectionEvent,
     Log,
@@ -6,6 +7,7 @@ import {
     LogLevel
 } from '../utils/log';
 import { SignalingMessage } from './msg';
+
 
 export class SignalingClientTR {
     private run: boolean;
@@ -18,7 +20,7 @@ export class SignalingClientTR {
         PacketHandler: (Data: SignalingMessage) => Promise<void>,
     ) {
         const u = new URL(url)
-        u.searchParams.append("uniqueid", crypto.randomUUID())
+        u.searchParams.append("uniqueid", uuidv4())
 
         this.url = u.toString();
         this.run = true
