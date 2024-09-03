@@ -216,11 +216,8 @@ export class RemoteDesktopClient {
             (val) => val.getVideoTracks().length > 0
         );
 
-        console.log(`incoming video stream ${stream.id}`);
-        if (Number.isNaN(parseInt(stream.id))) {
-            console.log(`blocked video stream ${stream.id}`);
+        if (Number.isNaN(parseInt(stream.id)))
             return;
-        } // RISK / black screen
 
         try {
             const frameStreams = (evt.receiver as any).createEncodedStreams();
@@ -266,7 +263,7 @@ export class RemoteDesktopClient {
         let localStream: MediaStream = null;
         try {
             localStream = await navigator.mediaDevices.getUserMedia({
-                audio: true
+                // audio: true
             });
         } catch {
             console.log(`failed to acquire microphone`);
