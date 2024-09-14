@@ -88,9 +88,10 @@ export class RemoteDesktopClient {
         signalingConfig: SignalingConfig,
         WebRTCConfig: RTCConfiguration,
         {
-            scancode
+            scancode,microphone
         }: {
             scancode?: boolean;
+            microphone?: boolean;
         }
     ) {
         this.closed = false;
@@ -130,7 +131,7 @@ export class RemoteDesktopClient {
                 'audio',
                 signalingConfig.audioUrl,
                 WebRTCConfig,
-                this.AcquireMicrophone.bind(this),
+                microphone ? this.AcquireMicrophone.bind(this) : async () => null,
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 handle_metrics.bind(this),
