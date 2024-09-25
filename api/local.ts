@@ -11,7 +11,7 @@ const TurnCredential = () => {
     };
 };
 
-let client: Client = null;
+let client: Client | null = null;
 export const http_available = () =>
     client != null || new URL(window.location.href).protocol == 'http:';
 export const ValidateIPaddress = (ipaddress: string) =>
@@ -34,7 +34,7 @@ async function internalFetch<T>(
     body?: any
 ): Promise<T | Error> {
     const token = pb.authStore.token;
-    const user = pb.authStore.model.id;
+    const user = pb.authStore.model?.id;
     const url = userHttp(address)
         ? `http://${address}:${WS_PORT}/${command}`
         : `https://${address}/${command}`;
@@ -152,6 +152,8 @@ export function KeepaliveVolume(
     total_time_callback?: (time_in_second: number) => Promise<void>
 ): callback {
     const { address } = computer;
+    if (address == undefined) throw new Error('address is not defined')
+
     let stop = false;
     const now = () => new Date().getTime() / 1000;
     const start = now();
@@ -164,7 +166,7 @@ export function KeepaliveVolume(
         ) {
             stop = true;
         }
-        total_time_callback(now() - start);
+        total_time_callback ? total_time_callback(now() - start) : null;
     };
 }
 
@@ -173,6 +175,10 @@ export async function StartVirtdaemon(
     volume_id?: string
 ): Promise<Error | StartRequest> {
     const { address } = computer;
+    if (address == undefined) 
+        return new Error('address is not defined')
+        
+    
 
     const id = crypto.randomUUID();
     const req = {
@@ -220,8 +226,10 @@ export type Session = {
 export async function StartThinkmayOnVM(
     computer: Computer,
     target: string
-): Promise<Session> {
+): Promise<Session|Error> {
     const { address } = computer;
+    if (address == undefined) 
+        return new Error('address is not defined')
 
     const turn = TurnCredential();
 
@@ -247,8 +255,10 @@ export async function StartThinkmayOnVM(
     };
 
     const resp = await internalFetch<StartRequest>(address, 'new', req);
-
     if (resp instanceof Error) throw resp;
+    else if (resp.thinkmay == undefined) 
+        return new Error('address is not defined')
+
 
     return {
         audioUrl: !userHttp(address)
@@ -272,8 +282,10 @@ export async function StartThinkmayOnVM(
         }
     };
 }
-export async function StartThinkmay(computer: Computer): Promise<Session> {
+export async function StartThinkmay(computer: Computer): Promise<Session|Error> {
     const { address } = computer;
+    if (address == undefined) 
+        return new Error('address is not defined')
 
     const turn = TurnCredential();
 
@@ -298,8 +310,8 @@ export async function StartThinkmay(computer: Computer): Promise<Session> {
     };
 
     const resp = await internalFetch<StartRequest>(address, 'new', req);
-
     if (resp instanceof Error) throw resp;
+    else if (resp.thinkmay == undefined) return new Error(`thinkmay is not defined`)
 
     return {
         audioUrl: !userHttp(address)
@@ -326,9 +338,11 @@ export async function StartThinkmay(computer: Computer): Promise<Session> {
 export function ParseRequest(
     computer: Computer,
     session: StartRequest
-): Session {
+): (Session|Error) {
     const { address } = computer;
     const { turn, thinkmay } = session;
+    if (address == undefined || turn == undefined || thinkmay == undefined) 
+        return new Error('address is not defined')
 
     return {
         audioUrl: !userHttp(address)
@@ -359,6 +373,8 @@ export function ParseVMRequest(
 ): Session {
     const { address } = computer;
     const { turn, thinkmay, target } = session;
+    if (address == undefined || turn == undefined || thinkmay == undefined) 
+        throw new Error('address is not defined')
 
     return {
         audioUrl: !userHttp(address)
@@ -394,6 +410,8 @@ export async function StartMoonlight(
     callback?: (type: 'stdout' | 'stderr', log: string) => void
 ): Promise<Child> {
     const { address } = computer;
+    if (address == undefined) 
+        throw new Error('address is not defined')
 
     const PORT = getRandomInt(60000, 65530);
     const sunshine = {
@@ -452,7 +470,9 @@ export async function CloseSession(
     computer: Computer,
     req: StartRequest
 ): Promise<Error | 'SUCCESS'> {
-    const resp = await internalFetch(computer.address, 'closed', req);
+    const {address} = computer
+    if (address == undefined) throw new Error('address is not defined')
+    const resp = await internalFetch(address, 'closed', req);
     return resp instanceof Error ? resp : 'SUCCESS';
 }
 
