@@ -5,7 +5,9 @@ import { pb } from './createClient';
 export const WS_PORT = 60000;
 const TurnCredential = () => {
     return {
-        port: 65535,
+        maxPort: 65535,
+        minPort: 30000,
+        port: getRandomInt(30000,65535),
         username: crypto.randomUUID(),
         password: crypto.randomUUID()
     };
