@@ -1,5 +1,5 @@
 import { getResolution } from '../core/utils/platform';
-import { supabase } from './createClient';
+import { supabaseLocal } from './createClient';
 
 export function getOS() {
     let OSName = 'unknown';
@@ -73,7 +73,7 @@ export async function UserSession(email: string) {
     };
 
     // TODO
-    const { data, error } = await supabase
+    const { data, error } = await supabaseLocal
         .from('generic_events')
         .insert({
             value,
@@ -88,7 +88,7 @@ export async function UserSession(email: string) {
         if (stack.length == current_stack_length) return;
 
         value.stack = stack;
-        await supabase
+        await supabaseLocal
             .from('generic_events')
             .update({ value })
             .eq('id', session);

@@ -1,5 +1,5 @@
-import PocketBase from 'pocketbase';
 import { createClient } from '@supabase/supabase-js';
+import PocketBase from 'pocketbase';
 
 export enum CAUSE {
     UNKNOWN,
@@ -17,12 +17,16 @@ export enum CAUSE {
     INVALID_REF
 }
 
-const supabaseUrl = getDomainURL();
-const supabaseKey =
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.ewogICJyb2xlIjogImFub24iLAogICJpc3MiOiAic3VwYWJhc2UiLAogICJpYXQiOiAxNzIzMTM2NDAwLAogICJleHAiOiAxODgwOTAyODAwCn0.SdW2AcXzhRFNBt9HmJw6sKa7lWDmVjbXdRF1mIjrDao';
 
 export const pb = new PocketBase(getDomainURL());
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabaseLocal = createClient(
+    getDomainURL(),
+    import.meta.env.VITE_SUPABASE_LOCAL_KEY
+);
+export const supabaseGlobal = createClient(
+    import.meta.env.VITE_SUPABASE_GLOBAL_URL,
+    import.meta.env.VITE_SUPABASE_GLOBAL_KEY 
+);
 
 export function getDomainURL(): string {
     return window.location.host.includes('localhost') ||
@@ -42,16 +46,18 @@ export async function SupabaseFuncInvoke<T>(
     body?: any,
     headers?: any
 ): Promise<Error | T> {
+    const globalURL = import.meta.env.VITE_SUPABASE_GLOBAL_URL
+    const globalKey  = import.meta.env.VITE_SUPABASE_GLOBAL_KEY 
     try {
         const response = await fetch(
-            `${supabaseUrl}/functions/v1/${funcName}`,
+            `${globalURL}/functions/v1/${funcName}`,
             {
                 body: JSON.stringify(body ?? {}),
                 method: 'POST',
                 headers: {
                     ...headers,
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${supabaseKey}`
+                    Authorization: `Bearer ${globalKey}`
                 }
             }
         );
