@@ -96,7 +96,10 @@ export async function UserSession(email: string) {
         current_stack_length = stack.length;
     };
 
+    setTimeout(analytics_report, 5 * 1000);
     setTimeout(analytics_report, 10 * 1000);
+    setTimeout(analytics_report, 20 * 1000);
     setTimeout(analytics_report, 30 * 1000);
+    setTimeout(analytics_report, 45 * 1000);
     setInterval(analytics_report, 60 * 1000);
 }
