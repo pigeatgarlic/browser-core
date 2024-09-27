@@ -11,35 +11,28 @@ import {
     LogConnectionEvent,
     LogLevel
 } from './utils/log';
-import { WebRTC } from './webrtc/webrtc';
+import { RTCMetric, WebRTC } from './webrtc/webrtc';
 
 const Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000))
 type ChannelName = 'hid' | 'manual';
 
-export type Metrics =
-    | {
-        type: 'VIDEO';
-        receivefps: number[];
-        decodefps: number[];
-        packetloss: number[];
-        bandwidth: number[];
-        buffer: number[];
-    }
-    | {
-        type: 'AUDIO';
-    }
-    | {
-        type: 'NETWORK';
-    }
-    | {
-        type: 'FRAME_LOSS';
-    };
 
 export class RemoteDesktopClient {
     public hid: HID;
     public touch: TouchHandler;
     public video: VideoWrapper;
     public audio: AudioWrapper;
+    public Metrics: {
+        video: {
+            packetloss: {
+                last: number
+                current: number
+            }
+        },
+        audio: {
+
+        }
+    };
 
     private missing_frame: any
     private framesDecoded: number = 0
@@ -53,7 +46,7 @@ export class RemoteDesktopClient {
             this.waitForNewFrame()
         }
 
-        this.missing_frame = setTimeout(IDR, 200)
+        this.missing_frame = setTimeout(IDR, 100)
     }
 
     private countDecodedFrame() {
@@ -70,7 +63,7 @@ export class RemoteDesktopClient {
                 IDR()
 
             last_decoded_frame = this.framesDecoded
-        }, 1000)
+        }, 2000)
     }
 
     private videoConn: WebRTC;
@@ -119,9 +112,12 @@ export class RemoteDesktopClient {
             val => this.SendRawHID(val)
         );
 
-        const handle_metrics = (val: any) => {
-            if (val.kind == 'video')
+        const handle_metrics = (val: RTCMetric) => {
+            if (val.kind == 'video') {
                 this.framesDecoded = val.framesDecoded
+                this.Metrics.video.packetloss.current = val.packetsLost - this.Metrics.video.packetloss.last
+                this.Metrics.video.packetloss.last    = val.packetsLost
+            }
         }
 
         const audioEstablishmentLoop = async () => {
@@ -134,7 +130,7 @@ export class RemoteDesktopClient {
                 microphone ? this.AcquireMicrophone.bind(this) : async () => null,
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
-                handle_metrics.bind(this),
+                _ => {},
                 audioEstablishmentLoop,
             );
 

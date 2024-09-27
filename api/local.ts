@@ -343,8 +343,12 @@ export function ParseRequest(
 ): (Session|Error) {
     const { address } = computer;
     const { turn, thinkmay } = session;
-    if (address == undefined || turn == undefined || thinkmay == undefined) 
-        return new Error('address is not defined')
+    if (address == undefined) 
+        throw new Error('address is not defined')
+    else if (turn == undefined) 
+        throw new Error('turn is not defined')
+    else if (thinkmay == undefined) 
+        throw new Error('thinkmay is not defined')
 
     return {
         audioUrl: !userHttp(address)
@@ -375,8 +379,12 @@ export function ParseVMRequest(
 ): Session {
     const { address } = computer;
     const { turn, thinkmay, target } = session;
-    if (address == undefined || turn == undefined || thinkmay == undefined) 
+    if (address == undefined) 
         throw new Error('address is not defined')
+    else if (turn == undefined) 
+        throw new Error('turn is not defined')
+    else if (thinkmay == undefined) 
+        throw new Error('thinkmay is not defined')
 
     return {
         audioUrl: !userHttp(address)

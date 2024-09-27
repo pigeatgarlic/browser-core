@@ -9,6 +9,51 @@ import {
     LogLevel
 } from '../utils/log';
 
+export type RTCMetric = {
+    codecId : string
+    mediaType : string
+    id : string
+    remoteId : string
+    kind : string
+    mid : string
+    trackIdentifier : string
+    transportId : string
+    type : string
+
+    bytesReceived : number
+    firCount : number
+    frameHeight : number
+    frameWidth : number
+    framesAssembledFromMultiplePackets : number
+    framesDecoded : number
+    framesDropped : number
+    framesPerSecond : number
+    framesReceived : number
+    freezeCount : number
+    headerBytesReceived : number
+    jitter : number
+    jitterBufferDelay : number
+    jitterBufferEmittedCount : number
+    jitterBufferMinimumDelay : number
+    jitterBufferTargetDelay : number
+    keyFramesDecoded : number
+    lastPacketReceivedTimestamp : number
+    nackCount : number
+    packetsLost : number
+    packetsReceived : number
+    pauseCount : number
+    pliCount : number
+    ssrc : number
+    timestamp : number
+    totalAssemblyTime : number
+    totalDecodeTime : number
+    totalFreezesDuration : number
+    totalInterFrameDelay : number
+    totalPausesDuration : number
+    totalProcessingDelay : number
+    totalSquaredInterFrameDelay : number
+}
+
 export class WebRTC {
     private id: string;
     public connected: boolean;
@@ -29,7 +74,7 @@ export class WebRTC {
         localTrack: () => Promise<MediaStream | null>,
         TrackHandler: (a: RTCTrackEvent) => Promise<void>,
         channelHandler: (a: RTCDataChannelEvent) => Promise<void>,
-        MetricsHandler: (val: any) => void,
+        MetricsHandler: (val: RTCMetric) => void,
         CloseHandler: () => void,
     ) {
         this.connected = false;
