@@ -32,7 +32,7 @@ export function getBrowser() {
     return 'unknown';
 }
 
-const stack = [];
+const stack : {content:any,timestamp: string}[]= [];
 let current_stack_length = 0;
 export function UserEvents(content: { type: string; payload: any }) {
     stack.push({
@@ -68,7 +68,6 @@ export async function UserSession(email: string) {
         os: getOS(),
         browser: getBrowser(),
         resolution: getResolution(),
-        email: email ?? 'unknown',
         url: window.location.href
     };
 
@@ -77,7 +76,7 @@ export async function UserSession(email: string) {
         .from('generic_events')
         .insert({
             value,
-            name: `new session ${window.location.href}`,
+            name: email ?? 'unknown',
             type: 'ANALYTICS'
         })
         .select('id');
