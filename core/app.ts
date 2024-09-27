@@ -90,6 +90,15 @@ export class RemoteDesktopClient {
         this.closed = false;
         this.video = vid;
         this.audio = audio;
+        this.Metrics = {
+            audio: {},
+            video: {
+                packetloss: {
+                    current: 0,
+                    last: 0,
+                }
+            },
+        }
 
         this.hid = null;
         this.datachannels = new Map<ChannelName, DataChannel>();
