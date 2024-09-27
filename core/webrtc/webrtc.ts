@@ -194,8 +194,6 @@ export class WebRTC {
         stream: MediaStream,
     ) {
         const tracks = stream.getTracks();
-        console.log('Adding Local Stream to peer connection');
-
         tracks.forEach((track) => this.Conn.addTrack(track, stream));
 
         const transceiver = this.Conn.getTransceivers().find(

@@ -283,14 +283,10 @@ export class RemoteDesktopClient {
                 // audio: true
             });
         } catch {
-            console.log(`failed to acquire microphone`);
             return null;
         }
 
         const audioTracks = localStream.getAudioTracks();
-        if (audioTracks.length > 0) {
-            console.log(`Using Audio device: ${audioTracks[0].label}`);
-        }
 
         return localStream
     }
