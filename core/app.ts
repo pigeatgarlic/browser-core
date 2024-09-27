@@ -24,6 +24,10 @@ export class RemoteDesktopClient {
     public audio: AudioWrapper;
     public Metrics: {
         video: {
+            idrcount: {
+                last: number
+                current: number
+            }
             packetloss: {
                 last: number
                 current: number
@@ -93,6 +97,10 @@ export class RemoteDesktopClient {
         this.Metrics = {
             audio: {},
             video: {
+                idrcount: {
+                    current: 0,
+                    last: 0,
+                },
                 packetloss: {
                     current: 0,
                     last: 0,
@@ -126,6 +134,9 @@ export class RemoteDesktopClient {
                 this.framesDecoded = val.framesDecoded
                 this.Metrics.video.packetloss.current = val.packetsLost - this.Metrics.video.packetloss.last
                 this.Metrics.video.packetloss.last    = val.packetsLost
+
+                this.Metrics.video.idrcount.current = val.keyFramesDecoded - this.Metrics.video.idrcount.last
+                this.Metrics.video.idrcount.last    = val.keyFramesDecoded
             }
         }
 
