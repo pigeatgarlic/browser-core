@@ -33,6 +33,10 @@ export class RemoteDesktopClient {
                 last: number
                 current: number
             },
+            bitrate: {
+                total: number
+                persecond: number
+            },
             frame: {
                 total: number
                 persecond: number
@@ -106,6 +110,10 @@ export class RemoteDesktopClient {
                     current: 0,
                     last: 0,
                 },
+                bitrate: {
+                    persecond: 0,
+                    total: 0,
+                },
                 frame: {
                     persecond: 0,
                     total: 0,
@@ -144,6 +152,9 @@ export class RemoteDesktopClient {
 
                 this.Metrics.video.frame.persecond = Math.round((val.framesDecoded - this.Metrics.video.frame.total) / ((now.getTime() - this.Metrics.video.timestamp.getTime()) / 1000))
                 this.Metrics.video.frame.total     = val.framesDecoded
+
+                this.Metrics.video.bitrate.persecond = Math.round((val.bytesReceived - this.Metrics.video.bitrate.total) / ((now.getTime() - this.Metrics.video.timestamp.getTime()) / 1000) * 8 / 1024 )
+                this.Metrics.video.bitrate.total     = val.bytesReceived
 
                 this.Metrics.video.packetloss.current = val.packetsLost - this.Metrics.video.packetloss.last
                 this.Metrics.video.packetloss.last    = val.packetsLost
