@@ -24,11 +24,16 @@ export class RemoteDesktopClient {
     public audio: AudioWrapper;
     public Metrics: {
         video: {
+            timestamp : Date
             idrcount: {
                 last: number
                 current: number
             }
             packetloss: {
+                last: number
+                current: number
+            },
+            frame: {
                 last: number
                 current: number
             }
@@ -39,7 +44,6 @@ export class RemoteDesktopClient {
     };
 
     private missing_frame: any
-    private framesDecoded: number = 0
     private countThread: any
     private async waitForNewFrame() {
         if (this.missing_frame != undefined)
@@ -61,12 +65,12 @@ export class RemoteDesktopClient {
             this.ResetVideo()
         }
 
-        let last_decoded_frame = this.framesDecoded
+        let last_decoded_frame = this.Metrics.video.frame.last
         this.countThread = setInterval(() => {
-            if (this.framesDecoded == last_decoded_frame)
+            if (this.Metrics.video.frame.last == last_decoded_frame)
                 IDR()
 
-            last_decoded_frame = this.framesDecoded
+            last_decoded_frame = this.Metrics.video.frame.last
         }, 2000)
     }
 
@@ -97,7 +101,12 @@ export class RemoteDesktopClient {
         this.Metrics = {
             audio: {},
             video: {
+                timestamp: new Date(),
                 idrcount: {
+                    current: 0,
+                    last: 0,
+                },
+                frame: {
                     current: 0,
                     last: 0,
                 },
@@ -131,7 +140,11 @@ export class RemoteDesktopClient {
 
         const handle_metrics = (val: RTCMetric) => {
             if (val.kind == 'video') {
-                this.framesDecoded = val.framesDecoded
+                this.Metrics.video.timestamp = new Date()
+
+                this.Metrics.video.frame.current = val.framesDecoded - this.Metrics.video.frame.last
+                this.Metrics.video.frame.last    = val.framesDecoded
+
                 this.Metrics.video.packetloss.current = val.packetsLost - this.Metrics.video.packetloss.last
                 this.Metrics.video.packetloss.last    = val.packetsLost
 
