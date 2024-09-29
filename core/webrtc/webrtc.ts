@@ -117,7 +117,7 @@ export class WebRTC {
             stats.forEach(val => val.type == 'inbound-rtp' 
                 ?  MetricsHandler(val) 
                 : () => {})
-        },500)
+        },2000)
     }
 
     private async SignalingOnClose() {

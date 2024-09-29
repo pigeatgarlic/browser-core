@@ -40,6 +40,7 @@ export class RemoteDesktopClient {
             frame: {
                 total: number
                 persecond: number
+                waitperiod: number
             }
         },
         audio: {
@@ -49,30 +50,21 @@ export class RemoteDesktopClient {
 
     private missing_frame: any
     private countThread: any
-    private async waitForNewFrame() {
+    private waitForNewFrame() {
         if (this.missing_frame != undefined)
             clearTimeout(this.missing_frame)
 
-        const IDR = () => {
-            this.ResetVideo()
-            this.waitForNewFrame()
-        }
-
-        this.missing_frame = setTimeout(IDR, 50)
+        this.missing_frame = setTimeout(this.ResetVideo.bind(this), this.Metrics.video.frame.waitperiod)
     }
 
     private countDecodedFrame() {
         if (this.countThread != undefined)
             clearInterval(this.countThread)
 
-        const IDR = () => {
-            this.ResetVideo()
-        }
-
         let last_decoded_frame = this.Metrics.video.frame.total
         this.countThread = setInterval(() => {
             if (this.Metrics.video.frame.total == last_decoded_frame)
-                IDR()
+                this.ResetVideo()
 
             last_decoded_frame = this.Metrics.video.frame.total
         }, 2000)
@@ -115,6 +107,7 @@ export class RemoteDesktopClient {
                     total: 0,
                 },
                 frame: {
+                    waitperiod: 50,
                     persecond: 0,
                     total: 0,
                 },
@@ -163,6 +156,12 @@ export class RemoteDesktopClient {
                 this.Metrics.video.idrcount.last    = val.keyFramesDecoded
 
                 this.Metrics.video.timestamp = now
+
+                const fps = this.Metrics.video.frame.persecond
+                this.Metrics.video.frame.waitperiod =
+                    fps < 50 ? 50 : 
+                    fps > 100 ? 40 :
+                    Math.round(40 + ((fps - 50) / 50) * 10 )
             }
         }
 
@@ -236,8 +235,8 @@ export class RemoteDesktopClient {
         controller.enqueue(encodedFrame)
     }
     private async videoTransform(encodedFrame: RTCEncodedVideoFrame, controller: TransformStreamDefaultController<RTCEncodedVideoFrame>) {
-        controller.enqueue(encodedFrame)
         this.waitForNewFrame()
+        controller.enqueue(encodedFrame)
     }
 
     private async handleIncomingVideo(evt: RTCTrackEvent): Promise<void> {
