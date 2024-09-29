@@ -41,11 +41,12 @@ export function UserEvents(content: { type: string; payload: any }) {
     });
 }
 
-export const PingSession = async () => {
+export const PingSession = async (total: number) => {
     UserEvents({
         type: 'remote/session',
         payload: {
-            timestamp: new Date()
+            timestamp: new Date(),
+            total
         }
     });
 };
