@@ -58,7 +58,7 @@ export class RemoteDesktopClient {
             this.waitForNewFrame()
         }
 
-        this.missing_frame = setTimeout(IDR, 100)
+        this.missing_frame = setTimeout(IDR, 50)
     }
 
     private countDecodedFrame() {
