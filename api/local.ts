@@ -174,7 +174,9 @@ export function KeepaliveVolume(
 
 export async function StartVirtdaemon(
     computer: Computer,
-    volume_id?: string
+    volume_id?: string,
+    ram?: string,
+    vcpu?: string
 ): Promise<Error | StartRequest> {
     const { address } = computer;
     if (address == undefined) 
@@ -188,8 +190,8 @@ export async function StartVirtdaemon(
         vm: {
             GPUs: ['GA104 [GeForce RTX 3060 Ti Lite Hash Rate]'],
             Volumes: volume_id != undefined ? [volume_id] : [],
-            CPU: '12',
-            RAM: '16'
+            CPU: vcpu ?? '12',
+            RAM: ram ?? '16'
         }
     };
 
