@@ -159,9 +159,9 @@ export class RemoteDesktopClient {
 
                 const fps = this.Metrics.video.frame.persecond
                 this.Metrics.video.frame.waitperiod =
-                    fps < 50 ? 50 : 
-                    fps > 100 ? 40 :
-                    Math.round(40 + ((fps - 50) / 50) * 10 )
+                    fps < 50 ? 60 : 
+                    fps > 100 ? 50 :
+                    Math.round(50 + ((fps - 50) / 50) * 10 )
             }
         }
 
