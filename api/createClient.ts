@@ -25,20 +25,20 @@ export const supabaseLocal = createClient(
 );
 export const supabaseGlobal = createClient(
     import.meta.env.VITE_SUPABASE_GLOBAL_URL,
-    import.meta.env.VITE_SUPABASE_GLOBAL_KEY 
+    import.meta.env.VITE_SUPABASE_GLOBAL_KEY
 );
 
 export function getDomainURL(): string {
     return window.location.host.includes('localhost') ||
         window.location.host.includes('tauri.localhost')
         ? 'https://play.thinkmay.net'
-        : window.location.href;
+        : window.location.origin;
 }
 export function getDomain(): string {
     return window.location.host.includes('localhost') ||
         window.location.host.includes('tauri.localhost')
         ? 'play.thinkmay.net'
-        : window.location.host;
+        : window.location.hostname;
 }
 
 export async function SupabaseFuncInvoke<T>(
@@ -47,7 +47,7 @@ export async function SupabaseFuncInvoke<T>(
     headers?: any
 ): Promise<Error | T> {
     const globalURL = import.meta.env.VITE_SUPABASE_GLOBAL_URL
-    const globalKey  = import.meta.env.VITE_SUPABASE_GLOBAL_KEY 
+    const globalKey = import.meta.env.VITE_SUPABASE_GLOBAL_KEY
     try {
         const response = await fetch(
             `${globalURL}/functions/v1/${funcName}`,
