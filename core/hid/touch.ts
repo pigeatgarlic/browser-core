@@ -4,8 +4,8 @@ import {
 import { EventCode, HIDMsg } from '../models/keys.model';
 
 const RADIUS = 50;
-const BOTTOM_THRESHOLD_PERCENT = 25;
-const MOUSE_SPEED = 4;
+const BOTTOM_THRESHOLD_PERCENT = 100;
+const MOUSE_SPEED = 3.5;
 export class TouchHandler {
     private onGoingTouchs: Map<number, TouchData>;
     private events: string[] = [];
