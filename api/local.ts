@@ -100,6 +100,7 @@ async function internalFetch<T>(
 
 export type Computer = {
     address?: string; // private
+    available?: boolean; // private
 
     Hostname?: string;
     CPU?: string;
