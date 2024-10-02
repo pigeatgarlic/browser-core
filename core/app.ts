@@ -167,7 +167,7 @@ export class RemoteDesktopClient {
                 const fps = this.Metrics.video.frame.persecond
                 this.Metrics.video.frame.waitperiod = this.Metrics.video.idrcount.strict_timing
                     ? calculate_waitperiod(fps)
-                    : 100
+                    : 150
             }
         }
 
