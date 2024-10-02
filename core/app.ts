@@ -142,9 +142,9 @@ export class RemoteDesktopClient {
         );
 
         const calculate_waitperiod = (fps: number) => 
-                    fps < 50 ? 100 : 
+                    fps < 50 ? 60 : 
                     fps > 100 ? 50 :
-                    Math.round(50 + ((100 - fps) / 50) * 50 );
+                    Math.round(50 + ((100 - fps) / 50) * 10 );
 
         const handle_metrics = (val: RTCMetric) => {
             if (val.kind == 'video') {
