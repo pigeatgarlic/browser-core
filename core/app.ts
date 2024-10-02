@@ -28,6 +28,7 @@ export class RemoteDesktopClient {
             idrcount: {
                 last: number
                 current: number
+                strict_timing: boolean
             }
             packetloss: {
                 last: number
@@ -99,6 +100,7 @@ export class RemoteDesktopClient {
             video: {
                 timestamp: new Date(),
                 idrcount: {
+                    strict_timing: true,
                     current: 0,
                     last: 0,
                 },
@@ -139,6 +141,11 @@ export class RemoteDesktopClient {
             val => this.SendRawHID(val)
         );
 
+        const calculate_waitperiod = (fps: number) => 
+                    fps < 50 ? 100 : 
+                    fps > 100 ? 50 :
+                    Math.round(50 + ((100 - fps) / 50) * 50 );
+
         const handle_metrics = (val: RTCMetric) => {
             if (val.kind == 'video') {
                 const now = new Date()
@@ -158,10 +165,9 @@ export class RemoteDesktopClient {
                 this.Metrics.video.timestamp = now
 
                 const fps = this.Metrics.video.frame.persecond
-                this.Metrics.video.frame.waitperiod =
-                    fps < 50 ? 60 : 
-                    fps > 100 ? 50 :
-                    Math.round(50 + ((fps - 50) / 50) * 10 )
+                this.Metrics.video.frame.waitperiod = this.Metrics.video.idrcount.strict_timing
+                    ? calculate_waitperiod(fps)
+                    : 100
             }
         }
 
