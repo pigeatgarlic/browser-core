@@ -6,8 +6,9 @@ import { EventCode, HIDMsg } from './models/keys.model';
 import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 import { VideoWrapper } from './pipeline/sink/video/wrapper';
 import { SignalingConfig } from './signaling/config';
-import { convertJSKey } from './utils/convert';
+import { convertJSKey, useShift } from './utils/convert';
 import {
+    AddNotifier,
     ConnectionEvent,
     Log,
     LogConnectionEvent,
@@ -15,10 +16,8 @@ import {
 } from './utils/log';
 import { RTCMetric, WebRTC } from './webrtc/webrtc';
 
-const Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000));
-type ChannelName = 'hid' | 'manual';
-
-export class RemoteDesktopClient {
+type channelName = 'hid' | 'manual';
+class RemoteDesktopClient {
     public hid: HID;
     public touch: TouchHandler;
     public video: VideoWrapper;
@@ -48,6 +47,7 @@ export class RemoteDesktopClient {
         audio: {};
     };
 
+    private static Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000));
     private missing_frame: any;
     private countThread: any;
     private waitForNewFrame() {
@@ -73,7 +73,7 @@ export class RemoteDesktopClient {
 
     private videoConn: WebRTC;
     private audioConn: WebRTC;
-    private datachannels: Map<ChannelName, DataChannel>;
+    private datachannels: Map<channelName, DataChannel>;
 
     public ready(): boolean {
         return this.videoConn.connected && this.audioConn.connected;
@@ -122,7 +122,7 @@ export class RemoteDesktopClient {
         };
 
         this.hid = null;
-        this.datachannels = new Map<ChannelName, DataChannel>();
+        this.datachannels = new Map<channelName, DataChannel>();
         this.datachannels.set(
             'manual',
             new DataChannel(async (data: string) => {})
@@ -209,7 +209,7 @@ export class RemoteDesktopClient {
                 audioEstablishmentLoop
             );
 
-            await Timeout();
+            await RemoteDesktopClient.Timeout();
             if (!this.audioConn.connected) {
                 this.audioConn.Close();
                 return;
@@ -234,7 +234,7 @@ export class RemoteDesktopClient {
                 videoEstablishmentLoop
             );
 
-            await Timeout();
+            await RemoteDesktopClient.Timeout();
             if (!this.videoConn.connected) {
                 this.videoConn.Close();
                 return;
@@ -259,7 +259,7 @@ export class RemoteDesktopClient {
         Log(LogLevel.Infor, `incoming data channel: ${a.channel.label}`);
 
         this.datachannels
-            .get(a.channel.label as ChannelName)
+            .get(a.channel.label as channelName)
             .SetSender(a.channel);
     }
 
@@ -506,7 +506,18 @@ export class RemoteDesktopClient {
         this.audioConn?.Close();
         this.video.video.srcObject = null;
         this.audio.internal().srcObject = null;
-        this.datachannels = new Map<ChannelName, DataChannel>();
+        this.datachannels = new Map<channelName, DataChannel>();
         Log(LogLevel.Infor, `Closed remote desktop connection`);
     }
 }
+
+
+export { 
+    AddNotifier, 
+    AudioWrapper, 
+    ConnectionEvent, 
+    EventCode, 
+    RemoteDesktopClient, 
+    useShift, 
+    VideoWrapper 
+};
