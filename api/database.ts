@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import PocketBase from 'pocketbase';
-import { getResolution } from '../core/utils/platform';
+import { getBrowser, getOS, getResolution } from '../core/utils/platform';
 
 export enum CAUSE {
     UNKNOWN,
@@ -14,16 +14,15 @@ export enum CAUSE {
     NEED_WAIT,
     INVALID_REQUEST,
     REMOTE_TIMEOUT,
-
     INVALID_REF
 }
 
-export const pb = new PocketBase(getDomainURL());
-export const supabaseLocal = createClient(
+export const POCKETBASE = new PocketBase(getDomainURL());
+export const LOCAL = () => createClient(
     getDomainURL(),
     import.meta.env.VITE_SUPABASE_LOCAL_KEY
 );
-export const supabaseGlobal = createClient(
+export const GLOBAL = () => createClient(
     import.meta.env.VITE_SUPABASE_GLOBAL_URL,
     import.meta.env.VITE_SUPABASE_GLOBAL_KEY
 );
@@ -41,36 +40,6 @@ export function getDomain(): string {
         : window.location.hostname;
 }
 
-export function getOS() {
-    let OSName = 'unknown';
-
-    if (navigator.userAgent.indexOf('Win') != -1) OSName = 'Windows';
-    if (navigator.userAgent.indexOf('Mac') != -1) OSName = 'Mac OS';
-    if (navigator.userAgent.indexOf('Linux') != -1) OSName = 'Linux';
-    if (navigator.userAgent.indexOf('Android') != -1) OSName = 'Android';
-    if (navigator.userAgent.indexOf('like Mac') != -1) OSName = 'iOS';
-
-    return OSName;
-}
-
-export function getBrowser() {
-    if (
-        (navigator.userAgent.indexOf('Opera') ||
-            navigator.userAgent.indexOf('OPR')) != -1
-    ) {
-        return 'Opera';
-    } else if (navigator.userAgent.indexOf('Edg') != -1) {
-        return 'Edge';
-    } else if (navigator.userAgent.indexOf('Chrome') != -1) {
-        return 'Chrome';
-    } else if (navigator.userAgent.indexOf('Safari') != -1) {
-        return 'Safari';
-    } else if (navigator.userAgent.indexOf('Firefox') != -1) {
-        return 'Firefox';
-    }
-
-    return 'unknown';
-}
 
 const stack: { content: any; timestamp: string }[] = [];
 let current_stack_length = 0;
@@ -113,7 +82,7 @@ export async function UserSession(email: string) {
     };
 
     // TODO
-    const { data, error } = await supabaseLocal
+    const { data, error } = await LOCAL()
         .from('generic_events')
         .insert({
             value,
@@ -128,7 +97,7 @@ export async function UserSession(email: string) {
         if (stack.length == current_stack_length) return;
 
         value.stack = stack;
-        await supabaseLocal
+        await LOCAL()
             .from('generic_events')
             .update({ value })
             .eq('id', session);

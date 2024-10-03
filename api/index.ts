@@ -1,6 +1,6 @@
 import { Body, Client, getClient, ResponseType } from '@tauri-apps/api/http';
 import { Child, Command } from '@tauri-apps/api/shell';
-import { CAUSE, getDomain, getDomainURL, pb, PingSession, supabaseGlobal, supabaseLocal, UserEvents, UserSession } from './database';
+import { CAUSE, getDomain, getDomainURL, GLOBAL, LOCAL, PingSession, POCKETBASE, UserEvents, UserSession } from './database';
 import { fromComputer, NodeType, RenderNode } from './tree';
 
 const WS_PORT = 60000;
@@ -36,8 +36,8 @@ async function internalFetch<T>(
     command: string,
     body?: any
 ): Promise<T | Error> {
-    const token = pb.authStore.token;
-    const user = pb.authStore.model?.id;
+    const token = POCKETBASE.authStore.token;
+    const user = POCKETBASE.authStore.model?.id;
     const url = userHttp(address)
         ? `http://${address}:${WS_PORT}/${command}`
         : `https://${address}/${command}`;
@@ -505,6 +505,21 @@ async function DiscordRichPresence(app_id: string): Promise<string> {
 }
 
 
-export { CAUSE, fromComputer, getDomain, getDomainURL, pb, PingSession, RenderNode, supabaseGlobal, supabaseLocal, UserEvents, UserSession };
-export type { Computer, NodeType };
+export {
+    CAUSE,
+    fromComputer,
+    getDomain,
+    getDomainURL,
+    GLOBAL,
+    LOCAL,
+    PingSession,
+    POCKETBASE,
+    RenderNode,
+    UserEvents,
+    UserSession
+};
+export type {
+    Computer,
+    NodeType
+};
 
