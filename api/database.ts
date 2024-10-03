@@ -30,13 +30,13 @@ export const GLOBAL = () => createClient(
 export function getDomainURL(): string {
     return window.location.host.includes('localhost') ||
         window.location.host.includes('tauri.localhost')
-        ? 'https://play.thinkmay.net'
+        ? 'https://play.0.thinkmay.net'
         : window.location.origin;
 }
 export function getDomain(): string {
     return window.location.host.includes('localhost') ||
         window.location.host.includes('tauri.localhost')
-        ? 'play.thinkmay.net'
+        ? 'play.0.thinkmay.net'
         : window.location.hostname;
 }
 
