@@ -8,53 +8,56 @@ import {
 } from '../utils/log';
 import { SignalingMessage } from './msg';
 
-
 export class SignalingClientTR {
     private run: boolean;
     private url: string;
 
-    private outcoming: SignalingMessage[] = []
+    private outcoming: SignalingMessage[] = [];
 
     constructor(
         url: string,
-        PacketHandler: (Data: SignalingMessage) => Promise<void>,
+        PacketHandler: (Data: SignalingMessage) => Promise<void>
     ) {
-        const u = new URL(url)
-        u.searchParams.append("uniqueid", uuidv4())
+        const u = new URL(url);
+        u.searchParams.append('uniqueid', uuidv4());
 
         this.url = u.toString();
-        this.run = true
+        this.run = true;
         LogConnectionEvent(ConnectionEvent.WebSocketConnecting);
 
         (async () => {
-            const client = await getClient()
+            const client = await getClient();
             while (this.run) {
-                await new Promise(r => setTimeout(r, 300))
-                const copy = this.outcoming
-                this.outcoming = []
+                await new Promise((r) => setTimeout(r, 300));
+                const copy = this.outcoming;
+                this.outcoming = [];
 
-                const { ok, data } = await client.post<SignalingMessage[]>(this.url, Body.json(copy), {
-                    responseType: ResponseType.JSON
-                })
+                const { ok, data } = await client.post<SignalingMessage[]>(
+                    this.url,
+                    Body.json(copy),
+                    {
+                        responseType: ResponseType.JSON
+                    }
+                );
                 if (!ok) {
-                    Log(LogLevel.Error, JSON.stringify(data))
-                    continue
+                    Log(LogLevel.Error, JSON.stringify(data));
+                    continue;
                 }
 
                 for (let index = 0; index < data.length; index++)
-                    await PacketHandler(data[index])
+                    await PacketHandler(data[index]);
             }
-        })()
+        })();
     }
 
     public Close() {
-        this.run = false
+        this.run = false;
     }
 
     /**
      * send messsage to signalling server
      */
     public SignallingSend(msg: SignalingMessage) {
-        this.outcoming.push(msg)
+        this.outcoming.push(msg);
     }
 }

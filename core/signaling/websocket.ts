@@ -24,7 +24,7 @@ export class SignalingClient {
         const internalOnClose = () => {
             this.WebSocketConnection = undefined;
             clearInterval(this.ping);
-            this.PacketHandler = async () => { };
+            this.PacketHandler = async () => {};
             onClose();
         };
 

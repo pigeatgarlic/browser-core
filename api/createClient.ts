@@ -17,7 +17,6 @@ export enum CAUSE {
     INVALID_REF
 }
 
-
 export const pb = new PocketBase(getDomainURL());
 export const supabaseLocal = createClient(
     getDomainURL(),

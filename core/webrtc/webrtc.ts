@@ -10,57 +10,60 @@ import {
 } from '../utils/log';
 
 export type RTCMetric = {
-    codecId : string
-    mediaType : string
-    id : string
-    remoteId : string
-    kind : string
-    mid : string
-    trackIdentifier : string
-    transportId : string
-    type : string
+    codecId: string;
+    mediaType: string;
+    id: string;
+    remoteId: string;
+    kind: string;
+    mid: string;
+    trackIdentifier: string;
+    transportId: string;
+    type: string;
 
-    bytesReceived : number
-    firCount : number
-    frameHeight : number
-    frameWidth : number
-    framesAssembledFromMultiplePackets : number
-    framesDecoded : number
-    framesDropped : number
-    framesPerSecond : number
-    framesReceived : number
-    freezeCount : number
-    headerBytesReceived : number
-    jitter : number
-    jitterBufferDelay : number
-    jitterBufferEmittedCount : number
-    jitterBufferMinimumDelay : number
-    jitterBufferTargetDelay : number
-    keyFramesDecoded : number
-    lastPacketReceivedTimestamp : number
-    nackCount : number
-    packetsLost : number
-    packetsReceived : number
-    pauseCount : number
-    pliCount : number
-    ssrc : number
-    timestamp : number
-    totalAssemblyTime : number
-    totalDecodeTime : number
-    totalFreezesDuration : number
-    totalInterFrameDelay : number
-    totalPausesDuration : number
-    totalProcessingDelay : number
-    totalSquaredInterFrameDelay : number
-}
+    bytesReceived: number;
+    firCount: number;
+    frameHeight: number;
+    frameWidth: number;
+    framesAssembledFromMultiplePackets: number;
+    framesDecoded: number;
+    framesDropped: number;
+    framesPerSecond: number;
+    framesReceived: number;
+    freezeCount: number;
+    headerBytesReceived: number;
+    jitter: number;
+    jitterBufferDelay: number;
+    jitterBufferEmittedCount: number;
+    jitterBufferMinimumDelay: number;
+    jitterBufferTargetDelay: number;
+    keyFramesDecoded: number;
+    lastPacketReceivedTimestamp: number;
+    nackCount: number;
+    packetsLost: number;
+    packetsReceived: number;
+    pauseCount: number;
+    pliCount: number;
+    ssrc: number;
+    timestamp: number;
+    totalAssemblyTime: number;
+    totalDecodeTime: number;
+    totalFreezesDuration: number;
+    totalInterFrameDelay: number;
+    totalPausesDuration: number;
+    totalProcessingDelay: number;
+    totalSquaredInterFrameDelay: number;
+};
 
 export class WebRTC {
     private id: string;
     public connected: boolean;
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
-    private signaling: SignalingClientTR | SignalingClient | SignalingClientFetch;
-    private watch_loop : any
+    private signaling:
+        | SignalingClientTR
+        | SignalingClient
+        | SignalingClientFetch;
+    private watch_loop: any;
 
     private rtrackHandler: (a: RTCTrackEvent) => any;
     private ltrackHandler: () => Promise<MediaStream | null>;
@@ -75,7 +78,7 @@ export class WebRTC {
         TrackHandler: (a: RTCTrackEvent) => Promise<void>,
         channelHandler: (a: RTCDataChannelEvent) => Promise<void>,
         MetricsHandler: (val: RTCMetric) => void,
-        CloseHandler: () => void,
+        CloseHandler: () => void
     ) {
         this.connected = false;
         this.closeHandler = CloseHandler;
@@ -85,13 +88,10 @@ export class WebRTC {
         this.webrtcConfig = webrtcConfig;
         this.id = id;
 
-        Log(
-            LogLevel.Infor,
-            `Started connect to signaling server ${id}`
-        );
+        Log(LogLevel.Infor, `Started connect to signaling server ${id}`);
 
-        const using_tauri = (window as any).__TAURI_IPC__ != undefined
-        const protocol = signalingURL.split('://').at(0)
+        const using_tauri = (window as any).__TAURI_IPC__ != undefined;
+        const protocol = signalingURL.split('://').at(0);
         if (protocol == 'ws' || protocol == 'wss')
             this.signaling = new SignalingClient(
                 signalingURL,
@@ -101,23 +101,22 @@ export class WebRTC {
         else if (using_tauri)
             this.signaling = new SignalingClientTR(
                 signalingURL,
-                this.handleIncomingPacket.bind(this),
+                this.handleIncomingPacket.bind(this)
             );
-        else 
+        else
             this.signaling = new SignalingClientFetch(
                 signalingURL,
-                this.handleIncomingPacket.bind(this),
+                this.handleIncomingPacket.bind(this)
             );
 
         this.watch_loop = setInterval(async () => {
-            if (this.Conn == undefined) 
-                return
-            
-            const stats = await this.Conn.getStats()
-            stats.forEach(val => val.type == 'inbound-rtp' 
-                ?  MetricsHandler(val) 
-                : () => {})
-        },2000)
+            if (this.Conn == undefined) return;
+
+            const stats = await this.Conn.getStats();
+            stats.forEach((val) =>
+                val.type == 'inbound-rtp' ? MetricsHandler(val) : () => {}
+            );
+        }, 2000);
     }
 
     private async SignalingOnClose() {
@@ -127,28 +126,25 @@ export class WebRTC {
     }
 
     public Close() {
-        Log(
-            LogLevel.Infor,
-            `Closed webrtc connection ${this.id}`
-        );
+        Log(LogLevel.Infor, `Closed webrtc connection ${this.id}`);
         this.connected = false;
         this.Conn?.close();
         this.signaling?.Close();
-        this.rtrackHandler = () => { };
-        this.channelHandler = () => { };
-        clearInterval(this.watch_loop)
+        this.rtrackHandler = () => {};
+        this.channelHandler = () => {};
+        clearInterval(this.watch_loop);
         LogConnectionEvent(
             ConnectionEvent.WebRTCConnectionClosed,
             'close',
             this.id as string
         );
         const close = this.closeHandler;
-        this.closeHandler = () => { };
-        close()
+        this.closeHandler = () => {};
+        close();
     }
 
     private async handleIncomingPacket(pkt: SignalingMessage) {
-        Log(LogLevel.Debug,this.id +' signaling out : ' + msgString(pkt))
+        Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(pkt));
         switch (pkt.type) {
             case SignalingType.TYPE_SDP:
                 LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage);
@@ -180,7 +176,10 @@ export class WebRTC {
     }
 
     public SetupConnection(config: RTCConfiguration) {
-        this.Conn = new RTCPeerConnection({...config,encodedInsertableStreams: true} as any);
+        this.Conn = new RTCPeerConnection({
+            ...config,
+            encodedInsertableStreams: true
+        } as any);
         this.Conn.ondatachannel = this.channelHandler;
         this.Conn.ontrack = this.rtrackHandler;
         this.Conn.onicecandidate = this.onICECandidates.bind(this);
@@ -188,11 +187,7 @@ export class WebRTC {
             this.onConnectionStateChange.bind(this);
     }
 
-
-
-    private async AddLocalTrack(
-        stream: MediaStream,
-    ) {
+    private async AddLocalTrack(stream: MediaStream) {
         const tracks = stream.getTracks();
         tracks.forEach((track) => this.Conn.addTrack(track, stream));
 
@@ -222,7 +217,7 @@ export class WebRTC {
                 'done',
                 this.id as string
             );
-            Log(LogLevel.Infor, this.id +' webrtc connection established');
+            Log(LogLevel.Infor, this.id + ' webrtc connection established');
         };
 
         const connectingHandler = () => {
@@ -231,12 +226,12 @@ export class WebRTC {
                 'connecting',
                 this.id as string
             );
-            Log(LogLevel.Infor, this.id +' webrtc connection checking');
+            Log(LogLevel.Infor, this.id + ' webrtc connection checking');
         };
 
         switch (
-        (eve.target as RTCPeerConnection)
-            .connectionState as RTCPeerConnectionState 
+            (eve.target as RTCPeerConnection)
+                .connectionState as RTCPeerConnectionState
         ) {
             case 'new':
             case 'connecting':
@@ -270,9 +265,8 @@ export class WebRTC {
         try {
             await this.Conn.setRemoteDescription(sdp);
             const track = await this.ltrackHandler();
-            if (track != null) 
-                await this.AddLocalTrack(track)
-                
+            if (track != null) await this.AddLocalTrack(track);
+
             const ans = await this.Conn.createAnswer();
             await this.onLocalDescription(ans);
         } catch (error) {
@@ -286,43 +280,43 @@ export class WebRTC {
         if (!this.Conn.localDescription) return;
 
         const init = this.Conn.localDescription;
-        const out : SignalingMessage = {
+        const out: SignalingMessage = {
             type: SignalingType.TYPE_SDP,
             sdp: {
                 Type: init.type,
                 SDPData: init.sdp
             }
-        }
-        Log(LogLevel.Debug,this.id + ' signaling out : ' + msgString(out))
+        };
+        Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(out));
         this.signaling.SignallingSend(out);
     }
 
     private onICECandidates(event: RTCPeerConnectionIceEvent) {
         if (event.candidate == null) {
-            Log(LogLevel.Infor, this.id +' ICE Candidate was null, done');
+            Log(LogLevel.Infor, this.id + ' ICE Candidate was null, done');
             return;
         }
 
         const init = event.candidate.toJSON();
-        const out : SignalingMessage = {
+        const out: SignalingMessage = {
             type: SignalingType.TYPE_ICE,
             ice: {
                 SDPMid: init.sdpMid,
                 Candidate: init.candidate,
                 SDPMLineIndex: init.sdpMLineIndex
             }
-        }
-        Log(LogLevel.Debug,this.id + ' signaling out : ' + msgString(out))
+        };
+        Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(out));
         this.signaling.SignallingSend(out);
     }
 
     private async DoneHandshake() {
-        const out : SignalingMessage = {
+        const out: SignalingMessage = {
             type: SignalingType.END
-        }
-        Log(LogLevel.Debug,this.id + ' signaling out : ' + msgString(out))
+        };
+        Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(out));
         this.signaling.SignallingSend(out);
-        await new Promise(r => setTimeout(r,1000))
-        this.signaling.Close()
+        await new Promise((r) => setTimeout(r, 1000));
+        this.signaling.Close();
     }
 }

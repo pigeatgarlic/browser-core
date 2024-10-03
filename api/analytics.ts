@@ -32,7 +32,7 @@ export function getBrowser() {
     return 'unknown';
 }
 
-const stack : {content:any,timestamp: string}[]= [];
+const stack: { content: any; timestamp: string }[] = [];
 let current_stack_length = 0;
 export function UserEvents(content: { type: string; payload: any }) {
     stack.push({

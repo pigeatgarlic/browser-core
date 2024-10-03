@@ -31,15 +31,15 @@ export type SignalingMessage =
           type: SignalingType.START;
       };
 
-export function msgString(msg : SignalingMessage) : string {
+export function msgString(msg: SignalingMessage): string {
     switch (msg.type) {
         case SignalingType.END:
-            return 'END'
+            return 'END';
         case SignalingType.START:
-            return 'START'
+            return 'START';
         case SignalingType.TYPE_ICE:
-            return msg.ice.Candidate
+            return msg.ice.Candidate;
         case SignalingType.TYPE_SDP:
-            return msg.sdp.Type 
+            return msg.sdp.Type;
     }
 }

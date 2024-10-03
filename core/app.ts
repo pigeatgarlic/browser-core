@@ -15,9 +15,8 @@ import {
 } from './utils/log';
 import { RTCMetric, WebRTC } from './webrtc/webrtc';
 
-const Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000))
+const Timeout = () => new Promise((r) => setTimeout(r, 30 * 1000));
 type ChannelName = 'hid' | 'manual';
-
 
 export class RemoteDesktopClient {
     public hid: HID;
@@ -26,51 +25,50 @@ export class RemoteDesktopClient {
     public audio: AudioWrapper;
     public Metrics: {
         video: {
-            timestamp : Date
+            timestamp: Date;
             idrcount: {
-                last: number
-                current: number
-                strict_timing: boolean
-            }
+                last: number;
+                current: number;
+                strict_timing: boolean;
+            };
             packetloss: {
-                last: number
-                current: number
-            },
+                last: number;
+                current: number;
+            };
             bitrate: {
-                total: number
-                persecond: number
-            },
+                total: number;
+                persecond: number;
+            };
             frame: {
-                total: number
-                persecond: number
-                waitperiod: number
-            }
-        },
-        audio: {
-
-        }
+                total: number;
+                persecond: number;
+                waitperiod: number;
+            };
+        };
+        audio: {};
     };
 
-    private missing_frame: any
-    private countThread: any
+    private missing_frame: any;
+    private countThread: any;
     private waitForNewFrame() {
-        if (this.missing_frame != undefined)
-            clearTimeout(this.missing_frame)
+        if (this.missing_frame != undefined) clearTimeout(this.missing_frame);
 
-        this.missing_frame = setTimeout(this.ResetVideo.bind(this), this.Metrics.video.frame.waitperiod)
+        this.missing_frame = setTimeout(
+            this.ResetVideo.bind(this),
+            this.Metrics.video.frame.waitperiod
+        );
     }
 
     private countDecodedFrame() {
-        if (this.countThread != undefined)
-            clearInterval(this.countThread)
+        if (this.countThread != undefined) clearInterval(this.countThread);
 
-        let last_decoded_frame = this.Metrics.video.frame.total
+        let last_decoded_frame = this.Metrics.video.frame.total;
         this.countThread = setInterval(() => {
             if (this.Metrics.video.frame.total == last_decoded_frame)
-                this.ResetVideo()
+                this.ResetVideo();
 
-            last_decoded_frame = this.Metrics.video.frame.total
-        }, 2000)
+            last_decoded_frame = this.Metrics.video.frame.total;
+        }, 2000);
     }
 
     private videoConn: WebRTC;
@@ -88,7 +86,8 @@ export class RemoteDesktopClient {
         signalingConfig: SignalingConfig,
         WebRTCConfig: RTCConfiguration,
         {
-            scancode,microphone
+            scancode,
+            microphone
         }: {
             scancode?: boolean;
             microphone?: boolean;
@@ -104,30 +103,32 @@ export class RemoteDesktopClient {
                 idrcount: {
                     strict_timing: true,
                     current: 0,
-                    last: 0,
+                    last: 0
                 },
                 bitrate: {
                     persecond: 0,
-                    total: 0,
+                    total: 0
                 },
                 frame: {
                     waitperiod: 50,
                     persecond: 0,
-                    total: 0,
+                    total: 0
                 },
                 packetloss: {
                     current: 0,
-                    last: 0,
+                    last: 0
                 }
-            },
-        }
+            }
+        };
 
         this.hid = null;
         this.datachannels = new Map<ChannelName, DataChannel>();
-        this.datachannels.set('manual',
-            new DataChannel(async (data: string) => { })
+        this.datachannels.set(
+            'manual',
+            new DataChannel(async (data: string) => {})
         );
-        this.datachannels.set('hid',
+        this.datachannels.set(
+            'hid',
             new DataChannel(async (data: string) => {
                 if (this.closed) return;
                 this.hid.handleIncomingData(data);
@@ -135,43 +136,62 @@ export class RemoteDesktopClient {
         );
 
         const hid_channel = this.datachannels.get('hid');
-        this.hid = new HID(((data: string) => {
-            if (this.closed) return;
-            hid_channel.sendMessage(data);
-        }).bind(this), scancode, vid.video);
-        this.touch = new TouchHandler( vid.video, 
-            val => this.SendRawHID(val)
+        this.hid = new HID(
+            ((data: string) => {
+                if (this.closed) return;
+                hid_channel.sendMessage(data);
+            }).bind(this),
+            scancode,
+            vid.video
         );
+        this.touch = new TouchHandler(vid.video, (val) => this.SendRawHID(val));
 
-        const calculate_waitperiod = (fps: number) => 
-                    fps < 50 ? 60 : 
-                    fps > 100 ? 50 :
-                    Math.round(50 + ((100 - fps) / 50) * 10 );
+        const calculate_waitperiod = (fps: number) =>
+            fps < 50
+                ? 60
+                : fps > 100
+                  ? 50
+                  : Math.round(50 + ((100 - fps) / 50) * 10);
 
         const handle_metrics = (val: RTCMetric) => {
             if (val.kind == 'video') {
-                const now = new Date()
+                const now = new Date();
 
-                this.Metrics.video.frame.persecond = Math.round((val.framesDecoded - this.Metrics.video.frame.total) / ((now.getTime() - this.Metrics.video.timestamp.getTime()) / 1000))
-                this.Metrics.video.frame.total     = val.framesDecoded
+                this.Metrics.video.frame.persecond = Math.round(
+                    (val.framesDecoded - this.Metrics.video.frame.total) /
+                        ((now.getTime() -
+                            this.Metrics.video.timestamp.getTime()) /
+                            1000)
+                );
+                this.Metrics.video.frame.total = val.framesDecoded;
 
-                this.Metrics.video.bitrate.persecond = Math.round((val.bytesReceived - this.Metrics.video.bitrate.total) / ((now.getTime() - this.Metrics.video.timestamp.getTime()) / 1000) * 8 / 1024 )
-                this.Metrics.video.bitrate.total     = val.bytesReceived
+                this.Metrics.video.bitrate.persecond = Math.round(
+                    (((val.bytesReceived - this.Metrics.video.bitrate.total) /
+                        ((now.getTime() -
+                            this.Metrics.video.timestamp.getTime()) /
+                            1000)) *
+                        8) /
+                        1024
+                );
+                this.Metrics.video.bitrate.total = val.bytesReceived;
 
-                this.Metrics.video.packetloss.current = val.packetsLost - this.Metrics.video.packetloss.last
-                this.Metrics.video.packetloss.last    = val.packetsLost
+                this.Metrics.video.packetloss.current =
+                    val.packetsLost - this.Metrics.video.packetloss.last;
+                this.Metrics.video.packetloss.last = val.packetsLost;
 
-                this.Metrics.video.idrcount.current = val.keyFramesDecoded - this.Metrics.video.idrcount.last
-                this.Metrics.video.idrcount.last    = val.keyFramesDecoded
+                this.Metrics.video.idrcount.current =
+                    val.keyFramesDecoded - this.Metrics.video.idrcount.last;
+                this.Metrics.video.idrcount.last = val.keyFramesDecoded;
 
-                this.Metrics.video.timestamp = now
+                this.Metrics.video.timestamp = now;
 
-                const fps = this.Metrics.video.frame.persecond
-                this.Metrics.video.frame.waitperiod = this.Metrics.video.idrcount.strict_timing
+                const fps = this.Metrics.video.frame.persecond;
+                this.Metrics.video.frame.waitperiod = this.Metrics.video
+                    .idrcount.strict_timing
                     ? calculate_waitperiod(fps)
-                    : 150
+                    : 150;
             }
-        }
+        };
 
         const audioEstablishmentLoop = async () => {
             if (this.closed) return;
@@ -180,14 +200,16 @@ export class RemoteDesktopClient {
                 'audio',
                 signalingConfig.audioUrl,
                 WebRTCConfig,
-                microphone ? this.AcquireMicrophone.bind(this) : async () => null,
+                microphone
+                    ? this.AcquireMicrophone.bind(this)
+                    : async () => null,
                 this.handleIncomingAudio.bind(this),
                 this.handleIncomingDataChannel.bind(this),
-                _ => {},
-                audioEstablishmentLoop,
+                (_) => {},
+                audioEstablishmentLoop
             );
 
-            await Timeout()
+            await Timeout();
             if (!this.audioConn.connected) {
                 this.audioConn.Close();
                 return;
@@ -203,14 +225,16 @@ export class RemoteDesktopClient {
                 'video',
                 signalingConfig.videoUrl,
                 WebRTCConfig,
-                async () => { return null },
+                async () => {
+                    return null;
+                },
                 this.handleIncomingVideo.bind(this),
                 this.handleIncomingDataChannel.bind(this),
                 handle_metrics.bind(this),
-                videoEstablishmentLoop,
+                videoEstablishmentLoop
             );
 
-            await Timeout()
+            await Timeout();
             if (!this.videoConn.connected) {
                 this.videoConn.Close();
                 return;
@@ -239,12 +263,18 @@ export class RemoteDesktopClient {
             .SetSender(a.channel);
     }
 
-    private async audioTransform(encodedFrame: RTCEncodedAudioFrame, controller: TransformStreamDefaultController<RTCEncodedAudioFrame>) {
-        controller.enqueue(encodedFrame)
+    private async audioTransform(
+        encodedFrame: RTCEncodedAudioFrame,
+        controller: TransformStreamDefaultController<RTCEncodedAudioFrame>
+    ) {
+        controller.enqueue(encodedFrame);
     }
-    private async videoTransform(encodedFrame: RTCEncodedVideoFrame, controller: TransformStreamDefaultController<RTCEncodedVideoFrame>) {
-        this.waitForNewFrame()
-        controller.enqueue(encodedFrame)
+    private async videoTransform(
+        encodedFrame: RTCEncodedVideoFrame,
+        controller: TransformStreamDefaultController<RTCEncodedVideoFrame>
+    ) {
+        this.waitForNewFrame();
+        controller.enqueue(encodedFrame);
     }
 
     private async handleIncomingVideo(evt: RTCTrackEvent): Promise<void> {
@@ -259,26 +289,28 @@ export class RemoteDesktopClient {
             )
         );
 
-        if (evt.track.kind != 'video')
-            return
+        if (evt.track.kind != 'video') return;
 
         const stream = evt.streams.find(
             (val) => val.getVideoTracks().length > 0
         );
 
-        if (Number.isNaN(parseInt(stream.id)))
-            return;
+        if (Number.isNaN(parseInt(stream.id))) return;
 
         try {
             const frameStreams = (evt.receiver as any).createEncodedStreams();
             frameStreams.readable
-                .pipeThrough(new TransformStream({ transform: this.videoTransform.bind(this) }))
+                .pipeThrough(
+                    new TransformStream({
+                        transform: this.videoTransform.bind(this)
+                    })
+                )
                 .pipeTo(frameStreams.writable);
 
-            this.waitForNewFrame()
-        } catch { }
+            this.waitForNewFrame();
+        } catch {}
 
-        this.countDecodedFrame()
+        this.countDecodedFrame();
         await this.video.assign(stream);
     }
 
@@ -294,16 +326,21 @@ export class RemoteDesktopClient {
             )
         );
 
-        if (evt.track.kind != 'audio')
-            return
+        if (evt.track.kind != 'audio') return;
 
-        const stream = evt.streams.find((val) => val.getAudioTracks().length > 0)
+        const stream = evt.streams.find(
+            (val) => val.getAudioTracks().length > 0
+        );
         try {
             const frameStreams = (evt.receiver as any).createEncodedStreams();
             frameStreams.readable
-                .pipeThrough(new TransformStream({ transform: this.audioTransform.bind(this) }))
+                .pipeThrough(
+                    new TransformStream({
+                        transform: this.audioTransform.bind(this)
+                    })
+                )
                 .pipeTo(frameStreams.writable);
-        } catch { }
+        } catch {}
 
         await this.audio.assign(stream);
     }
@@ -321,7 +358,7 @@ export class RemoteDesktopClient {
 
         const audioTracks = localStream.getAudioTracks();
 
-        return localStream
+        return localStream;
     }
 
     public async ChangeFramerate(framerate: number) {
@@ -384,8 +421,10 @@ export class RemoteDesktopClient {
 
     async SendRawHID(...data: HIDMsg[]) {
         if (this.closed) return;
-        for (let index = 0; index < data.length; index++) 
-            await this.datachannels.get('hid').sendMessage(data[index].ToString());
+        for (let index = 0; index < data.length; index++)
+            await this.datachannels
+                .get('hid')
+                .sendMessage(data[index].ToString());
     }
     public SetClipboard(val: string) {
         if (this.closed) return;
@@ -395,7 +434,7 @@ export class RemoteDesktopClient {
             })
         );
     }
-    
+
     public VirtualGamepadButton(isDown: boolean, index: number) {
         const is_slider = index == 6 || index == 7;
         this.SendRawHID(
@@ -403,18 +442,18 @@ export class RemoteDesktopClient {
                 is_slider
                     ? EventCode.GamepadSlide
                     : !isDown
-                    ? EventCode.GamepadButtonDown
-                    : EventCode.GamepadButtonUp,
+                      ? EventCode.GamepadButtonDown
+                      : EventCode.GamepadButtonUp,
                 is_slider
                     ? {
-                        gamepad_id: 0,
-                        index: index,
-                        val: !isDown ? 0 : 1
-                    }
+                          gamepad_id: 0,
+                          index: index,
+                          val: !isDown ? 0 : 1
+                      }
                     : {
-                        gamepad_id: 0,
-                        index: index
-                    }
+                          gamepad_id: 0,
+                          index: index
+                      }
             )
         );
     }
@@ -446,21 +485,21 @@ export class RemoteDesktopClient {
         );
     }
 
-    public VirtualKeyboard = (...keys :{code: EventCode, jsKey: string}[]) => {
+    public VirtualKeyboard = (
+        ...keys: { code: EventCode; jsKey: string }[]
+    ) => {
         for (let index = 0; index < keys.length; index++) {
-            const {jsKey,code} = keys[index];
+            const { jsKey, code } = keys[index];
             const key = convertJSKey(jsKey, 0);
             if (key == undefined) return;
             this.SendRawHID(new HIDMsg(code, { key }));
         }
     };
 
-
-
     public Close() {
         this.closed = true;
-        clearTimeout(this.missing_frame)
-        clearInterval(this.countThread)
+        clearTimeout(this.missing_frame);
+        clearInterval(this.countThread);
         this.hid?.Close();
         this.touch?.Close();
         this.videoConn?.Close();

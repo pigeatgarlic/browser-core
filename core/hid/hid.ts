@@ -33,10 +33,15 @@ export class HID {
 
     private intervals: any[];
 
-    private video : HTMLVideoElement
-    constructor(Sendfunc: (data: string) => void, scancode?: boolean, video?: HTMLVideoElement) {
-        this.SendFunc = (data: string) => !this.disable ? Sendfunc(data) : null;
-        this.video = video
+    private video: HTMLVideoElement;
+    constructor(
+        Sendfunc: (data: string) => void,
+        scancode?: boolean,
+        video?: HTMLVideoElement
+    ) {
+        this.SendFunc = (data: string) =>
+            !this.disable ? Sendfunc(data) : null;
+        this.video = video;
 
         this.prev_buttons = new Map<number, boolean>();
         this.prev_sliders = new Map<number, number>();
@@ -228,7 +233,6 @@ export class HID {
             });
     }
 
-
     public ResetKeyStuck() {
         this.SendFunc(new HIDMsg(EventCode.KeyReset, {}).ToString());
     }
@@ -310,8 +314,7 @@ export class HID {
     }
     private mouseButtonMovement(event: MouseEvent) {
         this.last_interact = new Date();
-        if (event.target != this.video)
-            return;
+        if (event.target != this.video) return;
 
         if (!this.relativeMouse) {
             this.SendFunc(

@@ -1,6 +1,4 @@
-import {
-    TouchData
-} from '../models/hid.model';
+import { TouchData } from '../models/hid.model';
 import { EventCode, HIDMsg } from '../models/keys.model';
 
 const RADIUS = 50;
@@ -19,14 +17,14 @@ export class TouchHandler {
 
     private running: any;
     private SendFunc: (...data: HIDMsg[]) => void;
-    private video: HTMLVideoElement
+    private video: HTMLVideoElement;
     constructor(video: HTMLVideoElement, Sendfunc: (data: HIDMsg) => void) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
-        this.mode = 'none'
-        this.video = video
-        this.last_interact = new Date()
+        this.mode = 'none';
+        this.video = video;
+        this.last_interact = new Date();
         document.ontouchstart = this.handleStart.bind(this);
         document.ontouchend = this.handleEnd.bind(this);
         document.ontouchmove = this.handleMove.bind(this);
@@ -37,12 +35,11 @@ export class TouchHandler {
         document.ontouchstart = null;
         document.ontouchend = null;
         document.ontouchmove = null;
-        clearInterval(this.running)
+        clearInterval(this.running);
     }
 
     private async ListenEvents() {
-        if (this.mode == 'none')
-            return
+        if (this.mode == 'none') return;
 
         switch (this.events.pop()) {
             case 'short_right':
@@ -71,9 +68,8 @@ export class TouchHandler {
     }
 
     private handleStart = (evt: TouchEvent) => {
-        this.last_interact = new Date()
-        if (evt.target == this.video)
-            evt.preventDefault()
+        this.last_interact = new Date();
+        if (evt.target == this.video) evt.preventDefault();
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
@@ -82,8 +78,7 @@ export class TouchHandler {
         }
     };
     private handleEnd = (evt: TouchEvent) => {
-        if (evt.target == this.video)
-            evt.preventDefault()
+        if (evt.target == this.video) evt.preventDefault();
 
         const touches = evt.changedTouches;
 
@@ -91,7 +86,8 @@ export class TouchHandler {
             const key = touches[i].identifier;
             const touch = this.onGoingTouchs.get(key);
             if (touch == null) continue;
-            else if (this.mode == 'gamepad') this.handleGamepad(touch.touchStart, touch);
+            else if (this.mode == 'gamepad')
+                this.handleGamepad(touch.touchStart, touch);
             else if (
                 this.mode == 'trackpad' &&
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
@@ -123,7 +119,6 @@ export class TouchHandler {
 
             const prev_touch = this.onGoingTouchs.get(identifier);
             if (prev_touch == null) continue;
-
 
             // one finger only
             if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad')
@@ -184,7 +179,7 @@ export class TouchHandler {
     }
 
     private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
-        return
+        return;
         const pos = {
             x: curr_touch.clientX - prev_touch.touchStart.clientX,
             y: curr_touch.clientY - prev_touch.touchStart.clientY
@@ -201,7 +196,7 @@ export class TouchHandler {
 
         const group =
             prev_touch.touchStart.clientX >
-                document.documentElement.clientWidth / 2
+            document.documentElement.clientWidth / 2
                 ? 'right'
                 : 'left';
 
@@ -230,8 +225,6 @@ export class TouchHandler {
             })
         );
     }
-
-
 
     private isTouchInBottomRight(touch: Touch): boolean {
         const screenHeight = document.documentElement.clientHeight;
