@@ -18,9 +18,9 @@ export class TouchHandler {
     }
 
     private running: any;
-    private SendFunc: (data: string) => void;
+    private SendFunc: (...data: HIDMsg[]) => void;
     private video: HTMLVideoElement
-    constructor(video: HTMLVideoElement, Sendfunc: (data: string) => void) {
+    constructor(video: HTMLVideoElement, Sendfunc: (data: HIDMsg) => void) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
@@ -49,24 +49,20 @@ export class TouchHandler {
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '2'
-                    }).ToString()
-                );
-                this.SendFunc(
+                    }),
                     new HIDMsg(EventCode.MouseUp, {
                         button: '2'
-                    }).ToString()
+                    })
                 );
                 break;
             case 'short_generic':
                 this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '0'
-                    }).ToString()
-                );
-                this.SendFunc(
+                    }),
                     new HIDMsg(EventCode.MouseUp, {
                         button: '0'
-                    }).ToString()
+                    })
                 );
                 break;
             default:
@@ -139,7 +135,7 @@ export class TouchHandler {
                         dY:
                             MOUSE_SPEED *
                             Math.round(curr_touch.clientY - prev_touch.clientY)
-                    }).ToString()
+                    })
                 );
             else if (this.onGoingTouchs.size < 3 && this.mode == 'gamepad')
                 this.handleGamepad(curr_touch, prev_touch);
@@ -171,7 +167,7 @@ export class TouchHandler {
             this.SendFunc(
                 new HIDMsg(EventCode.MouseWheel, {
                     deltaX: -wheelValue
-                }).ToString()
+                })
             );
         } else {
             // Calculate the vertical scroll amount based on touch movement
@@ -182,7 +178,7 @@ export class TouchHandler {
             this.SendFunc(
                 new HIDMsg(EventCode.MouseWheel, {
                     deltaY: -wheelValue
-                }).ToString()
+                })
             );
         }
     }
@@ -226,14 +222,12 @@ export class TouchHandler {
                 gamepad_id: 0,
                 index: axisx,
                 val: x
-            }).ToString()
-        );
-        this.SendFunc(
+            }),
             new HIDMsg(EventCode.GamepadAxis, {
                 gamepad_id: 0,
                 index: axisy,
                 val: y
-            }).ToString()
+            })
         );
     }
 

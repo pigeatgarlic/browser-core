@@ -1,10 +1,12 @@
 import { DataChannel } from './datachannel/datachannel';
 import { HID } from './hid/hid';
 import { TouchHandler } from './hid/touch';
+import { AxisType } from './models/hid.model';
 import { EventCode, HIDMsg } from './models/keys.model';
 import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 import { VideoWrapper } from './pipeline/sink/video/wrapper';
 import { SignalingConfig } from './signaling/config';
+import { convertJSKey } from './utils/convert';
 import {
     ConnectionEvent,
     Log,
@@ -380,18 +382,80 @@ export class RemoteDesktopClient {
         Log(LogLevel.Debug, `hard reset video stream`);
     }
 
-    public async SendRawHID(data: string) {
+    async SendRawHID(...data: HIDMsg[]) {
         if (this.closed) return;
-        await this.datachannels.get('hid').sendMessage(data);
+        for (let index = 0; index < data.length; index++) 
+            await this.datachannels.get('hid').sendMessage(data[index].ToString());
     }
     public SetClipboard(val: string) {
-        const code = EventCode.ClipboardSet;
+        if (this.closed) return;
         this.SendRawHID(
-            new HIDMsg(code, {
+            new HIDMsg(EventCode.ClipboardSet, {
                 val: btoa(val)
-            }).ToString()
+            })
         );
     }
+    
+    public VirtualGamepadButton(isDown: boolean, index: number) {
+        const is_slider = index == 6 || index == 7;
+        this.SendRawHID(
+            new HIDMsg(
+                is_slider
+                    ? EventCode.GamepadSlide
+                    : !isDown
+                    ? EventCode.GamepadButtonDown
+                    : EventCode.GamepadButtonUp,
+                is_slider
+                    ? {
+                        gamepad_id: 0,
+                        index: index,
+                        val: !isDown ? 0 : 1
+                    }
+                    : {
+                        gamepad_id: 0,
+                        index: index
+                    }
+            )
+        );
+    }
+
+    public VirtualGamepadAxis(x: number, y: number, type: AxisType) {
+        let axisx, axisy: number;
+        switch (type) {
+            case 'left':
+                axisx = 0;
+                axisy = 1;
+                break;
+            case 'right':
+                axisx = 2;
+                axisy = 3;
+                break;
+        }
+
+        this.SendRawHID(
+            new HIDMsg(EventCode.GamepadAxis, {
+                gamepad_id: 0,
+                index: axisx,
+                val: x
+            }),
+            new HIDMsg(EventCode.GamepadAxis, {
+                gamepad_id: 0,
+                index: axisy,
+                val: y
+            })
+        );
+    }
+
+    public VirtualKeyboard = (...keys :{code: EventCode, jsKey: string}[]) => {
+        for (let index = 0; index < keys.length; index++) {
+            const {jsKey,code} = keys[index];
+            const key = convertJSKey(jsKey, 0);
+            if (key == undefined) return;
+            this.SendRawHID(new HIDMsg(code, { key }));
+        }
+    };
+
+
 
     public Close() {
         this.closed = true;
