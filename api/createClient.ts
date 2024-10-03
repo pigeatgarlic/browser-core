@@ -40,32 +40,3 @@ export function getDomain(): string {
         ? 'play.thinkmay.net'
         : window.location.hostname;
 }
-
-export async function SupabaseFuncInvoke<T>(
-    funcName: string,
-    body?: any,
-    headers?: any
-): Promise<Error | T> {
-    const globalURL = import.meta.env.VITE_SUPABASE_GLOBAL_URL
-    const globalKey = import.meta.env.VITE_SUPABASE_GLOBAL_KEY
-    try {
-        const response = await fetch(
-            `${globalURL}/functions/v1/${funcName}`,
-            {
-                body: JSON.stringify(body ?? {}),
-                method: 'POST',
-                headers: {
-                    ...headers,
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${globalKey}`
-                }
-            }
-        );
-        if (response.ok === false) return new Error(await response.text());
-
-        const data = (await response.json()) as T;
-        return data;
-    } catch (error: any) {
-        return new Error(error.message);
-    }
-}
