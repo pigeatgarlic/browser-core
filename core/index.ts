@@ -14,6 +14,7 @@ import {
     LogConnectionEvent,
     LogLevel
 } from './utils/log';
+import { isMobile } from './utils/platform';
 import { RTCMetric, WebRTC } from './webrtc/webrtc';
 
 type channelName = 'hid' | 'manual';
@@ -514,6 +515,7 @@ class RemoteDesktopClient {
 
 export { 
     AddNotifier, 
+    isMobile,
     AudioWrapper, 
     ConnectionEvent, 
     EventCode, 

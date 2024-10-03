@@ -19,3 +19,19 @@ export let PINGER = async () => {};
 export const SetPinger = (fun: () => Promise<void>) => {
     PINGER = fun;
 };
+
+
+export const ready = async (pre: () => void,after: () => void,timeout: () => void) => {
+    pre()
+
+    let start = new Date().getTime();
+    while (CLIENT == null || !CLIENT?.ready()) {
+        const now = new Date().getTime();
+        if (now - start > 60 * 1000) 
+            return timeout()
+
+        await new Promise((r) => setTimeout(r, 1000));
+    }
+
+    return after();
+};
