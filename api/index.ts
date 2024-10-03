@@ -1,8 +1,9 @@
-import { Body, Client, ResponseType, getClient } from '@tauri-apps/api/http';
+import { Body, Client, getClient, ResponseType } from '@tauri-apps/api/http';
 import { Child, Command } from '@tauri-apps/api/shell';
-import { pb } from './createClient';
+import { CAUSE, getDomain, getDomainURL, pb, PingSession, supabaseGlobal, supabaseLocal, UserEvents, UserSession } from './database';
+import { fromComputer, NodeType, RenderNode } from './tree';
 
-export const WS_PORT = 60000;
+const WS_PORT = 60000;
 const TurnCredential = () => {
     return {
         maxPort: 65535,
@@ -14,13 +15,13 @@ const TurnCredential = () => {
 };
 
 let client: Client | null = null;
-export const http_available = () =>
+const http_available = () =>
     client != null || new URL(window.location.href).protocol == 'http:';
-export const ValidateIPaddress = (ipaddress: string) =>
+const ValidateIPaddress = (ipaddress: string) =>
     /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
         ipaddress
     );
-export const userHttp = (addr: string): boolean =>
+const userHttp = (addr: string): boolean =>
     http_available() && ValidateIPaddress(addr);
 
 getClient()
@@ -98,7 +99,7 @@ async function internalFetch<T>(
     }
 }
 
-export type Computer = {
+type Computer = {
     address?: string; // private
     available?: boolean; // private
 
@@ -502,3 +503,8 @@ async function DiscordRichPresence(app_id: string): Promise<string> {
     const command = await new Command('Daemon', ['discord', app_id]).execute();
     return command.stdout + '\n' + command.stderr;
 }
+
+
+export { CAUSE, fromComputer, getDomain, getDomainURL, pb, PingSession, RenderNode, supabaseGlobal, supabaseLocal, UserEvents, UserSession };
+export type { Computer, NodeType };
+
