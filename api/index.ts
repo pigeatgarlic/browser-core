@@ -101,7 +101,7 @@ async function internalFetch<T>(
 
 type Computer = {
     address?: string; // private
-    available?: boolean; // private
+    available?: 'not_ready' | 'ready'; // private
 
     Hostname?: string;
     CPU?: string;
