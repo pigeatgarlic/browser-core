@@ -25,16 +25,16 @@ export class TouchHandler {
         this.mode = 'none';
         this.video = video;
         this.last_interact = new Date();
-        document.ontouchstart = this.handleStart.bind(this);
-        document.ontouchend = this.handleEnd.bind(this);
-        document.ontouchmove = this.handleMove.bind(this);
+        this.video.ontouchstart = this.handleStart.bind(this);
+        this.video.ontouchend = this.handleEnd.bind(this);
+        this.video.ontouchmove = this.handleMove.bind(this);
         this.running = setInterval(this.ListenEvents.bind(this), 100);
     }
 
     public Close() {
-        document.ontouchstart = null;
-        document.ontouchend = null;
-        document.ontouchmove = null;
+        this.video.ontouchstart = null;
+        this.video.ontouchend = null;
+        this.video.ontouchmove = null;
         clearInterval(this.running);
     }
 
