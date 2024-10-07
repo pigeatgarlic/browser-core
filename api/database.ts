@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import PocketBase from 'pocketbase';
+import { ValidateIPaddress } from './index';
 import { getBrowser, getOS, getResolution } from '../core/utils/platform';
 
 export enum CAUSE {
@@ -29,13 +30,15 @@ export const GLOBAL = () => createClient(
 
 export function getDomainURL(): string {
     return window.location.host.includes('localhost') ||
-        window.location.host.includes('tauri.localhost')
+        window.location.host.includes('tauri.localhost') ||
+        ValidateIPaddress(window.location.host.split(':').at(0))
         ? 'https://play.0.thinkmay.net'
         : window.location.origin;
 }
 export function getDomain(): string {
     return window.location.host.includes('localhost') ||
-        window.location.host.includes('tauri.localhost')
+        window.location.host.includes('tauri.localhost') ||
+        ValidateIPaddress(window.location.host.split(':').at(0))
         ? 'play.0.thinkmay.net'
         : window.location.hostname;
 }
