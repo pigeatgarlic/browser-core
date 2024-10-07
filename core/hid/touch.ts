@@ -18,7 +18,7 @@ export class TouchHandler {
     private running: any;
     private SendFunc: (...data: HIDMsg[]) => void;
     private video: HTMLVideoElement;
-    constructor(video: HTMLVideoElement, Sendfunc: (data: HIDMsg) => void) {
+    constructor(video: HTMLVideoElement, Sendfunc: (...data: HIDMsg[]) => void) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
@@ -86,8 +86,6 @@ export class TouchHandler {
             const key = touches[i].identifier;
             const touch = this.onGoingTouchs.get(key);
             if (touch == null) continue;
-            else if (this.mode == 'gamepad')
-                this.handleGamepad(touch.touchStart, touch);
             else if (
                 this.mode == 'trackpad' &&
                 new Date().getTime() - touch.startTime.getTime() < 250 &&
@@ -132,8 +130,6 @@ export class TouchHandler {
                             Math.round(curr_touch.clientY - prev_touch.clientY)
                     })
                 );
-            else if (this.onGoingTouchs.size < 3 && this.mode == 'gamepad')
-                this.handleGamepad(curr_touch, prev_touch);
 
             prev_touch.copyFromTouch(curr_touch);
         }
@@ -176,54 +172,6 @@ export class TouchHandler {
                 })
             );
         }
-    }
-
-    private handleGamepad(curr_touch: Touch, prev_touch: TouchData) {
-        return;
-        const pos = {
-            x: curr_touch.clientX - prev_touch.touchStart.clientX,
-            y: curr_touch.clientY - prev_touch.touchStart.clientY
-        };
-
-        const raw = Math.sqrt(pos.x * pos.x + pos.y * pos.y);
-        const rad = Math.sqrt(
-            (pos.x * pos.x + pos.y * pos.y) / (RADIUS * RADIUS)
-        );
-        const final_rad = rad > 1 ? 1 : rad;
-
-        const x = pos.x * (final_rad / raw);
-        const y = pos.y * (final_rad / raw);
-
-        const group =
-            prev_touch.touchStart.clientX >
-            document.documentElement.clientWidth / 2
-                ? 'right'
-                : 'left';
-
-        let axisx, axisy: number;
-        switch (group) {
-            case 'left':
-                axisx = 0;
-                axisy = 1;
-                break;
-            case 'right':
-                axisx = 2;
-                axisy = 3;
-                break;
-        }
-
-        this.SendFunc(
-            new HIDMsg(EventCode.GamepadAxis, {
-                gamepad_id: 0,
-                index: axisx,
-                val: x
-            }),
-            new HIDMsg(EventCode.GamepadAxis, {
-                gamepad_id: 0,
-                index: axisy,
-                val: y
-            })
-        );
     }
 
     private isTouchInBottomRight(touch: Touch): boolean {

@@ -19,14 +19,13 @@ export enum CAUSE {
 }
 
 export const POCKETBASE = new PocketBase(getDomainURL());
-export const LOCAL = () => createClient(
-    getDomainURL(),
-    import.meta.env.VITE_SUPABASE_LOCAL_KEY
-);
-export const GLOBAL = () => createClient(
-    import.meta.env.VITE_SUPABASE_GLOBAL_URL,
-    import.meta.env.VITE_SUPABASE_GLOBAL_KEY
-);
+export const LOCAL = () =>
+    createClient(getDomainURL(), import.meta.env.VITE_SUPABASE_LOCAL_KEY);
+export const GLOBAL = () =>
+    createClient(
+        import.meta.env.VITE_SUPABASE_GLOBAL_URL,
+        import.meta.env.VITE_SUPABASE_GLOBAL_KEY
+    );
 
 export function getDomainURL(): string {
     return window.location.host.includes('localhost') ||
@@ -42,7 +41,6 @@ export function getDomain(): string {
         ? 'play.0.thinkmay.net'
         : window.location.hostname;
 }
-
 
 const stack: { content: any; timestamp: string }[] = [];
 let current_stack_length = 0;

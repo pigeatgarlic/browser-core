@@ -28,19 +28,19 @@ export class HID {
         return (new Date().getTime() - this.last_interact.getTime()) / 1000;
     }
 
-    private SendFunc: (data: string) => void;
+    private SendFunc: (...data: HIDMsg[]) => void;
     public disable: boolean;
 
     private intervals: any[];
 
     private video: HTMLVideoElement;
     constructor(
-        Sendfunc: (data: string) => void,
+        Sendfunc: (...data: HIDMsg[]) => void,
         scancode?: boolean,
         video?: HTMLVideoElement
     ) {
-        this.SendFunc = (data: string) =>
-            !this.disable ? Sendfunc(data) : null;
+        this.SendFunc = (...data: HIDMsg[]) =>
+            !this.disable ? Sendfunc(...data) : null;
         this.video = video;
 
         this.prev_buttons = new Map<number, boolean>();
@@ -112,7 +112,7 @@ export class HID {
 
     public PasteClipboard() {
         const code = EventCode.ClipboardPaste;
-        this.SendFunc(new HIDMsg(code, {}).ToString());
+        this.SendFunc(new HIDMsg(code, {}));
     }
 
     public handleIncomingData(data: string) {
@@ -166,7 +166,7 @@ export class HID {
                                         gamepad_id: gamepad_id,
                                         index: index
                                     }
-                                ).ToString()
+                                )
                             );
 
                             this.prev_buttons.set(index, pressed);
@@ -199,7 +199,7 @@ export class HID {
                                     gamepad_id: gamepad_id,
                                     index: index,
                                     val: value
-                                }).ToString()
+                                })
                             );
 
                             this.prev_sliders.set(index, value);
@@ -224,7 +224,7 @@ export class HID {
                             gamepad_id: gamepad_id,
                             index: index,
                             val: value
-                        }).ToString()
+                        })
                     );
 
                     this.prev_axis.set(index, value);
@@ -234,7 +234,7 @@ export class HID {
     }
 
     public ResetKeyStuck() {
-        this.SendFunc(new HIDMsg(EventCode.KeyReset, {}).ToString());
+        this.SendFunc(new HIDMsg(EventCode.KeyReset, {}));
     }
 
     private keydown(event: KeyboardEvent) {
@@ -263,7 +263,7 @@ export class HID {
 
         let code = EventCode.KeyDown;
         if (this.scancode) code += 2;
-        this.SendFunc(new HIDMsg(code, { key }).ToString());
+        this.SendFunc(new HIDMsg(code, { key }));
         this.pressing_keys.push(key);
     }
     private keyup(event: KeyboardEvent) {
@@ -283,7 +283,7 @@ export class HID {
 
         let code = EventCode.KeyUp;
         if (this.scancode) code += 2;
-        this.SendFunc(new HIDMsg(code, { key }).ToString());
+        this.SendFunc(new HIDMsg(code, { key }));
         this.pressing_keys.splice(
             this.pressing_keys.findIndex((x) => x == key)
         );
@@ -300,7 +300,7 @@ export class HID {
         this.SendFunc(
             new HIDMsg(code, {
                 deltaY: -Math.round(event.deltaY)
-            }).ToString()
+            })
         );
     }
     public mouseMoveRel(event: { movementX: number; movementY: number }) {
@@ -309,7 +309,7 @@ export class HID {
             new HIDMsg(code, {
                 dX: event.movementX,
                 dY: event.movementY
-            }).ToString()
+            })
         );
     }
     private mouseButtonMovement(event: MouseEvent) {
@@ -321,14 +321,14 @@ export class HID {
                 new HIDMsg(EventCode.MouseMoveAbs, {
                     dX: this.clientToServerX(event.clientX),
                     dY: this.clientToServerY(event.clientY)
-                }).ToString()
+                })
             );
         } else {
             this.SendFunc(
                 new HIDMsg(EventCode.MouseMoveRel, {
                     dX: event.movementX * MOUSE_SPEED,
                     dY: event.movementY * MOUSE_SPEED
-                }).ToString()
+                })
             );
         }
     }
@@ -358,7 +358,7 @@ export class HID {
         this.SendFunc(
             new HIDMsg(code, {
                 button: event.button
-            }).ToString()
+            })
         );
     }
     public MouseButtonUp(event: { button: number }) {
@@ -366,7 +366,7 @@ export class HID {
         this.SendFunc(
             new HIDMsg(code, {
                 button: event.button
-            }).ToString()
+            })
         );
     }
 

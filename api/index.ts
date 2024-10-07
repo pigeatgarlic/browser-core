@@ -1,6 +1,16 @@
 import { Body, Client, getClient, ResponseType } from '@tauri-apps/api/http';
 import { Child, Command } from '@tauri-apps/api/shell';
-import { CAUSE, getDomain, getDomainURL, GLOBAL, LOCAL, PingSession, POCKETBASE, UserEvents, UserSession } from './database';
+import {
+    CAUSE,
+    getDomain,
+    getDomainURL,
+    GLOBAL,
+    LOCAL,
+    PingSession,
+    POCKETBASE,
+    UserEvents,
+    UserSession
+} from './database';
 import { fromComputer, NodeType, RenderNode } from './tree';
 
 const WS_PORT = 60000;
@@ -505,7 +515,6 @@ async function DiscordRichPresence(app_id: string): Promise<string> {
     return command.stdout + '\n' + command.stderr;
 }
 
-
 export {
     CAUSE,
     fromComputer,
@@ -519,8 +528,4 @@ export {
     UserEvents,
     UserSession
 };
-export type {
-    Computer,
-    NodeType
-};
-
+export type { Computer, NodeType };

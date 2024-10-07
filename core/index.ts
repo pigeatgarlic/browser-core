@@ -136,16 +136,9 @@ class RemoteDesktopClient {
             })
         );
 
-        const hid_channel = this.datachannels.get('hid');
-        this.hid = new HID(
-            ((data: string) => {
-                if (this.closed) return;
-                hid_channel.sendMessage(data);
-            }).bind(this),
-            scancode,
-            vid.video
-        );
-        this.touch = new TouchHandler(vid.video, (val) => this.SendRawHID(val));
+        const start = (...val: HIDMsg[]) =>  { this.SendRawHID(...val) }
+        this.hid = new HID( start.bind(this), scancode, vid.video);
+        this.touch = new TouchHandler(vid.video, start.bind(this));
 
         const calculate_waitperiod = (fps: number) =>
             fps < 50
@@ -422,10 +415,10 @@ class RemoteDesktopClient {
 
     async SendRawHID(...data: HIDMsg[]) {
         if (this.closed) return;
+
+        const hid = this.datachannels.get('hid')
         for (let index = 0; index < data.length; index++)
-            await this.datachannels
-                .get('hid')
-                .sendMessage(data[index].ToString());
+            await hid.sendMessage(data[index].ToString());
     }
     public SetClipboard(val: string) {
         if (this.closed) return;
@@ -486,16 +479,14 @@ class RemoteDesktopClient {
         );
     }
 
-    public VirtualKeyboard = (
-        ...keys: { code: EventCode; jsKey: string }[]
-    ) => {
+    public VirtualKeyboard(...keys: { code: EventCode; jsKey: string }[]) {
         for (let index = 0; index < keys.length; index++) {
             const { jsKey, code } = keys[index];
             const key = convertJSKey(jsKey, 0);
             if (key == undefined) return;
             this.SendRawHID(new HIDMsg(code, { key }));
         }
-    };
+    }
 
     public Close() {
         this.closed = true;
@@ -512,14 +503,13 @@ class RemoteDesktopClient {
     }
 }
 
-
-export { 
-    AddNotifier, 
+export {
+    AddNotifier,
+    AudioWrapper,
+    ConnectionEvent,
+    EventCode,
+    RemoteDesktopClient,
+    VideoWrapper,
     isMobile,
-    AudioWrapper, 
-    ConnectionEvent, 
-    EventCode, 
-    RemoteDesktopClient, 
-    useShift, 
-    VideoWrapper 
+    useShift
 };

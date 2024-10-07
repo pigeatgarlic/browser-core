@@ -65,7 +65,6 @@ export function getResolution(): {
     };
 }
 
-
 export const isMobile = () => {
     const userAgent = navigator?.userAgent?.toLowerCase();
     const isMobile =
