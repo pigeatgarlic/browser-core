@@ -1,5 +1,6 @@
 import { Body, Client, getClient, ResponseType } from '@tauri-apps/api/http';
 import { Child, Command } from '@tauri-apps/api/shell';
+import { v4 as uuidv4 } from 'uuid';
 import {
     CAUSE,
     getDomain,
@@ -19,8 +20,8 @@ const TurnCredential = () => {
         maxPort: 65535,
         minPort: 30000,
         port: getRandomInt(30000, 65535),
-        username: crypto.randomUUID(),
-        password: crypto.randomUUID()
+        username: uuidv4(),
+        password: uuidv4()
     };
 };
 
@@ -194,7 +195,7 @@ export async function StartVirtdaemon(
     const { address } = computer;
     if (address == undefined) return new Error('address is not defined');
 
-    const id = crypto.randomUUID();
+    const id = uuidv4();
     const req = {
         id,
         vm: {
@@ -258,7 +259,7 @@ export async function StartThinkmayOnVM(
         ScreenHeight: 1080
     };
 
-    const id = crypto.randomUUID();
+    const id = uuidv4();
     const req: StartRequest = {
         id,
         target,
@@ -314,7 +315,7 @@ export async function StartThinkmay(
         ScreenHeight: 1080
     };
 
-    const id = crypto.randomUUID();
+    const id = uuidv4();
     const req: StartRequest = {
         id,
         thinkmay,
@@ -529,3 +530,4 @@ export {
     UserSession
 };
 export type { Computer, NodeType };
+
