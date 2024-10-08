@@ -18,6 +18,7 @@ export enum CAUSE {
     INVALID_REF
 }
 
+const THINKMAY_DOMAIN = 'thinkmay.net'
 export const POCKETBASE = new PocketBase(getDomainURL());
 export const LOCAL = () =>
     createClient(getDomainURL(), import.meta.env.VITE_SUPABASE_LOCAL_KEY);
@@ -28,16 +29,12 @@ export const GLOBAL = () =>
     );
 
 export function getDomainURL(): string {
-    return window.location.host.includes('localhost') ||
-        window.location.host.includes('tauri.localhost') ||
-        ValidateIPaddress(window.location.host.split(':').at(0))
+    return !window.location.origin.includes(THINKMAY_DOMAIN)
         ? 'https://play.0.thinkmay.net'
         : window.location.origin;
 }
 export function getDomain(): string {
-    return window.location.host.includes('localhost') ||
-        window.location.host.includes('tauri.localhost') ||
-        ValidateIPaddress(window.location.host.split(':').at(0))
+    return !window.location.origin.includes(THINKMAY_DOMAIN)
         ? 'play.0.thinkmay.net'
         : window.location.hostname;
 }
