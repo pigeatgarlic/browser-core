@@ -56,7 +56,7 @@ class RemoteDesktopClient {
 
         this.missing_frame = setTimeout(
             this.ResetVideo.bind(this),
-            this.Metrics.video.frame.waitperiod
+            1000 
         );
     }
 
@@ -183,7 +183,7 @@ class RemoteDesktopClient {
                 this.Metrics.video.frame.waitperiod = this.Metrics.video
                     .idrcount.strict_timing
                     ? calculate_waitperiod(fps)
-                    : 150;
+                    : 250;
             }
         };
 
