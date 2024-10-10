@@ -85,7 +85,12 @@ export class HID {
         /**
          * gamepad stuff
          */
-        Array.from(Array(16).keys()).forEach(x => this.SendFunc(new HIDMsg(EventCode.GamepadButtonDown, { gamepad_id: 0, x })))
+        Array.from(Array(16).keys()).forEach(x => {
+            this.prev_buttons.set(x,false);
+            this.prev_sliders.set(x,0);
+            this.prev_axis.set(x,0);
+        })
+
         this.intervals.push(setInterval(this.runButton.bind(this), 1));
         this.intervals.push(setInterval(this.runAxis.bind(this), 1));
         this.intervals.push(setInterval(this.runSlider.bind(this), 1));
