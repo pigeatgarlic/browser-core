@@ -66,7 +66,7 @@ class RemoteDesktopClient {
     private datachannels: Map<channelName, DataChannel>;
 
     public ready(): boolean {
-        return this.videoConn.connected && this.audioConn.connected;
+        return this.Metrics.video.status == 'connected'
     }
 
     private closed: boolean;
