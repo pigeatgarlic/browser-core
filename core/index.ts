@@ -178,8 +178,7 @@ class RemoteDesktopClient {
             const start = RemoteDesktopClient.Now();
             this.Metrics.audio.status = 'connecting';
             while (
-                !this.audioConn.connected ||
-                this.Metrics.audio.sample.received == 0
+                !this.audioConn.connected
             ) {
                 if (RemoteDesktopClient.Now() - start > 30 * 1000)
                     return this.audioConn.Close();
