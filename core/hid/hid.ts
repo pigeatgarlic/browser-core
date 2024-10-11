@@ -29,6 +29,7 @@ export class HID {
 
     private SendFunc: (...data: HIDMsg[]) => Promise<void>;
     public disable: boolean;
+    private closed: boolean;
 
     private intervals: any[];
 
@@ -38,8 +39,10 @@ export class HID {
         scancode?: boolean,
         video?: HTMLVideoElement
     ) {
-        this.SendFunc = (...data: HIDMsg[]) =>
-            !this.disable ? Sendfunc(...data) : null;
+        this.disable = false;
+        this.closed = false;
+        this.SendFunc = async (...data: HIDMsg[]) =>
+            !this.disable ? await Sendfunc(...data) : null;
         this.video = video;
 
         this.prev_buttons = new Map<number, boolean>();
@@ -91,9 +94,9 @@ export class HID {
         });
 
         (async () => {
-            while (!this.disable) {
+            while (!this.closed) {
                 try {
-                    await this.runGamepad();
+                    if (await this.runGamepad()) continue;
                 } catch {}
                 await new Promise((r) => setTimeout(r, 10));
             }
@@ -113,6 +116,7 @@ export class HID {
     public Close() {
         this.intervals.forEach((x) => clearInterval(x));
         this.disable = true;
+        this.closed = true;
         document.onwheel = null;
         document.onmousemove = null;
         document.onmousedown = null;
@@ -153,7 +157,8 @@ export class HID {
         }
     }
 
-    private async runGamepad() {
+    private async runGamepad(): Promise<boolean> {
+        const last = this.last_interact;
         const gamepads = navigator.getGamepads().filter((x) => x != null);
         for (let gamepad_id = 0; gamepad_id < gamepads.length; gamepad_id++) {
             const { buttons, axes } = gamepads[gamepad_id];
@@ -165,7 +170,7 @@ export class HID {
                         Math.abs(this.prev_sliders.get(index) - value) <
                         0.000001
                     )
-                        return;
+                        continue;
                     await this.SendFunc(
                         new HIDMsg(EventCode.GamepadSlide, {
                             gamepad_id: gamepad_id,
@@ -177,7 +182,7 @@ export class HID {
                     this.prev_sliders.set(index, value);
                     this.last_interact = new Date();
                 } else {
-                    if (this.prev_buttons.get(index) == pressed) return;
+                    if (this.prev_buttons.get(index) == pressed) continue;
                     await this.SendFunc(
                         new HIDMsg(
                             pressed
@@ -197,7 +202,7 @@ export class HID {
             for (let index = 0; index < axes.length; index++) {
                 const value = axes[index];
                 if (Math.abs(this.prev_axis.get(index) - value) < 0.000001)
-                    return;
+                    continue;
 
                 await this.SendFunc(
                     new HIDMsg(EventCode.GamepadAxis, {
@@ -211,6 +216,8 @@ export class HID {
                 this.last_interact = new Date();
             }
         }
+
+        return this.last_interact != last;
     }
 
     public async ResetKeyStuck() {
