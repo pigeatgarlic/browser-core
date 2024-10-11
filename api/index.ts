@@ -31,8 +31,8 @@ const http_available = () =>
 export function ValidateIPaddress(ipaddress: string) {
     return ipaddress != undefined
         ? /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-              ipaddress
-          )
+            ipaddress
+        )
         : false;
 }
 const userHttp = (addr: string): boolean =>
@@ -283,7 +283,7 @@ export async function StartThinkmayOnVM(
             ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`,
         rtc_config: {
-            iceTransportPolicy: 'relay',
+            iceTransportPolicy: 'all',
             iceServers: [
                 {
                     urls: `stun:${address}:${turn.port}`
@@ -403,7 +403,7 @@ export function ParseVMRequest(
             ? `https://${address}/handshake/client?token=${thinkmay.videoToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.videoToken}&target=${target}`,
         rtc_config: {
-            iceTransportPolicy: 'relay', // preferred as VM often under double NAT
+            iceTransportPolicy: 'all',
             iceServers: [
                 {
                     urls: `stun:${address}:${turn.port}`
@@ -532,3 +532,4 @@ export {
     UserSession
 };
 export type { Computer, NodeType };
+
