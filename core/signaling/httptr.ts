@@ -8,7 +8,7 @@ export class SignalingClientTR {
     private url: string;
 
     private outcoming: SignalingMessage[] = [];
-    private last_msg : SignalingMessage[] = [];
+    private last_msg: SignalingMessage[] = [];
 
     constructor(
         url: string,
@@ -22,7 +22,11 @@ export class SignalingClientTR {
 
         (async () => {
             const client = await getClient();
-            while (this.run || this.outcoming.length > 0 || this.last_msg.length > 0) {
+            while (
+                this.run ||
+                this.outcoming.length > 0 ||
+                this.last_msg.length > 0
+            ) {
                 await new Promise((r) => setTimeout(r, 300));
                 const copy = this.outcoming;
                 this.outcoming = [];
@@ -39,7 +43,7 @@ export class SignalingClientTR {
                     continue;
                 }
 
-                this.last_msg = data
+                this.last_msg = data;
                 for (let index = 0; index < data.length; index++)
                     await PacketHandler(data[index]);
             }

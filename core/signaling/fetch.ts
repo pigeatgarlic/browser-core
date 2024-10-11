@@ -20,7 +20,11 @@ export class SignalingClientFetch {
         this.run = true;
 
         (async () => {
-            while (this.run || this.outcoming.length > 0 || this.last_msg.length > 0) {
+            while (
+                this.run ||
+                this.outcoming.length > 0 ||
+                this.last_msg.length > 0
+            ) {
                 await new Promise((r) => setTimeout(r, 300));
                 const copy = this.outcoming;
                 this.outcoming = [];
@@ -37,7 +41,7 @@ export class SignalingClientFetch {
                 }
 
                 const data = (await resp.json()) as SignalingMessage[];
-                this.last_msg = data
+                this.last_msg = data;
                 for (let index = 0; index < data.length; index++)
                     await PacketHandler(data[index]);
             }
