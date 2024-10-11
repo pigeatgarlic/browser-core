@@ -8,51 +8,58 @@ import {
     LogConnectionEvent,
     LogLevel
 } from '../utils/log';
+import { getBrowser } from '../utils/platform';
 
-export type RTCMetric = {
-    codecId: string;
-    mediaType: string;
-    id: string;
-    remoteId: string;
-    kind: string;
-    mid: string;
-    trackIdentifier: string;
-    transportId: string;
-    type: string;
+export type RTCMetric =
+    | {
+          codecId: string;
+          mediaType: string;
+          id: string;
+          remoteId: string;
+          kind: 'video';
+          mid: string;
+          trackIdentifier: string;
+          transportId: string;
+          type: string;
 
-    bytesReceived: number;
-    firCount: number;
-    frameHeight: number;
-    frameWidth: number;
-    framesAssembledFromMultiplePackets: number;
-    framesDecoded: number;
-    framesDropped: number;
-    framesPerSecond: number;
-    framesReceived: number;
-    freezeCount: number;
-    headerBytesReceived: number;
-    jitter: number;
-    jitterBufferDelay: number;
-    jitterBufferEmittedCount: number;
-    jitterBufferMinimumDelay: number;
-    jitterBufferTargetDelay: number;
-    keyFramesDecoded: number;
-    lastPacketReceivedTimestamp: number;
-    nackCount: number;
-    packetsLost: number;
-    packetsReceived: number;
-    pauseCount: number;
-    pliCount: number;
-    ssrc: number;
-    timestamp: number;
-    totalAssemblyTime: number;
-    totalDecodeTime: number;
-    totalFreezesDuration: number;
-    totalInterFrameDelay: number;
-    totalPausesDuration: number;
-    totalProcessingDelay: number;
-    totalSquaredInterFrameDelay: number;
-};
+          bytesReceived: number;
+          firCount: number;
+          frameHeight: number;
+          frameWidth: number;
+          framesAssembledFromMultiplePackets: number;
+          framesDecoded: number;
+          framesDropped: number;
+          framesPerSecond: number;
+          framesReceived: number;
+          freezeCount: number;
+          headerBytesReceived: number;
+          jitter: number;
+          jitterBufferDelay: number;
+          jitterBufferEmittedCount: number;
+          jitterBufferMinimumDelay: number;
+          jitterBufferTargetDelay: number;
+          keyFramesDecoded: number;
+          lastPacketReceivedTimestamp: number;
+          nackCount: number;
+          packetsLost: number;
+          packetsReceived: number;
+          pauseCount: number;
+          pliCount: number;
+          ssrc: number;
+          timestamp: number;
+          totalAssemblyTime: number;
+          totalDecodeTime: number;
+          totalFreezesDuration: number;
+          totalInterFrameDelay: number;
+          totalPausesDuration: number;
+          totalProcessingDelay: number;
+          totalSquaredInterFrameDelay: number;
+      }
+    | {
+          kind: 'audio';
+
+          totalSamplesReceived: number;
+      };
 
 export class WebRTC {
     private id: string;
@@ -178,7 +185,7 @@ export class WebRTC {
     public SetupConnection(config: RTCConfiguration) {
         this.Conn = new RTCPeerConnection({
             ...config,
-            encodedInsertableStreams: true
+            encodedInsertableStreams: getBrowser() != 'Safari'
         } as any);
         this.Conn.ondatachannel = this.channelHandler;
         this.Conn.ontrack = this.rtrackHandler;
@@ -209,39 +216,26 @@ export class WebRTC {
 
     private onConnectionStateChange(eve: Event) {
         const successHandler = async () => {
-            await new Promise((r) => setTimeout(r, 5000));
             this.connected = true;
+            await new Promise((r) => setTimeout(r, 5000));
             this.DoneHandshake();
-            LogConnectionEvent(
-                ConnectionEvent.WebRTCConnectionDoneChecking,
-                'done',
-                this.id as string
-            );
-            Log(LogLevel.Infor, this.id + ' webrtc connection established');
-        };
-
-        const connectingHandler = () => {
-            LogConnectionEvent(
-                ConnectionEvent.WebRTCConnectionChecking,
-                'connecting',
-                this.id as string
-            );
-            Log(LogLevel.Infor, this.id + ' webrtc connection checking');
         };
 
         switch (
             (eve.target as RTCPeerConnection)
                 .connectionState as RTCPeerConnectionState
         ) {
-            case 'new':
-            case 'connecting':
-                connectingHandler();
-                break;
             case 'connected':
                 successHandler();
                 break;
+            case 'new':
+                break;
+            case 'connecting':
+                break;
             case 'closed':
+                break;
             case 'failed':
+                break;
             case 'disconnected':
                 this.Close();
                 break;

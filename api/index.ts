@@ -28,10 +28,12 @@ const TurnCredential = () => {
 let client: Client | null = null;
 const http_available = () =>
     client != null || new URL(window.location.href).protocol == 'http:';
-export function ValidateIPaddress (ipaddress: string) {
-    return ipaddress != undefined ? /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-        ipaddress
-    ) : false;
+export function ValidateIPaddress(ipaddress: string) {
+    return ipaddress != undefined
+        ? /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
+              ipaddress
+          )
+        : false;
 }
 const userHttp = (addr: string): boolean =>
     http_available() && ValidateIPaddress(addr);
@@ -530,4 +532,3 @@ export {
     UserSession
 };
 export type { Computer, NodeType };
-

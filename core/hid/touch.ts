@@ -18,7 +18,10 @@ export class TouchHandler {
     private running: any;
     private SendFunc: (...data: HIDMsg[]) => void;
     private video: HTMLVideoElement;
-    constructor(video: HTMLVideoElement, Sendfunc: (...data: HIDMsg[]) => void) {
+    constructor(
+        video: HTMLVideoElement,
+        Sendfunc: (...data: HIDMsg[]) => void
+    ) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
@@ -68,8 +71,8 @@ export class TouchHandler {
     }
 
     private handleStart = (evt: TouchEvent) => {
+        evt.preventDefault();
         this.last_interact = new Date();
-        if (evt.target == this.video) evt.preventDefault();
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++) {
@@ -78,8 +81,7 @@ export class TouchHandler {
         }
     };
     private handleEnd = (evt: TouchEvent) => {
-        if (evt.target == this.video) evt.preventDefault();
-
+        evt.preventDefault();
         const touches = evt.changedTouches;
 
         for (let i = 0; i < touches.length; i++) {
@@ -107,6 +109,7 @@ export class TouchHandler {
     };
 
     private handleMove = async (evt: TouchEvent) => {
+        evt.preventDefault();
         const touches = evt.touches;
         if (touches.length === 2) {
             await this.handleTwoFingerScroll(touches);

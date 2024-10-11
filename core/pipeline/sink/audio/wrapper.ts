@@ -23,9 +23,7 @@ export class AudioWrapper {
 
     // Play audio function
     async play() {
-        if (this.audio.paused && !this.isPlaying) {
-            return await this.audio.play();
-        }
+        await this.audio.play();
     }
 
     // Pause audio function
@@ -43,7 +41,6 @@ export class AudioWrapper {
 
         this.audio.srcObject = null;
         this.audio.srcObject = provider;
-        await this.play();
         this.last_assign = new Date();
     }
 

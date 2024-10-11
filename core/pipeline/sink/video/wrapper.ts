@@ -21,9 +21,7 @@ export class VideoWrapper {
 
     // Play video function
     async play() {
-        if (this.video.paused && !this.isPlaying) {
-            return await this.video.play();
-        }
+        await this.video.play();
     }
 
     // Pause video function
@@ -36,7 +34,6 @@ export class VideoWrapper {
     async assign(provider: MediaProvider) {
         this.video.srcObject = null;
         this.video.srcObject = provider;
-        await this.play();
     }
 
     internal(): HTMLVideoElement {

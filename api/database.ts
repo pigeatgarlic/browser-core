@@ -18,7 +18,7 @@ export enum CAUSE {
     INVALID_REF
 }
 
-const THINKMAY_DOMAIN = 'thinkmay.net'
+const THINKMAY_DOMAIN = 'thinkmay.net';
 export const POCKETBASE = new PocketBase(getDomainURL());
 export const LOCAL = () =>
     createClient(getDomainURL(), import.meta.env.VITE_SUPABASE_LOCAL_KEY);
