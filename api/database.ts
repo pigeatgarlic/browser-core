@@ -58,8 +58,9 @@ export const PingSession = async (total: number) => {
     });
 };
 
+export const DevEnv = window.location.href.includes('localhost')
 export async function UserSession(email: string) {
-    if (window.location.href.includes('localhost')) return;
+    if (DevEnv) return;
 
     let ip = '';
 
