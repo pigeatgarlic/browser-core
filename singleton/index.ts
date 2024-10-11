@@ -22,6 +22,6 @@ export const SetPinger = (fun: () => Promise<void>) => {
 
 export const ready = async (
 ) => {
-    while (CLIENT == null || !CLIENT?.ready())
+    while (CLIENT != null && !CLIENT.ready())
         await new Promise(r => setTimeout(r,1000))
 };
