@@ -95,10 +95,12 @@ export class HID {
 
         (async () => {
             while (!this.closed) {
+                let wait_period = 10;
                 try {
-                    if (await this.runGamepad()) continue;
+                    wait_period = await this.runGamepad();
                 } catch {}
-                await new Promise((r) => setTimeout(r, 10));
+                if (wait_period > 0)
+                    await new Promise((r) => setTimeout(r, wait_period));
             }
         })();
         this.intervals.push(
@@ -157,7 +159,7 @@ export class HID {
         }
     }
 
-    private async runGamepad(): Promise<boolean> {
+    private async runGamepad(): Promise<number> {
         const last = this.last_interact;
         const gamepads = navigator.getGamepads().filter((x) => x != null);
         for (let gamepad_id = 0; gamepad_id < gamepads.length; gamepad_id++) {
@@ -217,7 +219,7 @@ export class HID {
             }
         }
 
-        return this.last_interact != last;
+        return gamepads.length == 0 ? 1000 : this.last_interact != last ? 0 : 5;
     }
 
     public async ResetKeyStuck() {
