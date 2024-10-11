@@ -64,6 +64,7 @@ export type RTCMetric =
 export class WebRTC {
     private id: string;
     public connected: boolean;
+    public closed: boolean;
     private Conn: RTCPeerConnection;
     private webrtcConfig: RTCConfiguration;
     private signaling:
@@ -87,6 +88,7 @@ export class WebRTC {
         MetricsHandler: (val: RTCMetric) => void,
         CloseHandler: () => void
     ) {
+        this.closed = false;
         this.connected = false;
         this.closeHandler = CloseHandler;
         this.rtrackHandler = TrackHandler;
@@ -135,16 +137,12 @@ export class WebRTC {
     public Close() {
         Log(LogLevel.Infor, `Closed webrtc connection ${this.id}`);
         this.connected = false;
+        this.closed = true;
         this.Conn?.close();
-        this.signaling?.Close();
+        this.DoneHandshake();
         this.rtrackHandler = () => {};
         this.channelHandler = () => {};
         clearInterval(this.watch_loop);
-        LogConnectionEvent(
-            ConnectionEvent.WebRTCConnectionClosed,
-            'close',
-            this.id as string
-        );
         const close = this.closeHandler;
         this.closeHandler = () => {};
         close();
@@ -218,7 +216,7 @@ export class WebRTC {
         const successHandler = async () => {
             this.connected = true;
             await new Promise((r) => setTimeout(r, 5000));
-            this.DoneHandshake();
+            await this.DoneHandshake();
         };
 
         switch (
@@ -229,13 +227,10 @@ export class WebRTC {
                 successHandler();
                 break;
             case 'new':
-                break;
             case 'connecting':
                 break;
             case 'closed':
-                break;
             case 'failed':
-                break;
             case 'disconnected':
                 this.Close();
                 break;
@@ -305,9 +300,7 @@ export class WebRTC {
     }
 
     private async DoneHandshake() {
-        const out: SignalingMessage = {
-            type: SignalingType.END
-        };
+        const out: SignalingMessage = { type: SignalingType.END };
         Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(out));
         this.signaling.SignallingSend(out);
         await new Promise((r) => setTimeout(r, 1000));

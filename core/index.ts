@@ -66,7 +66,7 @@ class RemoteDesktopClient {
     private datachannels: Map<channelName, DataChannel>;
 
     public ready(): boolean {
-        return this.Metrics.video.status == 'connected'
+        return this.Metrics.video.status == 'connected';
     }
 
     private closed: boolean;
@@ -197,8 +197,9 @@ class RemoteDesktopClient {
                 !this.audioConn.connected ||
                 this.Metrics.audio.sample.received == 0
             ) {
-                if (RemoteDesktopClient.Now() - start > 15 * 1000)
+                if (RemoteDesktopClient.Now() - start > 30 * 1000)
                     return this.audioConn.Close();
+                else if (this.audioConn.closed) return;
                 else await new Promise((r) => setTimeout(r, 100));
             }
 
@@ -227,8 +228,9 @@ class RemoteDesktopClient {
                 !this.videoConn.connected ||
                 this.Metrics.video.frame.total == 0
             ) {
-                if (RemoteDesktopClient.Now() - start > 15 * 1000)
+                if (RemoteDesktopClient.Now() - start > 30 * 1000)
                     return this.videoConn.Close();
+                else if (this.videoConn.closed) return;
                 else {
                     await this.ResetVideo();
                     await new Promise((r) => setTimeout(r, 1000));
@@ -414,8 +416,8 @@ class RemoteDesktopClient {
         if (this.closed) return;
         this.videoConn?.Close();
         this.audioConn?.Close();
-        this.Metrics.audio.status = 'close'
-        this.Metrics.video.status = 'close'
+        this.Metrics.audio.status = 'close';
+        this.Metrics.video.status = 'close';
     }
 
     async SendRawHID(...data: HIDMsg[]) {

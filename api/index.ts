@@ -31,8 +31,8 @@ const http_available = () =>
 export function ValidateIPaddress(ipaddress: string) {
     return ipaddress != undefined
         ? /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-            ipaddress
-        )
+              ipaddress
+          )
         : false;
 }
 const userHttp = (addr: string): boolean =>
@@ -532,4 +532,3 @@ export {
     UserSession
 };
 export type { Computer, NodeType };
-

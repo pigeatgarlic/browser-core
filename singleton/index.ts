@@ -20,8 +20,7 @@ export const SetPinger = (fun: () => Promise<void>) => {
     PINGER = fun;
 };
 
-export const ready = async (
-) => {
+export const ready = async () => {
     while (CLIENT != null && !CLIENT.ready())
-        await new Promise(r => setTimeout(r,1000))
+        await new Promise((r) => setTimeout(r, 1000));
 };
