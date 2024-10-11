@@ -10,17 +10,18 @@ export class TouchHandler {
 
     public mode: 'gamepad' | 'trackpad' | 'none';
 
+    private disable: boolean
     private last_interact: Date;
     public last_active(): number {
         return (new Date().getTime() - this.last_interact.getTime()) / 1000;
     }
 
     private running: any;
-    private SendFunc: (...data: HIDMsg[]) => void;
+    private SendFunc: (...data: HIDMsg[]) => Promise<void>;
     private video: HTMLVideoElement;
     constructor(
         video: HTMLVideoElement,
-        Sendfunc: (...data: HIDMsg[]) => void
+        Sendfunc: (...data: HIDMsg[]) => Promise<void>
     ) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
@@ -31,7 +32,12 @@ export class TouchHandler {
         this.video.ontouchstart = this.handleStart.bind(this);
         this.video.ontouchend = this.handleEnd.bind(this);
         this.video.ontouchmove = this.handleMove.bind(this);
-        this.running = setInterval(this.ListenEvents.bind(this), 100);
+        (async () => {
+            while (!this.disable) {
+                await this.ListenEvents()
+                await new Promise(r => setTimeout(r,10))
+            }
+        })()
     }
 
     public Close() {
@@ -39,6 +45,7 @@ export class TouchHandler {
         this.video.ontouchend = null;
         this.video.ontouchmove = null;
         clearInterval(this.running);
+        this.disable = true
     }
 
     private async ListenEvents() {
@@ -46,7 +53,7 @@ export class TouchHandler {
 
         switch (this.events.pop()) {
             case 'short_right':
-                this.SendFunc(
+                await this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '2'
                     }),
@@ -56,7 +63,7 @@ export class TouchHandler {
                 );
                 break;
             case 'short_generic':
-                this.SendFunc(
+                await this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '0'
                     }),
@@ -123,7 +130,7 @@ export class TouchHandler {
 
             // one finger only
             if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad')
-                this.SendFunc(
+                await this.SendFunc(
                     new HIDMsg(EventCode.MouseMoveRel, {
                         dX:
                             MOUSE_SPEED *
@@ -158,7 +165,7 @@ export class TouchHandler {
             const deltaX = (touches[0].clientX - touches[1].clientX) * 0.7;
             const wheelValue = deltaX; // You can adjust the value as needed
             // Send a mouse wheel event with the horizontal scroll value
-            this.SendFunc(
+            await this.SendFunc(
                 new HIDMsg(EventCode.MouseWheel, {
                     deltaX: -wheelValue
                 })
@@ -169,7 +176,7 @@ export class TouchHandler {
             const wheelValue = deltaY; // You can adjust the value as needed
 
             // Send a mouse wheel event with the vertical scroll value
-            this.SendFunc(
+            await this.SendFunc(
                 new HIDMsg(EventCode.MouseWheel, {
                     deltaY: -wheelValue
                 })

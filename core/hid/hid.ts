@@ -1,4 +1,3 @@
-import { AxisType } from '../models/hid.model';
 import {
     EventCode,
     HIDMsg,
@@ -28,14 +27,14 @@ export class HID {
         return (new Date().getTime() - this.last_interact.getTime()) / 1000;
     }
 
-    private SendFunc: (...data: HIDMsg[]) => void;
+    private SendFunc: (...data: HIDMsg[]) => Promise<void>;
     public disable: boolean;
 
     private intervals: any[];
 
     private video: HTMLVideoElement;
     constructor(
-        Sendfunc: (...data: HIDMsg[]) => void,
+        Sendfunc: (...data: HIDMsg[]) => Promise<void>,
         scancode?: boolean,
         video?: HTMLVideoElement
     ) {
@@ -91,16 +90,19 @@ export class HID {
             this.prev_axis.set(x, 0);
         });
 
-        this.intervals.push(setInterval(this.runButton.bind(this), 1));
-        this.intervals.push(setInterval(this.runAxis.bind(this), 1));
-        this.intervals.push(setInterval(this.runSlider.bind(this), 1));
+        (async () => {
+            while (!this.disable) {
+                await this.runGamepad()
+                await new Promise(r => setTimeout(r,10))
+            }
+        })()
         this.intervals.push(
             setInterval(
                 () =>
-                    (this.relativeMouse =
-                        document.pointerLockElement != null ||
-                        (document as any).mozPointerLockElement != null ||
-                        (document as any).webkitPointerLockElement != null),
+                (this.relativeMouse =
+                    document.pointerLockElement != null ||
+                    (document as any).mozPointerLockElement != null ||
+                    (document as any).webkitPointerLockElement != null),
                 100
             )
         );
@@ -108,6 +110,7 @@ export class HID {
 
     public Close() {
         this.intervals.forEach((x) => clearInterval(x));
+        this.disable = true
         document.onwheel = null;
         document.onmousemove = null;
         document.onmousedown = null;
@@ -116,9 +119,9 @@ export class HID {
         this.shortcuts = new Array<Shortcut>();
     }
 
-    public PasteClipboard() {
+    public async PasteClipboard() {
         const code = EventCode.ClipboardPaste;
-        this.SendFunc(new HIDMsg(code, {}));
+        await this.SendFunc(new HIDMsg(code, {}));
     }
 
     public handleIncomingData(data: string) {
@@ -148,102 +151,67 @@ export class HID {
         }
     }
 
-    private runButton(): void {
-        navigator
-            .getGamepads()
-            .forEach((gamepad: Gamepad, gamepad_id: number) => {
-                if (gamepad == null) return;
+    private async runGamepad() {
+        const gamepads = navigator.getGamepads().filter(x => x != null)
+        for (let gamepad_id = 0; gamepad_id < gamepads.length; gamepad_id++) {
+            const { buttons, axes } = gamepads[gamepad_id];
 
-                gamepad.buttons.forEach(
-                    (button: GamepadButton, index: number) => {
-                        if (index == 6 || index == 7) {
-                            // slider
-                        } else {
-                            const pressed = button.pressed;
-
-                            if (this.prev_buttons.get(index) == pressed) return;
-
-                            this.SendFunc(
-                                new HIDMsg(
-                                    pressed
-                                        ? EventCode.GamepadButtonUp
-                                        : EventCode.GamepadButtonDown,
-                                    {
-                                        gamepad_id: gamepad_id,
-                                        index: index
-                                    }
-                                )
-                            );
-
-                            this.prev_buttons.set(index, pressed);
-                            this.last_interact = new Date();
-                        }
-                    }
-                );
-            });
-    }
-    private runSlider(): void {
-        navigator
-            .getGamepads()
-            .forEach((gamepad: Gamepad, gamepad_id: number) => {
-                if (gamepad == null) return;
-
-                gamepad.buttons.forEach(
-                    (button: GamepadButton, index: number) => {
-                        if (index == 6 || index == 7) {
-                            // slider
-                            const value = button.value;
-
-                            if (
-                                Math.abs(this.prev_sliders.get(index) - value) <
-                                0.000001
-                            )
-                                return;
-
-                            this.SendFunc(
-                                new HIDMsg(EventCode.GamepadSlide, {
-                                    gamepad_id: gamepad_id,
-                                    index: index,
-                                    val: value
-                                })
-                            );
-
-                            this.prev_sliders.set(index, value);
-                            this.last_interact = new Date();
-                        }
-                    }
-                );
-            });
-    }
-    private runAxis(): void {
-        navigator
-            .getGamepads()
-            .forEach((gamepad: Gamepad, gamepad_id: number) => {
-                if (gamepad == null) return;
-
-                gamepad.axes.forEach((value: number, index: number) => {
-                    if (Math.abs(this.prev_axis.get(index) - value) < 0.000001)
-                        return;
-
-                    this.SendFunc(
-                        new HIDMsg(EventCode.GamepadAxis, {
+            for (let index = 0; index < buttons.length; index++) {
+                const { pressed, value } = buttons[index];
+                if (index == 6 || index == 7) {
+                    if (Math.abs(this.prev_sliders.get(index) - value) < 0.000001) return;
+                    await this.SendFunc(
+                        new HIDMsg(EventCode.GamepadSlide, {
                             gamepad_id: gamepad_id,
                             index: index,
                             val: value
                         })
                     );
 
-                    this.prev_axis.set(index, value);
+                    this.prev_sliders.set(index, value);
                     this.last_interact = new Date();
-                });
-            });
+                } else {
+                    if (this.prev_buttons.get(index) == pressed) return;
+                    await this.SendFunc(
+                        new HIDMsg(
+                            pressed
+                                ? EventCode.GamepadButtonUp
+                                : EventCode.GamepadButtonDown,
+                            {
+                                gamepad_id: gamepad_id,
+                                index: index
+                            }
+                        )
+                    );
+
+                    this.prev_buttons.set(index, pressed);
+                    this.last_interact = new Date();
+                }
+            }
+            for (let index = 0; index < axes.length; index++) {
+                const value = axes[index];
+                if (Math.abs(this.prev_axis.get(index) - value) < 0.000001)
+                    return;
+
+                await this.SendFunc(
+                    new HIDMsg(EventCode.GamepadAxis, {
+                        gamepad_id: gamepad_id,
+                        index: index,
+                        val: value
+                    })
+                );
+
+                this.prev_axis.set(index, value);
+                this.last_interact = new Date();
+            }
+        }
     }
 
-    public ResetKeyStuck() {
-        this.SendFunc(new HIDMsg(EventCode.KeyReset, {}));
+    public async ResetKeyStuck() {
+        await this.SendFunc(new HIDMsg(EventCode.KeyReset, {}));
     }
 
-    private keydown(event: KeyboardEvent) {
+    private async keydown(event: KeyboardEvent) {
         this.last_interact = new Date();
         if (
             getComputedStyle(event.target as HTMLElement).getPropertyValue(
@@ -269,10 +237,10 @@ export class HID {
 
         let code = EventCode.KeyDown;
         if (this.scancode) code += 2;
-        this.SendFunc(new HIDMsg(code, { key }));
+        await this.SendFunc(new HIDMsg(code, { key }));
         this.pressing_keys.push(key);
     }
-    private keyup(event: KeyboardEvent) {
+    private async keyup(event: KeyboardEvent) {
         if (
             getComputedStyle(event.target as HTMLElement).getPropertyValue(
                 '--prefix'
@@ -289,12 +257,12 @@ export class HID {
 
         let code = EventCode.KeyUp;
         if (this.scancode) code += 2;
-        this.SendFunc(new HIDMsg(code, { key }));
+        await this.SendFunc(new HIDMsg(code, { key }));
         this.pressing_keys.splice(
             this.pressing_keys.findIndex((x) => x == key)
         );
     }
-    private mouseWheel(event: WheelEvent) {
+    private async mouseWheel(event: WheelEvent) {
         if (
             getComputedStyle(event.target as HTMLElement).getPropertyValue(
                 '--prefix'
@@ -303,34 +271,34 @@ export class HID {
             return;
 
         const code = EventCode.MouseWheel;
-        this.SendFunc(
+        await this.SendFunc(
             new HIDMsg(code, {
                 deltaY: -Math.round(event.deltaY)
             })
         );
     }
-    public mouseMoveRel(event: { movementX: number; movementY: number }) {
+    public async mouseMoveRel(event: { movementX: number; movementY: number }) {
         const code = EventCode.MouseMoveRel;
-        this.SendFunc(
+        await this.SendFunc(
             new HIDMsg(code, {
                 dX: event.movementX,
                 dY: event.movementY
             })
         );
     }
-    private mouseButtonMovement(event: MouseEvent) {
+    private async mouseButtonMovement(event: MouseEvent) {
         this.last_interact = new Date();
         if (event.target != this.video) return;
 
         if (!this.relativeMouse) {
-            this.SendFunc(
+            await this.SendFunc(
                 new HIDMsg(EventCode.MouseMoveAbs, {
                     dX: this.clientToServerX(event.clientX),
                     dY: this.clientToServerY(event.clientY)
                 })
             );
         } else {
-            this.SendFunc(
+            await this.SendFunc(
                 new HIDMsg(EventCode.MouseMoveRel, {
                     dX: event.movementX * MOUSE_SPEED,
                     dY: event.movementY * MOUSE_SPEED
@@ -359,17 +327,17 @@ export class HID {
         this.MouseButtonUp(event);
     }
 
-    public MouseButtonDown(event: { button: number }) {
+    public async MouseButtonDown(event: { button: number }) {
         const code = EventCode.MouseDown;
-        this.SendFunc(
+        await this.SendFunc(
             new HIDMsg(code, {
                 button: event.button
             })
         );
     }
-    public MouseButtonUp(event: { button: number }) {
+    public async MouseButtonUp(event: { button: number }) {
         const code = EventCode.MouseUp;
-        this.SendFunc(
+        await this.SendFunc(
             new HIDMsg(code, {
                 button: event.button
             })
@@ -398,6 +366,6 @@ export class HID {
             if ('keyboard' in navigator && 'lock' in navigator.keyboard)
                 document.onfullscreenchange = block;
             else document.onfullscreenchange = null;
-        } catch {}
+        } catch { }
     }
 }

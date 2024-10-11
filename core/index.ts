@@ -114,7 +114,7 @@ class RemoteDesktopClient {
         this.datachannels.set('manual', new DataChannel());
         this.datachannels.set('hid', new DataChannel(handleHID.bind(this)));
 
-        const send = (...val: HIDMsg[]) => this.SendRawHID(...val);
+        const send = async (...val: HIDMsg[]) => await this.SendRawHID(...val);
         this.hid = new HID(send.bind(this), scancode, vid.video);
         this.touch = new TouchHandler(vid.video, send.bind(this));
 
@@ -183,7 +183,7 @@ class RemoteDesktopClient {
                 if (RemoteDesktopClient.Now() - start > 30 * 1000)
                     return this.audioConn.Close();
                 else if (this.audioConn.closed) return;
-                else await new Promise((r) => setTimeout(r, 100));
+                else await new Promise((r) => setTimeout(r, 1000));
             }
 
             this.Metrics.audio.status = 'connected';
@@ -386,18 +386,18 @@ class RemoteDesktopClient {
         for (let index = 0; index < data.length; index++)
             await hid.sendMessage(data[index].ToString());
     }
-    public SetClipboard(val: string) {
+    public async SetClipboard(val: string) {
         if (this.closed) return;
-        this.SendRawHID(
+        await this.SendRawHID(
             new HIDMsg(EventCode.ClipboardSet, {
                 val: btoa(val)
             })
         );
     }
 
-    public VirtualGamepadButton(isDown: boolean, index: number) {
+    public async VirtualGamepadButton(isDown: boolean, index: number) {
         const is_slider = index == 6 || index == 7;
-        this.SendRawHID(
+        await this.SendRawHID(
             new HIDMsg(
                 is_slider
                     ? EventCode.GamepadSlide
@@ -418,7 +418,7 @@ class RemoteDesktopClient {
         );
     }
 
-    public VirtualGamepadAxis(x: number, y: number, type: AxisType) {
+    public async VirtualGamepadAxis(x: number, y: number, type: AxisType) {
         let axisx, axisy: number;
         switch (type) {
             case 'left':
@@ -431,7 +431,7 @@ class RemoteDesktopClient {
                 break;
         }
 
-        this.SendRawHID(
+        await this.SendRawHID(
             new HIDMsg(EventCode.GamepadAxis, {
                 gamepad_id: 0,
                 index: axisx,
@@ -445,12 +445,12 @@ class RemoteDesktopClient {
         );
     }
 
-    public VirtualKeyboard(...keys: { code: EventCode; jsKey: string }[]) {
+    public async VirtualKeyboard(...keys: { code: EventCode; jsKey: string }[]) {
         for (let index = 0; index < keys.length; index++) {
             const { jsKey, code } = keys[index];
             const key = convertJSKey(jsKey, 0);
             if (key == undefined) return;
-            this.SendRawHID(new HIDMsg(code, { key }));
+            await this.SendRawHID(new HIDMsg(code, { key }));
         }
     }
 
