@@ -92,17 +92,19 @@ export class HID {
 
         (async () => {
             while (!this.disable) {
-                await this.runGamepad()
-                await new Promise(r => setTimeout(r,10))
+                try {
+                    await this.runGamepad();
+                } catch {}
+                await new Promise((r) => setTimeout(r, 10));
             }
-        })()
+        })();
         this.intervals.push(
             setInterval(
                 () =>
-                (this.relativeMouse =
-                    document.pointerLockElement != null ||
-                    (document as any).mozPointerLockElement != null ||
-                    (document as any).webkitPointerLockElement != null),
+                    (this.relativeMouse =
+                        document.pointerLockElement != null ||
+                        (document as any).mozPointerLockElement != null ||
+                        (document as any).webkitPointerLockElement != null),
                 100
             )
         );
@@ -110,7 +112,7 @@ export class HID {
 
     public Close() {
         this.intervals.forEach((x) => clearInterval(x));
-        this.disable = true
+        this.disable = true;
         document.onwheel = null;
         document.onmousemove = null;
         document.onmousedown = null;
@@ -152,14 +154,18 @@ export class HID {
     }
 
     private async runGamepad() {
-        const gamepads = navigator.getGamepads().filter(x => x != null)
+        const gamepads = navigator.getGamepads().filter((x) => x != null);
         for (let gamepad_id = 0; gamepad_id < gamepads.length; gamepad_id++) {
             const { buttons, axes } = gamepads[gamepad_id];
 
             for (let index = 0; index < buttons.length; index++) {
                 const { pressed, value } = buttons[index];
                 if (index == 6 || index == 7) {
-                    if (Math.abs(this.prev_sliders.get(index) - value) < 0.000001) return;
+                    if (
+                        Math.abs(this.prev_sliders.get(index) - value) <
+                        0.000001
+                    )
+                        return;
                     await this.SendFunc(
                         new HIDMsg(EventCode.GamepadSlide, {
                             gamepad_id: gamepad_id,
@@ -366,6 +372,6 @@ export class HID {
             if ('keyboard' in navigator && 'lock' in navigator.keyboard)
                 document.onfullscreenchange = block;
             else document.onfullscreenchange = null;
-        } catch { }
+        } catch {}
     }
 }

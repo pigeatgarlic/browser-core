@@ -29,21 +29,23 @@ export class SignalingClientFetch {
                 const copy = this.outcoming;
                 this.outcoming = [];
 
-                const resp = await fetch(this.url, {
-                    method: 'POST',
-                    body: JSON.stringify(copy)
-                });
-                const { ok } = resp;
+                try {
+                    const resp = await fetch(this.url, {
+                        method: 'POST',
+                        body: JSON.stringify(copy)
+                    });
+                    const { ok } = resp;
 
-                if (!ok) {
-                    Log(LogLevel.Error, await resp.text());
-                    continue;
-                }
+                    if (!ok) {
+                        Log(LogLevel.Error, await resp.text());
+                        continue;
+                    }
 
-                const data = (await resp.json()) as SignalingMessage[];
-                this.last_msg = data;
-                for (let index = 0; index < data.length; index++)
-                    await PacketHandler(data[index]);
+                    const data = (await resp.json()) as SignalingMessage[];
+                    this.last_msg = data;
+                    for (let index = 0; index < data.length; index++)
+                        await PacketHandler(data[index]);
+                } catch {}
             }
         })();
     }

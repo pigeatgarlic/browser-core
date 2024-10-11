@@ -10,7 +10,7 @@ export class TouchHandler {
 
     public mode: 'gamepad' | 'trackpad' | 'none';
 
-    private disable: boolean
+    private disable: boolean;
     private last_interact: Date;
     public last_active(): number {
         return (new Date().getTime() - this.last_interact.getTime()) / 1000;
@@ -34,10 +34,12 @@ export class TouchHandler {
         this.video.ontouchmove = this.handleMove.bind(this);
         (async () => {
             while (!this.disable) {
-                await this.ListenEvents()
-                await new Promise(r => setTimeout(r,10))
+                try {
+                    await this.ListenEvents();
+                } catch {}
+                await new Promise((r) => setTimeout(r, 10));
             }
-        })()
+        })();
     }
 
     public Close() {
@@ -45,7 +47,7 @@ export class TouchHandler {
         this.video.ontouchend = null;
         this.video.ontouchmove = null;
         clearInterval(this.running);
-        this.disable = true
+        this.disable = true;
     }
 
     private async ListenEvents() {

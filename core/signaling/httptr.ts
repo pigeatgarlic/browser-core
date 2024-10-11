@@ -31,21 +31,23 @@ export class SignalingClientTR {
                 const copy = this.outcoming;
                 this.outcoming = [];
 
-                const { ok, data } = await client.post<SignalingMessage[]>(
-                    this.url,
-                    Body.json(copy),
-                    {
-                        responseType: ResponseType.JSON
+                try {
+                    const { ok, data } = await client.post<SignalingMessage[]>(
+                        this.url,
+                        Body.json(copy),
+                        {
+                            responseType: ResponseType.JSON
+                        }
+                    );
+                    if (!ok) {
+                        Log(LogLevel.Error, JSON.stringify(data));
+                        continue;
                     }
-                );
-                if (!ok) {
-                    Log(LogLevel.Error, JSON.stringify(data));
-                    continue;
-                }
 
-                this.last_msg = data;
-                for (let index = 0; index < data.length; index++)
-                    await PacketHandler(data[index]);
+                    this.last_msg = data;
+                    for (let index = 0; index < data.length; index++)
+                        await PacketHandler(data[index]);
+                } catch {}
             }
         })();
     }

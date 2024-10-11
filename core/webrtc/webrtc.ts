@@ -113,14 +113,17 @@ export class WebRTC {
                 this.handleIncomingPacket.bind(this)
             );
 
-        this.watch_loop = setInterval(async () => {
-            if (this.Conn == undefined) return;
-
-            const stats = await this.Conn.getStats();
-            stats.forEach((val) =>
-                val.type == 'inbound-rtp' ? MetricsHandler(val) : () => {}
-            );
-        }, 2000);
+        this.watch_loop = setInterval(
+            () =>
+                this.Conn?.getStats().then((stats) =>
+                    stats.forEach((val) =>
+                        val.type == 'inbound-rtp'
+                            ? MetricsHandler(val)
+                            : () => {}
+                    )
+                ),
+            2000
+        );
     }
 
     private async SignalingOnClose() {

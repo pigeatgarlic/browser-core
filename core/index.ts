@@ -177,9 +177,7 @@ class RemoteDesktopClient {
 
             const start = RemoteDesktopClient.Now();
             this.Metrics.audio.status = 'connecting';
-            while (
-                !this.audioConn.connected
-            ) {
+            while (!this.audioConn.connected) {
                 if (RemoteDesktopClient.Now() - start > 30 * 1000)
                     return this.audioConn.Close();
                 else if (this.audioConn.closed) return;
@@ -445,7 +443,9 @@ class RemoteDesktopClient {
         );
     }
 
-    public async VirtualKeyboard(...keys: { code: EventCode; jsKey: string }[]) {
+    public async VirtualKeyboard(
+        ...keys: { code: EventCode; jsKey: string }[]
+    ) {
         for (let index = 0; index < keys.length; index++) {
             const { jsKey, code } = keys[index];
             const key = convertJSKey(jsKey, 0);
