@@ -144,6 +144,7 @@ export class WebRTC {
     }
 
     private async handleIncomingPacket(pkt: SignalingMessage) {
+        if (this.closed) return;
         Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(pkt));
         try {
             switch (pkt.type) {

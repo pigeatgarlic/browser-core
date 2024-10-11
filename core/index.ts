@@ -108,25 +108,15 @@ class RemoteDesktopClient {
             }
         };
 
-        this.hid = null;
+        const handleHID = (data: string) =>
+            !this.closed ? this.hid?.handleIncomingData(data) : null;
         this.datachannels = new Map<channelName, DataChannel>();
-        this.datachannels.set(
-            'manual',
-            new DataChannel(async (data: string) => {})
-        );
-        this.datachannels.set(
-            'hid',
-            new DataChannel(async (data: string) => {
-                if (this.closed) return;
-                this.hid.handleIncomingData(data);
-            })
-        );
+        this.datachannels.set('manual', new DataChannel());
+        this.datachannels.set('hid', new DataChannel(handleHID.bind(this)));
 
-        const start = (...val: HIDMsg[]) => {
-            this.SendRawHID(...val);
-        };
-        this.hid = new HID(start.bind(this), scancode, vid.video);
-        this.touch = new TouchHandler(vid.video, start.bind(this));
+        const send = (...val: HIDMsg[]) => this.SendRawHID(...val);
+        this.hid = new HID(send.bind(this), scancode, vid.video);
+        this.touch = new TouchHandler(vid.video, send.bind(this));
 
         const handle_metrics = (val: RTCMetric) => {
             const now = new Date();
@@ -198,7 +188,6 @@ class RemoteDesktopClient {
             }
 
             this.Metrics.audio.status = 'connected';
-            await this.audio.play();
         };
 
         const videoEstablishmentLoop = async () => {
@@ -244,8 +233,6 @@ class RemoteDesktopClient {
         a: RTCDataChannelEvent
     ): Promise<void> {
         if (this.closed) return;
-        Log(LogLevel.Infor, `incoming data channel: ${a.channel.label}`);
-
         this.datachannels
             .get(a.channel.label as channelName)
             .SetSender(a.channel);
@@ -321,6 +308,7 @@ class RemoteDesktopClient {
             } catch {}
         }
         await this.audio.assign(stream);
+        await this.audio.play();
     }
 
     private async AcquireMicrophone() {
