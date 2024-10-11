@@ -412,15 +412,10 @@ class RemoteDesktopClient {
 
     public async HardReset() {
         if (this.closed) return;
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'danger-reset'
-            })
-        );
-
         this.videoConn?.Close();
         this.audioConn?.Close();
-        Log(LogLevel.Debug, `hard reset video stream`);
+        this.Metrics.audio.status = 'close'
+        this.Metrics.video.status = 'close'
     }
 
     async SendRawHID(...data: HIDMsg[]) {
