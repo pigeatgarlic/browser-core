@@ -215,7 +215,7 @@ export class WebRTC {
     private onConnectionStateChange(eve: Event) {
         const successHandler = async () => {
             this.connected = true;
-            await new Promise((r) => setTimeout(r, 5000));
+            await new Promise((r) => setTimeout(r, 1000));
             await this.DoneHandshake();
         };
 
