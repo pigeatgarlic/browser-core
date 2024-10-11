@@ -7,13 +7,7 @@ import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 import { VideoWrapper } from './pipeline/sink/video/wrapper';
 import { SignalingConfig } from './signaling/config';
 import { convertJSKey, useShift } from './utils/convert';
-import {
-    AddNotifier,
-    ConnectionEvent,
-    Log,
-    LogConnectionEvent,
-    LogLevel
-} from './utils/log';
+import { AddNotifier, ConnectionEvent, Log, LogLevel } from './utils/log';
 import { getBrowser, isMobile } from './utils/platform';
 import { RTCMetric, WebRTC } from './webrtc/webrtc';
 
@@ -250,10 +244,6 @@ class RemoteDesktopClient {
         a: RTCDataChannelEvent
     ): Promise<void> {
         if (this.closed) return;
-        LogConnectionEvent(
-            ConnectionEvent.ReceivedDatachannel,
-            a.channel.label
-        );
         Log(LogLevel.Infor, `incoming data channel: ${a.channel.label}`);
 
         this.datachannels
@@ -278,15 +268,6 @@ class RemoteDesktopClient {
     private async handleIncomingVideo(evt: RTCTrackEvent): Promise<void> {
         if (this.closed) return;
         Log(LogLevel.Infor, `Incoming ${evt.track.kind} stream`);
-        await LogConnectionEvent(
-            ConnectionEvent.ReceivedVideoStream,
-            JSON.stringify(
-                evt.streams.map((x) =>
-                    x.getTracks().map((x) => `${x.label} ${x.id}`)
-                )
-            )
-        );
-
         if (evt.track.kind != 'video') return;
 
         const stream = evt.streams.find(
@@ -318,15 +299,6 @@ class RemoteDesktopClient {
     private async handleIncomingAudio(evt: RTCTrackEvent): Promise<void> {
         if (this.closed) return;
         Log(LogLevel.Infor, `Incoming ${evt.track.kind} stream`);
-        await LogConnectionEvent(
-            ConnectionEvent.ReceivedAudioStream,
-            JSON.stringify(
-                evt.streams.map((x) =>
-                    x.getTracks().map((x) => `${x.label} ${x.id}`)
-                )
-            )
-        );
-
         if (evt.track.kind != 'audio') return;
 
         const stream = evt.streams.find(

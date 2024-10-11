@@ -2,12 +2,7 @@ import { SignalingClientFetch } from '../signaling/fetch';
 import { SignalingClientTR } from '../signaling/httptr';
 import { msgString, SignalingMessage, SignalingType } from '../signaling/msg';
 import { SignalingClient } from '../signaling/websocket';
-import {
-    ConnectionEvent,
-    Log,
-    LogConnectionEvent,
-    LogLevel
-} from '../utils/log';
+import { Log, LogLevel } from '../utils/log';
 import { getBrowser } from '../utils/platform';
 
 export type RTCMetric =
@@ -150,33 +145,36 @@ export class WebRTC {
 
     private async handleIncomingPacket(pkt: SignalingMessage) {
         Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(pkt));
-        switch (pkt.type) {
-            case SignalingType.TYPE_SDP:
-                LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage);
-                this.onIncomingSDP({
-                    sdp: pkt.sdp.SDPData,
-                    type: pkt.sdp.Type
-                });
-                break;
-            case SignalingType.TYPE_ICE:
-                LogConnectionEvent(ConnectionEvent.ExchangingSignalingMessage);
-                this.onIncomingICE({
-                    candidate: pkt.ice.Candidate,
-                    sdpMid: pkt.ice.SDPMid != undefined ? pkt.ice.SDPMid : '',
-                    sdpMLineIndex:
-                        pkt.ice.SDPMLineIndex != undefined
-                            ? pkt.ice.SDPMLineIndex
-                            : 0
-                });
-                break;
-            case SignalingType.START:
-                this.SetupConnection(this.webrtcConfig);
-                break;
-            case SignalingType.END:
-                this.signaling.Close();
-                break;
-            default:
-                break;
+        try {
+            switch (pkt.type) {
+                case SignalingType.TYPE_SDP:
+                    await this.onIncomingSDP({
+                        sdp: pkt.sdp.SDPData,
+                        type: pkt.sdp.Type
+                    });
+                    break;
+                case SignalingType.TYPE_ICE:
+                    await this.onIncomingICE({
+                        candidate: pkt.ice.Candidate,
+                        sdpMid:
+                            pkt.ice.SDPMid != undefined ? pkt.ice.SDPMid : '',
+                        sdpMLineIndex:
+                            pkt.ice.SDPMLineIndex != undefined
+                                ? pkt.ice.SDPMLineIndex
+                                : 0
+                    });
+                    break;
+                case SignalingType.START:
+                    this.SetupConnection(this.webrtcConfig);
+                    break;
+                case SignalingType.END:
+                    this.signaling.Close();
+                    break;
+                default:
+                    break;
+            }
+        } catch (err) {
+            Log(LogLevel.Error, err);
         }
     }
 
@@ -213,18 +211,13 @@ export class WebRTC {
     }
 
     private onConnectionStateChange(eve: Event) {
-        const successHandler = async () => {
-            this.connected = true;
-            await new Promise((r) => setTimeout(r, 1000));
-            await this.DoneHandshake();
-        };
-
         switch (
             (eve.target as RTCPeerConnection)
                 .connectionState as RTCPeerConnectionState
         ) {
             case 'connected':
-                successHandler();
+                this.connected = true;
+                this.DoneHandshake();
                 break;
             case 'new':
             case 'connecting':
@@ -240,27 +233,18 @@ export class WebRTC {
     }
 
     public async onIncomingICE(ice: RTCIceCandidateInit) {
-        try {
-            const candidate = new RTCIceCandidate(ice);
-            await this.Conn.addIceCandidate(candidate);
-        } catch (error) {
-            Log(LogLevel.Error, this.id + ' ' + error);
-        }
+        const candidate = new RTCIceCandidate(ice);
+        await this.Conn.addIceCandidate(candidate);
     }
 
     public async onIncomingSDP(sdp: RTCSessionDescriptionInit) {
         if (sdp.type != 'offer') return;
+        await this.Conn.setRemoteDescription(sdp);
+        const track = await this.ltrackHandler();
+        if (track != null) await this.AddLocalTrack(track);
 
-        try {
-            await this.Conn.setRemoteDescription(sdp);
-            const track = await this.ltrackHandler();
-            if (track != null) await this.AddLocalTrack(track);
-
-            const ans = await this.Conn.createAnswer();
-            await this.onLocalDescription(ans);
-        } catch (error) {
-            Log(LogLevel.Error, this.id + ' ' + error);
-        }
+        const ans = await this.Conn.createAnswer();
+        await this.onLocalDescription(ans);
     }
 
     private async onLocalDescription(desc: RTCSessionDescriptionInit) {
@@ -299,11 +283,10 @@ export class WebRTC {
         this.signaling.SignallingSend(out);
     }
 
-    private async DoneHandshake() {
+    private DoneHandshake() {
         const out: SignalingMessage = { type: SignalingType.END };
         Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(out));
         this.signaling.SignallingSend(out);
-        await new Promise((r) => setTimeout(r, 1000));
         this.signaling.Close();
     }
 }

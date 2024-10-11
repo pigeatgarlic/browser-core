@@ -1,9 +1,4 @@
-import {
-    ConnectionEvent,
-    Log,
-    LogConnectionEvent,
-    LogLevel
-} from '../utils/log';
+import { Log, LogLevel } from '../utils/log';
 import { SignalingMessage } from './msg';
 
 export class SignalingClient {
@@ -28,7 +23,6 @@ export class SignalingClient {
             onClose();
         };
 
-        LogConnectionEvent(ConnectionEvent.WebSocketConnecting);
         this.WebSocketConnection = new WebSocket(url);
         this.WebSocketConnection.onopen = this.onServerOpen.bind(this);
         this.WebSocketConnection.onerror = internalOnClose;
@@ -44,7 +38,6 @@ export class SignalingClient {
      * Sends the peer id to the signalling server.
      */
     private onServerOpen() {
-        LogConnectionEvent(ConnectionEvent.WebSocketConnected);
         this.WebSocketConnection.onmessage = this.onServerMessage.bind(this);
         this.ping = setInterval(
             () => this.WebSocketConnection?.send('ping'),

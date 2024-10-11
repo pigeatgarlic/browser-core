@@ -1,10 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import {
-    ConnectionEvent,
-    Log,
-    LogConnectionEvent,
-    LogLevel
-} from '../utils/log';
+import { Log, LogLevel } from '../utils/log';
 import { SignalingMessage } from './msg';
 
 export class SignalingClientFetch {
@@ -12,6 +7,7 @@ export class SignalingClientFetch {
     private url: string;
 
     private outcoming: SignalingMessage[] = [];
+    private last_msg: SignalingMessage[] = [];
 
     constructor(
         url: string,
@@ -22,11 +18,10 @@ export class SignalingClientFetch {
 
         this.url = u.toString();
         this.run = true;
-        LogConnectionEvent(ConnectionEvent.WebSocketConnecting);
 
         (async () => {
-            while (this.run) {
-                await new Promise((r) => setTimeout(r, 1000));
+            while (this.run || this.outcoming.length > 0 || this.last_msg.length > 0) {
+                await new Promise((r) => setTimeout(r, 300));
                 const copy = this.outcoming;
                 this.outcoming = [];
 
@@ -42,6 +37,7 @@ export class SignalingClientFetch {
                 }
 
                 const data = (await resp.json()) as SignalingMessage[];
+                this.last_msg = data
                 for (let index = 0; index < data.length; index++)
                     await PacketHandler(data[index]);
             }
