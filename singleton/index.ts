@@ -20,7 +20,13 @@ export const SetPinger = (fun: () => Promise<void>) => {
     PINGER = fun;
 };
 
-export const ready = async () => {
-    while (CLIENT != null && !CLIENT.ready())
+export const ready = async (): Promise<boolean> => {
+    const now = () => new Date().getTime() / 1000;
+    const start = now();
+    while (CLIENT != null && !CLIENT.ready()) {
         await new Promise((r) => setTimeout(r, 1000));
+        if (now() - start > 10 * 60) return false;
+    }
+
+    return true;
 };

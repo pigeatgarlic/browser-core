@@ -297,6 +297,63 @@ export async function StartThinkmayOnVM(
         }
     };
 }
+export async function StartThinkmayOnPeer(
+    computer: Computer,
+    target: string
+): Promise<Session | Error> {
+    const { address } = computer;
+    if (address == undefined) return new Error('address is not defined');
+
+    const turn = TurnCredential();
+
+    const thinkmay = {
+        stunAddress: `stun:${address}:${turn.port}`,
+        turnAddress: `turn:${address}:${turn.port}`,
+        username: turn.username,
+        password: turn.password
+    };
+
+    const display = {
+        ScreenWidth: 1920,
+        ScreenHeight: 1080
+    };
+
+    const id = uuidv4();
+    const req: StartRequest = {
+        id,
+        target,
+        thinkmay,
+        turn,
+        display
+    };
+
+    const resp = await internalFetch<StartRequest>(address, 'new', req);
+    if (resp instanceof Error) throw resp;
+    else if (resp.thinkmay == undefined)
+        return new Error('address is not defined');
+
+    return {
+        audioUrl: !userHttp(address)
+            ? `https://${address}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`
+            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`,
+        videoUrl: !userHttp(address)
+            ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`
+            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`,
+        rtc_config: {
+            iceTransportPolicy: 'all',
+            iceServers: [
+                {
+                    urls: `stun:${address}:${turn.port}`
+                },
+                {
+                    urls: `turn:${address}:${turn.port}`,
+                    username: turn.username,
+                    credential: turn.password
+                }
+            ]
+        }
+    };
+}
 export async function StartThinkmay(
     computer: Computer
 ): Promise<Session | Error> {
