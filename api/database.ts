@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import PocketBase from 'pocketbase';
-import { ValidateIPaddress } from './index';
 import { getBrowser, getOS, getResolution } from '../core/utils/platform';
 
 export enum CAUSE {
@@ -39,7 +38,17 @@ export function getDomain(): string {
         : window.location.hostname;
 }
 
+let id = 'unknown'
 const stack: { content: any; timestamp: string }[] = [];
+const value = {
+    ip: 'unknown',
+    stack,
+    os: getOS(),
+    browser: getBrowser(),
+    resolution: getResolution(),
+    url: window.location.href
+};
+
 let current_stack_length = 0;
 export function UserEvents(content: { type: string; payload: any }) {
     stack.push({
@@ -62,36 +71,31 @@ export const DevEnv = window.location.href.includes('localhost');
 export async function UserSession(email: string) {
     if (DevEnv) return;
 
-    let ip = '';
-
     try {
-        ip =
-            (await (await fetch('https://icanhazip.com/')).text())
-                .split('\n')
-                .at(0) ?? '';
-    } catch {}
+        if (value.ip == 'unknown')
+            value.ip = (await (await fetch('https://icanhazip.com/')).text()).replaceAll('\n', '')
+    } catch { }
 
-    const value = {
-        ip,
-        stack,
-        os: getOS(),
-        browser: getBrowser(),
-        resolution: getResolution(),
-        url: window.location.href
-    };
+    const session = await (async () => {
+        if (id != 'unknown')
+            return id
 
-    // TODO
-    const { data, error } = await LOCAL()
-        .from('generic_events')
-        .insert({
-            value,
-            name: email ?? 'unknown',
-            type: 'ANALYTICS'
-        })
-        .select('id');
-    if (error || data?.length == 0) return;
+        const { data, error } = await LOCAL()
+            .from('generic_events')
+            .insert({
+                value,
+                name: email ?? 'unknown',
+                type: 'ANALYTICS'
+            })
+            .select('id');
+        if (error || data?.length == 0) return id;
+        id = data.at(0).id
+        return id;
+    })()
 
-    const session = data.at(0).id;
+    if (session == 'unknown')
+        return
+
     const analytics_report = async () => {
         if (stack.length == current_stack_length) return;
 
