@@ -38,7 +38,7 @@ export function getDomain(): string {
         : window.location.hostname;
 }
 
-let id = 'unknown'
+let id = 'unknown';
 const stack: { content: any; timestamp: string }[] = [];
 const value = {
     ip: 'unknown',
@@ -73,12 +73,13 @@ export async function UserSession(email: string) {
 
     try {
         if (value.ip == 'unknown')
-            value.ip = (await (await fetch('https://icanhazip.com/')).text()).replaceAll('\n', '')
-    } catch { }
+            value.ip = (
+                await (await fetch('https://icanhazip.com/')).text()
+            ).replaceAll('\n', '');
+    } catch {}
 
     const session = await (async () => {
-        if (id != 'unknown')
-            return id
+        if (id != 'unknown') return id;
 
         const { data, error } = await LOCAL()
             .from('generic_events')
@@ -89,12 +90,11 @@ export async function UserSession(email: string) {
             })
             .select('id');
         if (error || data?.length == 0) return id;
-        id = data.at(0).id
+        id = data.at(0).id;
         return id;
-    })()
+    })();
 
-    if (session == 'unknown')
-        return
+    if (session == 'unknown') return;
 
     const analytics_report = async () => {
         if (stack.length == current_stack_length) return;
