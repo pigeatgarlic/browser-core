@@ -56,14 +56,18 @@ export class HID {
         this.pressing_keys = [];
 
         this.disableKeyWhileFullscreen();
+
         /**
          * video event
          */
+        this.video.onmousedown = this.mouseButtonDown.bind(this);
+        this.video.onmouseup = this.mouseButtonUp.bind(this);
 
+        /**
+         * document event
+         */
         document.onwheel = this.mouseWheel.bind(this);
         document.onmousemove = this.mouseButtonMovement.bind(this);
-        document.onmousedown = this.mouseButtonDown.bind(this);
-        document.onmouseup = this.mouseButtonUp.bind(this);
         document.onkeydown = this.keydown.bind(this);
         document.onkeyup = this.keyup.bind(this);
 
@@ -228,13 +232,6 @@ export class HID {
 
     private async keydown(event: KeyboardEvent) {
         this.last_interact = new Date();
-        if (
-            getComputedStyle(event.target as HTMLElement).getPropertyValue(
-                '--prefix'
-            ).length > 0
-        )
-            return;
-
         event.preventDefault();
         let disable_send = false;
         this.shortcuts.forEach((element: Shortcut) => {
@@ -256,13 +253,6 @@ export class HID {
         this.pressing_keys.push(key);
     }
     private async keyup(event: KeyboardEvent) {
-        if (
-            getComputedStyle(event.target as HTMLElement).getPropertyValue(
-                '--prefix'
-            ).length > 0
-        )
-            return;
-
         event.preventDefault();
 
         if (event.key == 'Meta') return;
@@ -278,13 +268,6 @@ export class HID {
         );
     }
     private async mouseWheel(event: WheelEvent) {
-        if (
-            getComputedStyle(event.target as HTMLElement).getPropertyValue(
-                '--prefix'
-            ).length > 0
-        )
-            return;
-
         const code = EventCode.MouseWheel;
         await this.SendFunc(
             new HIDMsg(code, {
@@ -322,23 +305,9 @@ export class HID {
         }
     }
     private mouseButtonDown(event: MouseEvent) {
-        if (
-            getComputedStyle(event.target as HTMLElement).getPropertyValue(
-                '--prefix'
-            ).length > 0
-        )
-            return;
-
         this.MouseButtonDown(event);
     }
     private mouseButtonUp(event: MouseEvent) {
-        if (
-            getComputedStyle(event.target as HTMLElement).getPropertyValue(
-                '--prefix'
-            ).length > 0
-        )
-            return;
-
         this.MouseButtonUp(event);
     }
 
