@@ -31,14 +31,15 @@ export const ready = async (): Promise<boolean> => {
     return true;
 };
 
-export async function keyboard(val: string, action: 'up' | 'down') {
-    if ('vibrate' in navigator && action == 'down')
-        navigator.vibrate([40, 30, 0]);
-
-    await CLIENT?.VirtualKeyboard({
-        code: action == 'up' ? EventCode.KeyUp : EventCode.KeyDown,
-        jsKey: val
-    });
+export async function keyboard(
+    ...vals: { val: string; action: 'up' | 'down' }[]
+) {
+    await CLIENT?.VirtualKeyboard(
+        ...vals.map(({ action, val }) => ({
+            code: action == 'up' ? EventCode.KeyUp : EventCode.KeyDown,
+            jsKey: val
+        }))
+    );
 }
 export async function gamepadButton(index: number, type: 'up' | 'down') {
     if ('vibrate' in navigator && type == 'down')
