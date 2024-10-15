@@ -64,7 +64,7 @@ export class TouchHandler {
                     })
                 );
                 break;
-            case 'short_generic':
+            case 'short_left':
                 await this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
                         button: '0'
@@ -84,10 +84,11 @@ export class TouchHandler {
         this.last_interact = new Date();
 
         const touches = evt.changedTouches;
-        for (let i = 0; i < touches.length; i++) {
-            const key = touches[i].identifier;
-            this.onGoingTouchs.set(key, new TouchData(touches[i]));
-        }
+        for (let i = 0; i < touches.length; i++)
+            this.onGoingTouchs.set(
+                touches[i].identifier,
+                new TouchData(touches[i])
+            );
     };
     private handleEnd = (evt: TouchEvent) => {
         evt.preventDefault();
@@ -96,22 +97,20 @@ export class TouchHandler {
         for (let i = 0; i < touches.length; i++) {
             const key = touches[i].identifier;
             const touch = this.onGoingTouchs.get(key);
-            if (touch == null) continue;
-            else if (
+            if (touch == undefined) continue;
+
+            const diff = new Date().getTime() - touch.startTime.getTime();
+            if (
                 this.mode == 'trackpad' &&
-                new Date().getTime() - touch.startTime.getTime() < 250 &&
-                new Date().getTime() - touch.startTime.getTime() > 30 &&
-                touches.length == 1 &&
-                this.isTouchInBottomRight(touch)
-            )
-                this.events.push('short_right');
-            else if (
-                this.mode == 'trackpad' &&
-                new Date().getTime() - touch.startTime.getTime() < 250 &&
-                new Date().getTime() - touch.startTime.getTime() > 30 &&
+                diff < 250 &&
+                diff > 30 &&
                 touches.length == 1
             )
-                this.events.push('short_generic');
+                this.events.push(
+                    this.isTouchInBottomRight(touch)
+                        ? 'short_right'
+                        : 'short_left'
+                );
 
             this.onGoingTouchs.delete(key);
         }
@@ -120,18 +119,12 @@ export class TouchHandler {
     private handleMove = async (evt: TouchEvent) => {
         evt.preventDefault();
         const touches = evt.touches;
-        if (touches.length === 2) {
-            await this.handleTwoFingerScroll(touches);
-        }
         for (let i = 0; i < touches.length; i++) {
             const curr_touch = touches[i];
-            const identifier = curr_touch.identifier;
+            const prev_touch = this.onGoingTouchs.get(curr_touch.identifier);
 
-            const prev_touch = this.onGoingTouchs.get(identifier);
-            if (prev_touch == null) continue;
-
-            // one finger only
-            if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad')
+            if (prev_touch == undefined) continue;
+            else if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad')
                 await this.SendFunc(
                     new HIDMsg(EventCode.MouseMoveRel, {
                         dX:
@@ -146,45 +139,6 @@ export class TouchHandler {
             prev_touch.copyFromTouch(curr_touch);
         }
     };
-
-    private isTwoFingerScrollingHorizontally(touches: TouchList): boolean {
-        if (touches.length !== 2) {
-            return false;
-        }
-
-        const firstTouch = touches[0];
-        const secondTouch = touches[1];
-
-        const deltaX = Math.abs(secondTouch.clientX - firstTouch.clientX);
-        const deltaY = Math.abs(secondTouch.clientY - firstTouch.clientY);
-
-        return deltaX > deltaY;
-    }
-
-    private async handleTwoFingerScroll(touches: TouchList) {
-        if (this.isTwoFingerScrollingHorizontally(touches)) {
-            // Calculate the horizontal scroll amount based on touch movement
-            const deltaX = (touches[0].clientX - touches[1].clientX) * 0.7;
-            const wheelValue = deltaX; // You can adjust the value as needed
-            // Send a mouse wheel event with the horizontal scroll value
-            await this.SendFunc(
-                new HIDMsg(EventCode.MouseWheel, {
-                    deltaX: -wheelValue
-                })
-            );
-        } else {
-            // Calculate the vertical scroll amount based on touch movement
-            const deltaY = (touches[0].clientY - touches[1].clientY) * 0.7;
-            const wheelValue = deltaY; // You can adjust the value as needed
-
-            // Send a mouse wheel event with the vertical scroll value
-            await this.SendFunc(
-                new HIDMsg(EventCode.MouseWheel, {
-                    deltaY: -wheelValue
-                })
-            );
-        }
-    }
 
     private isTouchInBottomRight(touch: Touch): boolean {
         const screenHeight = document.documentElement.clientHeight;
