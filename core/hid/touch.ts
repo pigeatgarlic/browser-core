@@ -6,11 +6,8 @@ const BOTTOM_THRESHOLD_PERCENT = 100;
 const MOUSE_SPEED = 3.5;
 export class TouchHandler {
     private onGoingTouchs: Map<number, TouchData>;
-    private events: string[] = [];
-
     public mode: 'trackpad' | 'none';
 
-    private disable: boolean;
     private last_interact: Date;
     public last_active(): number {
         return (new Date().getTime() - this.last_interact.getTime()) / 1000;
@@ -26,20 +23,14 @@ export class TouchHandler {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
 
-        this.mode = 'none';
+        this.mode = 'trackpad';
         this.video = video;
         this.last_interact = new Date();
-        this.video.ontouchstart = this.handleStart.bind(this);
+
         this.video.ontouchend = this.handleEnd.bind(this);
-        this.video.ontouchmove = this.handleMove.bind(this);
-        (async () => {
-            while (!this.disable) {
-                try {
-                    await this.ListenEvents();
-                } catch {}
-                await new Promise((r) => setTimeout(r, 10));
-            }
-        })();
+        this.video.ontouchstart = this.handleStart.bind(this);
+        this.video.ontouchmove = (e) =>
+            this.mode != 'none' ? this.handleMove.bind(this)(e) : null;
     }
 
     public Close() {
@@ -47,13 +38,12 @@ export class TouchHandler {
         this.video.ontouchend = null;
         this.video.ontouchmove = null;
         clearInterval(this.running);
-        this.disable = true;
+        this.mode = 'none';
     }
 
-    private async ListenEvents() {
+    private async ListenEvents(events: string) {
         if (this.mode == 'none') return;
-
-        switch (this.events.pop()) {
+        switch (events) {
             case 'short_right':
                 await this.SendFunc(
                     new HIDMsg(EventCode.MouseDown, {
@@ -90,7 +80,7 @@ export class TouchHandler {
                 new TouchData(touches[i])
             );
     };
-    private handleEnd = (evt: TouchEvent) => {
+    private handleEnd = async (evt: TouchEvent) => {
         evt.preventDefault();
         const touches = evt.changedTouches;
 
@@ -106,7 +96,7 @@ export class TouchHandler {
                 diff > 30 &&
                 touches.length == 1
             )
-                this.events.push(
+                await this.ListenEvents(
                     this.isTouchInBottomRight(touch)
                         ? 'short_right'
                         : 'short_left'
@@ -119,6 +109,7 @@ export class TouchHandler {
     private handleMove = async (evt: TouchEvent) => {
         evt.preventDefault();
         const touches = evt.touches;
+
         for (let i = 0; i < touches.length; i++) {
             const curr_touch = touches[i];
             const prev_touch = this.onGoingTouchs.get(curr_touch.identifier);
