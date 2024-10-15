@@ -15,7 +15,7 @@ export const Assign = (fun: () => RemoteDesktopClient) => {
     CLIENT = fun();
 };
 
-export let PINGER = async () => { };
+export let PINGER = async () => {};
 export const SetPinger = (fun: () => Promise<void>) => {
     PINGER = fun;
 };
@@ -31,7 +31,7 @@ export const ready = async (): Promise<boolean> => {
     return true;
 };
 
-export async function keyboard(val, action: 'up' | 'down') {
+export async function keyboard(val: string, action: 'up' | 'down') {
     if ('vibrate' in navigator && action == 'down')
         navigator.vibrate([40, 30, 0]);
 
