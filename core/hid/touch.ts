@@ -8,7 +8,7 @@ export class TouchHandler {
     private onGoingTouchs: Map<number, TouchData>;
     private events: string[] = [];
 
-    public mode: 'gamepad' | 'trackpad' | 'none';
+    public mode: 'trackpad' | 'none';
 
     private disable: boolean;
     private last_interact: Date;
