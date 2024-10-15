@@ -1,4 +1,4 @@
-import { RemoteDesktopClient } from '../core';
+import { EventCode, RemoteDesktopClient } from '../core';
 
 export const SIZE = () =>
     CLIENT != null
@@ -15,7 +15,7 @@ export const Assign = (fun: () => RemoteDesktopClient) => {
     CLIENT = fun();
 };
 
-export let PINGER = async () => {};
+export let PINGER = async () => { };
 export const SetPinger = (fun: () => Promise<void>) => {
     PINGER = fun;
 };
@@ -30,3 +30,26 @@ export const ready = async (): Promise<boolean> => {
 
     return true;
 };
+
+export async function keyboard(val, action: 'up' | 'down') {
+    if ('vibrate' in navigator && action == 'down')
+        navigator.vibrate([40, 30, 0]);
+
+    await CLIENT?.VirtualKeyboard({
+        code: action == 'up' ? EventCode.KeyUp : EventCode.KeyDown,
+        jsKey: val
+    });
+}
+export async function gamepadButton(index: number, type: 'up' | 'down') {
+    if ('vibrate' in navigator && type == 'down')
+        navigator.vibrate([40, 30, 0]);
+    await CLIENT?.VirtualGamepadButton(type == 'down', index);
+}
+
+export async function gamepadAxis(
+    x: number,
+    y: number,
+    type: 'left' | 'right'
+) {
+    await CLIENT?.VirtualGamepadAxis(x, y, type);
+}
