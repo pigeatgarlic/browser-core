@@ -185,7 +185,7 @@ class RemoteDesktopClient {
             }
 
             this.Metrics.audio.status = 'connected';
-            setTimeout(this.audioConn.DoneHandshake,5000);
+            setTimeout(this.audioConn.DoneHandshake.bind(this.audioConn), 5000);
         };
 
         const videoEstablishmentLoop = async () => {
@@ -219,7 +219,7 @@ class RemoteDesktopClient {
             }
 
             this.Metrics.video.status = 'connected';
-            this.videoConn.DoneHandshake()
+            this.videoConn.DoneHandshake();
             await this.video.play();
         };
 

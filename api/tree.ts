@@ -129,7 +129,8 @@ export function fromComputer(
     };
 
     if (
-        node.info.Hostname?.includes('ATLAS') &&
+        (node.info.Hostname?.includes('ATLAS') ||
+            node.info.BIOS == 'bios vendor=Dell Inc. version=BOCHS  - 1') &&
         !node.info.address?.includes('192.168.1.')
     )
         node.type = 'vm_worker';
