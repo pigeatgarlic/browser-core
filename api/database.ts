@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import PocketBase from 'pocketbase';
 import { getBrowser, getOS, getResolution } from '../core/utils/platform';
+import { ValidateIPaddress } from '.';
 
 export enum CAUSE {
     UNKNOWN,
@@ -67,7 +68,9 @@ export const PingSession = async (total: number) => {
     });
 };
 
-export const DevEnv = window.location.href.includes('localhost');
+export const DevEnv =
+    window.location.href.includes('localhost') ||
+    ValidateIPaddress(window.location.host.split(':')[0]);
 export async function UserSession(email: string) {
     if (DevEnv) return;
 
