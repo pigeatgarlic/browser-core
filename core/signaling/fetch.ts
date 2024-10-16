@@ -25,7 +25,7 @@ export class SignalingClientFetch {
                 this.outcoming.length > 0 ||
                 this.last_msg.length > 0
             ) {
-                await new Promise((r) => setTimeout(r, 300));
+                await new Promise((r) => setTimeout(r, 1000));
                 const copy = this.outcoming;
                 this.outcoming = [];
 
