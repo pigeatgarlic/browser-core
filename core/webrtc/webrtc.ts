@@ -221,7 +221,6 @@ export class WebRTC {
         ) {
             case 'connected':
                 this.connected = true;
-                setTimeout(this.DoneHandshake,10000);
                 break;
             case 'new':
             case 'connecting':
@@ -287,7 +286,7 @@ export class WebRTC {
         this.signaling.SignallingSend(out);
     }
 
-    private DoneHandshake() {
+    public DoneHandshake() {
         const out: SignalingMessage = { type: SignalingType.END };
         Log(LogLevel.Debug, this.id + ' signaling out : ' + msgString(out));
         this.signaling.SignallingSend(out);
