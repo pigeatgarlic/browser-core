@@ -137,26 +137,22 @@ export class HID {
     }
 
     public handleIncomingData(data: string) {
-        const fields = data.split('|');
-        switch (fields.at(0)) {
+        const [typ, first, second] = data.split('|');
+        switch (typ) {
             case 'grum':
-                const index = Number(fields.at(1));
-                const sMag = Number(fields.at(2)) / 255;
-                const wMag = Number(fields.at(3)) / 255;
-                if (sMag > 0 || wMag > 0) {
-                    navigator.getGamepads().forEach((gamepad: any) => {
-                        if (gamepad?.index === index)
-                            gamepad?.vibrationActuator?.playEffect?.(
-                                'dual-rumble',
-                                {
-                                    startDelay: 0,
-                                    duration: 200,
-                                    weakMagnitude: wMag,
-                                    strongMagnitude: sMag
-                                }
-                            );
+                const weakMagnitude = Number.isNaN(Number.parseInt(first))
+                    ? 1.0
+                    : Number.parseInt(first) / 255;
+                const strongMagnitude = Number.isNaN(Number.parseInt(second))
+                    ? 1.0
+                    : Number.parseInt(second) / 255;
+                navigator.getGamepads().forEach((gamepad: Gamepad | null) => {
+                    gamepad?.vibrationActuator?.playEffect('dual-rumble', {
+                        duration: 1000,
+                        weakMagnitude,
+                        strongMagnitude
                     });
-                }
+                });
                 break;
             default:
                 break;
