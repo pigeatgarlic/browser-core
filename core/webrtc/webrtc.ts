@@ -221,7 +221,7 @@ export class WebRTC {
         ) {
             case 'connected':
                 this.connected = true;
-                this.DoneHandshake();
+                setTimeout(this.DoneHandshake,10000);
                 break;
             case 'new':
             case 'connecting':
