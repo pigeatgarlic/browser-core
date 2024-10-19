@@ -19,6 +19,7 @@ export enum CAUSE {
 }
 
 const THINKMAY_DOMAIN = 'thinkmay.net';
+export const RPOCKETBASE = (domain: string) => new PocketBase(`https://${domain}`);
 export const POCKETBASE = new PocketBase(getDomainURL());
 export const LOCAL = () =>
     createClient(getDomainURL(), import.meta.env.VITE_SUPABASE_LOCAL_KEY);
