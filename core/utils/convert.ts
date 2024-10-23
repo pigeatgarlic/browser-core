@@ -26,7 +26,7 @@ export function convertJSKey(
     else if (lower == 'backspace') lower = 'back';
     //else if (lower == "f1")
     //    lower = "escape"
-    else if (lower.includes('arrow')) lower = lower.split('arrow').at(1);
+    else if (lower.includes('arrow')) lower = lower.replaceAll('arrow','')
 
     return code[
         (lr.includes(lower)
