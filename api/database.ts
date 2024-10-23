@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import PocketBase from 'pocketbase';
-import { getBrowser, getOS, getResolution } from '../core/utils/platform';
 import { ValidateIPaddress } from '.';
+import { getBrowser, getOS, getResolution } from '../core/utils/platform';
 
 export enum CAUSE {
     UNKNOWN,
@@ -95,7 +95,7 @@ export async function UserSession(email: string) {
             })
             .select('id');
         if (error || data?.length == 0) return id;
-        id = data.at(0).id;
+        id = data[0].id;
         return id;
     })();
 
