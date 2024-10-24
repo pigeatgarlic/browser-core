@@ -24,9 +24,7 @@ export function convertJSKey(
     else if (lower == 'enter') lower = 'return';
     else if (lower == ' ') lower = 'space';
     else if (lower == 'backspace') lower = 'back';
-    //else if (lower == "f1")
-    //    lower = "escape"
-    else if (lower.includes('arrow')) lower = lower.replaceAll('arrow','')
+    else if (lower.includes('arrow')) lower = lower.replaceAll('arrow', '');
 
     return code[
         (lr.includes(lower)

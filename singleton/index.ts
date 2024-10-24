@@ -10,9 +10,9 @@ export const MAX_FRAMERATE = 120; //240
 export const MIN_FRAMERATE = 40;
 
 export let CLIENT: RemoteDesktopClient | null = null;
-export const Assign = (fun: () => RemoteDesktopClient) => {
+export const Assign = (client: RemoteDesktopClient) => {
     if (CLIENT != null) CLIENT.Close();
-    CLIENT = fun();
+    CLIENT = client;
 };
 
 export let PINGER = async () => {};
