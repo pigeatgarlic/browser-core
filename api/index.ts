@@ -18,8 +18,8 @@ const WS_PORT = 60000;
 const TurnCredential = () => {
     return {
         maxPort: 65535,
-        minPort: 30000,
-        port: getRandomInt(30000, 65535),
+        minPort: 10000,
+        port: getRandomInt(10000, 65535),
         username: uuidv4(),
         password: uuidv4()
     };
