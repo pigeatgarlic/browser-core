@@ -192,7 +192,8 @@ export async function StartVirtdaemon(
     computer: Computer,
     volume_id?: string,
     ram?: string,
-    vcpu?: string
+    vcpu?: string,
+    query_position?: (position: number) => Promise<void>
 ): Promise<Error | StartRequest> {
     const { address } = computer;
     if (address == undefined) return new Error('address is not defined');
@@ -212,12 +213,11 @@ export async function StartVirtdaemon(
     (async (_req: StartRequest) => {
         await new Promise((r) => setTimeout(r, 3000));
         while (running) {
-            if (
-                (await internalFetch<{}>(address, '_new', _req)) instanceof
-                Error
-            ) {
+            const request_new = await internalFetch<{}>(address, '_new', _req);
+            if (request_new instanceof Error) {
                 break;
             } else {
+                query_position(Number(request_new['position'] ?? Infinity));
                 await new Promise((r) => setTimeout(r, 1000));
             }
         }
