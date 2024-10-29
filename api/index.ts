@@ -217,6 +217,13 @@ export async function StartVirtdaemon(
         while (running) {
             const request_new = await internalFetch<{}>(address, '_new', _req);
             if (request_new instanceof Error) {
+                UserEvents({
+                    type: 'api/_new/fail',
+                    payload: {
+                        volume_id: volume_id ?? 'null',
+                        error: request_new
+                    }
+                });
                 break;
             } else {
                 query_position(Number(request_new['position'] ?? Infinity));
