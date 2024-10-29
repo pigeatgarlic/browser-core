@@ -172,17 +172,19 @@ export function KeepaliveVolume(
     const { address } = computer;
     if (address == undefined) throw new Error('address is not defined');
 
-    let stop = false;
+    let fail_count = 0;
+    const retry = 30;
+
     const now = () => new Date().getTime() / 1000;
     const start = now();
     return async () => {
-        if (stop) return;
+        if (fail_count > retry) return;
 
         if (
             (await internalFetch<{}>(address, '_use', volume_id)) instanceof
             Error
         ) {
-            stop = true;
+            fail_count++;
         }
         total_time_callback ? total_time_callback(now() - start) : null;
     };
