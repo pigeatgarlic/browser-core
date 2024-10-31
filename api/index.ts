@@ -163,7 +163,7 @@ export type StartRequest = {
     vm?: Computer;
 };
 
-type callback = () => Promise<void>;
+type callback = () => Promise<number>;
 export function KeepaliveVolume(
     computer: Computer,
     volume_id: string,
@@ -172,21 +172,16 @@ export function KeepaliveVolume(
     const { address } = computer;
     if (address == undefined) throw new Error('address is not defined');
 
-    let fail_count = 0;
-    const retry = 30;
-
     const now = () => new Date().getTime() / 1000;
     const start = now();
-    return async () => {
-        if (fail_count > retry) return;
+    let last_ping = now();
 
-        if (
-            (await internalFetch<{}>(address, '_use', volume_id)) instanceof
-            Error
-        ) {
-            fail_count++;
-        }
+    return async () : Promise<number> => {
         total_time_callback ? total_time_callback(now() - start) : null;
+        if(!(await internalFetch<{}>(address, '_use', volume_id) instanceof Error))
+            last_ping = now()
+            
+        return now() - last_ping;
     };
 }
 
