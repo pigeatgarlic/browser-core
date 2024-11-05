@@ -198,7 +198,7 @@ class RemoteDesktopClient {
                 WebRTCConfig,
                 async () => null,
                 this.handleIncomingVideo.bind(this),
-                this.handleIncomingDataChannel.bind(this),
+                async () => null,
                 handle_metrics.bind(this),
                 videoEstablishmentLoop
             );
