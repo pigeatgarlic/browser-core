@@ -11,11 +11,12 @@ export class DataChannel {
         let sent = false;
         let retry = 0;
         while (!sent && retry <= 5) {
-            for (const [key, value] of Array.from(this.channel.entries())) {
+            const entries = Array.from(this.channel.entries()).sort((a, b) => b[0] - a[0]);
+            for (const [key, value] of entries) {
                 if (sent || value.readyState != 'open') continue;
-                sent = true;
                 try {
                     value.send(message);
+                    sent = true;
                 } catch {
                     sent = false;
                 }
@@ -27,7 +28,7 @@ export class DataChannel {
     }
 
     public SetSender(chan: RTCDataChannel) {
-        const id = Date.now();
+        const id = chan?.id || Date.now();
 
         const close = () => {
             this.channel.delete(id);
