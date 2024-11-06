@@ -15,7 +15,9 @@ export const Assign = (client: RemoteDesktopClient) => {
     CLIENT = client;
 };
 
-export let PINGER = async (): Promise<number> => { return -999 };
+export let PINGER = async (): Promise<number> => {
+    return -999;
+};
 export const SetPinger = (fun: () => Promise<number>) => {
     PINGER = fun;
 };

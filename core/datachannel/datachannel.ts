@@ -11,7 +11,9 @@ export class DataChannel {
         let sent = false;
         let retry = 0;
         while (!sent && retry <= 5) {
-            const entries = Array.from(this.channel.entries()).sort((a, b) => b[0] - a[0]);
+            const entries = Array.from(this.channel.entries()).sort(
+                (a, b) => b[0] - a[0]
+            );
             for (const [key, value] of entries) {
                 if (sent || value.readyState != 'open') continue;
                 try {

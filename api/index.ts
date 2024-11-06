@@ -176,11 +176,16 @@ export function KeepaliveVolume(
     const start = now();
     let last_ping = now();
 
-    return async () : Promise<number> => {
+    return async (): Promise<number> => {
         total_time_callback ? total_time_callback(now() - start) : null;
-        if(!(await internalFetch<{}>(address, '_use', volume_id) instanceof Error))
-            last_ping = now()
-            
+        if (
+            !(
+                (await internalFetch<{}>(address, '_use', volume_id)) instanceof
+                Error
+            )
+        )
+            last_ping = now();
+
         return now() - last_ping;
     };
 }
