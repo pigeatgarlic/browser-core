@@ -246,6 +246,7 @@ export async function StartVirtdaemon(
 export type Session = {
     audioUrl: string;
     videoUrl: string;
+    logUrl?: string;
     rtc_config: RTCConfiguration;
 };
 
@@ -285,6 +286,9 @@ export async function StartThinkmayOnVM(
         return new Error('address is not defined');
 
     return {
+        logUrl: !userHttp(address)
+            ? `https://${address}/log?target=${target}`
+            : `http://${address}:${WS_PORT}/log?target=${target}`,
         audioUrl: !userHttp(address)
             ? `https://${address}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`,
@@ -342,6 +346,9 @@ export async function StartThinkmayOnPeer(
         return new Error('address is not defined');
 
     return {
+        logUrl: !userHttp(address)
+            ? `https://${address}/log?target=${target}`
+            : `http://${address}:${WS_PORT}/log?target=${target}`,
         audioUrl: !userHttp(address)
             ? `https://${address}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`,
@@ -462,6 +469,9 @@ export function ParseVMRequest(
     else if (thinkmay == undefined) throw new Error('thinkmay is not defined');
 
     return {
+        logUrl: !userHttp(address)
+            ? `https://${address}/log?target=${target}`
+            : `http://${address}:${WS_PORT}/log?target=${target}`,
         audioUrl: !userHttp(address)
             ? `https://${address}/handshake/client?token=${thinkmay.audioToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.audioToken}&target=${target}`,
