@@ -4,7 +4,10 @@ export const SIZE = () =>
     CLIENT != null
         ? CLIENT.video.video.videoHeight * CLIENT.video.video.videoWidth
         : 1920 * 1080;
-export const MAX_BITRATE = () => Math.round((15000 / (1920 * 1080)) * SIZE());
+let HQ = false;
+export const set_hq = (val: boolean) => (HQ = val);
+export const MAX_BITRATE = () =>
+    Math.round(((HQ ? 30000 : 15000) / (1920 * 1080)) * SIZE());
 export const MIN_BITRATE = () => Math.round((500 / (1920 * 1080)) * SIZE());
 export const MAX_FRAMERATE = 120; //240
 export const MIN_FRAMERATE = 40;
