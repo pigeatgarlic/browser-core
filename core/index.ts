@@ -11,6 +11,36 @@ import { AddNotifier, ConnectionEvent, Log, LogLevel } from './utils/log';
 import { getBrowser, isMobile } from './utils/platform';
 import { RTCMetric, WebRTC } from './webrtc/webrtc';
 
+const initialMetric = {
+    audio: {
+        status: 'close' as 'close' | 'connecting' | 'connected',
+
+        sample: {
+            received: 0
+        }
+    },
+    video: {
+        status: 'close' as 'close' | 'connecting' | 'connected',
+        timestamp: new Date(),
+        idrcount: {
+            current: 0,
+            last: 0
+        },
+        bitrate: {
+            persecond: 0,
+            total: 0
+        },
+        frame: {
+            persecond: 0,
+            total: 0
+        },
+        packetloss: {
+            current: 0,
+            last: 0
+        }
+    }
+};
+
 type channelName = 'hid' | 'manual';
 class RemoteDesktopClient {
     public hid: HID;
@@ -78,35 +108,7 @@ class RemoteDesktopClient {
         this.closed = false;
         this.video = vid;
         this.audio = audio;
-        this.Metrics = {
-            audio: {
-                status: 'close',
-
-                sample: {
-                    received: 0
-                }
-            },
-            video: {
-                status: 'close',
-                timestamp: new Date(),
-                idrcount: {
-                    current: 0,
-                    last: 0
-                },
-                bitrate: {
-                    persecond: 0,
-                    total: 0
-                },
-                frame: {
-                    persecond: 0,
-                    total: 0
-                },
-                packetloss: {
-                    current: 0,
-                    last: 0
-                }
-            }
-        };
+        this.Metrics = initialMetric;
 
         const handleHID = (data: string) =>
             !this.closed ? this.hid?.handleIncomingData(data) : null;
@@ -161,7 +163,7 @@ class RemoteDesktopClient {
         };
 
         const audioEstablishmentLoop = async () => {
-            this.Metrics.audio.status = 'close';
+            this.Metrics.audio = initialMetric.audio;
             if (this.closed) return;
 
             this.audioConn = new WebRTC(
@@ -189,7 +191,7 @@ class RemoteDesktopClient {
         };
 
         const videoEstablishmentLoop = async () => {
-            this.Metrics.video.status = 'close';
+            this.Metrics.video = initialMetric.video;
             if (this.closed) return;
 
             this.videoConn = new WebRTC(

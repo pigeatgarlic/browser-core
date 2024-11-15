@@ -115,7 +115,7 @@ export class TouchHandler {
             const prev_touch = this.onGoingTouchs.get(curr_touch.identifier);
 
             if (prev_touch == undefined) continue;
-            else if (this.onGoingTouchs.size == 1 && this.mode == 'trackpad')
+            else if (this.mode == 'trackpad')
                 await this.SendFunc(
                     new HIDMsg(EventCode.MouseMoveRel, {
                         dX:
