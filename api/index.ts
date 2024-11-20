@@ -17,9 +17,9 @@ import { fromComputer, NodeType, RenderNode } from './tree';
 const WS_PORT = 60000;
 const TurnCredential = () => {
     return {
+        port: 3478,
         maxPort: 65535,
         minPort: 10000,
-        port: getRandomInt(10000, 65535),
         username: uuidv4(),
         password: uuidv4()
     };
