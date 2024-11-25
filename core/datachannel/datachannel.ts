@@ -4,33 +4,21 @@ export class DataChannel {
 
     constructor(handler?: (data: string) => void) {
         this.channel = new Map<number, RTCDataChannel>();
-        this.handler = handler ?? (() => {});
+        this.handler = handler ?? (() => { });
     }
 
     public async sendMessage(message: string) {
-        let sent = false;
-        let retry = 0;
-        while (!sent && retry <= 5) {
-            const entries = Array.from(this.channel.entries()).sort(
-                (a, b) => b[0] - a[0]
-            );
-            for (const [key, value] of entries) {
-                if (sent || value.readyState != 'open') continue;
-                try {
-                    value.send(message);
-                    sent = true;
-                } catch {
-                    sent = false;
-                }
-                if (sent) break;
-            }
-
-            retry++;
+        for (const [key, value] of Array.from(this.channel.entries()).sort(
+            (a, b) => b[0] - a[0]
+        )) {
+            if (value.readyState != 'open') continue;
+            value.send(message);
+            break
         }
     }
 
     public SetSender(chan: RTCDataChannel) {
-        const id = chan?.id || Date.now();
+        const id = Date.now();
 
         const close = () => {
             this.channel.delete(id);
