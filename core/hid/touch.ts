@@ -87,17 +87,19 @@ export class TouchHandler {
         for (let i = 0; i < touches.length; i++) {
             const key = touches[i].identifier;
             const touch = this.onGoingTouchs.get(key);
-            if (touch == undefined) continue;
 
-            const diff = new Date().getTime() - touch.startTime.getTime();
-            if (
-                this.mode == 'trackpad' &&
-                diff < 250 &&
-                diff > 30 &&
-                touches.length == 1
-            )
+            const validtouch = () => {
+                return new Date().getTime() - touch.startTime.getTime() < 150 && // quick touch
+                    Math.sqrt(
+                        (touch.clientX - touch.touchStart.clientX) ** 2 +
+                        (touch.clientY - touch.touchStart.clientY) ** 2
+                    ) < 10
+            }
+
+            if (touch == undefined) continue;
+            if (this.mode == 'trackpad' && validtouch())
                 await this.ListenEvents(
-                    this.isTouchInBottomRight(touch)
+                    this.isTouchRight(touch)
                         ? 'short_right'
                         : 'short_left'
                 );
@@ -131,13 +133,7 @@ export class TouchHandler {
         }
     };
 
-    private isTouchInBottomRight(touch: Touch): boolean {
-        const screenHeight = document.documentElement.clientHeight;
-        const screenBottom =
-            screenHeight * (1 - BOTTOM_THRESHOLD_PERCENT / 100);
-        return (
-            touch.clientY >= screenBottom &&
-            touch.clientX >= document.documentElement.clientWidth / 2
-        );
+    private isTouchRight(touch: Touch): boolean {
+        return touch.clientX >= document.documentElement.clientWidth / 2;
     }
 }
