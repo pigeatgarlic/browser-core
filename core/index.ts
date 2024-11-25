@@ -204,20 +204,24 @@ class RemoteDesktopClient {
                 videoEstablishmentLoop
             );
 
-            const start = RemoteDesktopClient.Now();
             this.Metrics.video = structuredClone(initialMetric.video);
             this.Metrics.video.status = 'connecting';
-            while (
-                !this.videoConn.connected ||
-                this.Metrics.video.frame.total <= 60
-            ) {
-                if (RemoteDesktopClient.Now() - start > 10 * 1000)
+
+            let start = RemoteDesktopClient.Now();
+            while (!this.videoConn.connected) {
+                if (RemoteDesktopClient.Now() - start > 30 * 1000)
                     return this.videoConn.Close();
                 else if (this.videoConn.closed) return;
-                else {
-                    await this.ResetVideo();
-                    await new Promise((r) => setTimeout(r, 1000));
-                }
+                else await new Promise((r) => setTimeout(r, 100));
+            }
+
+            start = RemoteDesktopClient.Now();
+            while (this.Metrics.video.frame.total <= 60) {
+                if (RemoteDesktopClient.Now() - start > 5 * 1000)
+                    return this.videoConn.Close();
+                else if (this.videoConn.closed) return;
+                await this.ResetVideo();
+                await new Promise((r) => setTimeout(r, 1000));
             }
 
             this.Metrics.video.status = 'connected';
