@@ -216,12 +216,12 @@ class RemoteDesktopClient {
             }
 
             start = RemoteDesktopClient.Now();
-            while (this.Metrics.video.frame.total <= 60) {
+            while (this.Metrics.video.frame.total == 0) {
                 if (RemoteDesktopClient.Now() - start > 5 * 1000)
                     return this.videoConn.Close();
                 else if (this.videoConn.closed) return;
                 await this.ResetVideo();
-                await new Promise((r) => setTimeout(r, 1000));
+                await new Promise((r) => setTimeout(r, 300));
             }
 
             this.Metrics.video.status = 'connected';
