@@ -296,7 +296,6 @@ export async function StartThinkmayOnVM(
             ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`,
         rtc_config: {
-            iceTransportPolicy: 'all',
             iceServers: [
                 {
                     urls: `stun:${address}:${turn.port}`
@@ -356,7 +355,6 @@ export async function StartThinkmayOnPeer(
             ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`,
         rtc_config: {
-            iceTransportPolicy: 'all',
             iceServers: [
                 {
                     urls: `stun:${address}:${turn.port}`
@@ -411,7 +409,6 @@ export async function StartThinkmay(
             ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}`,
         rtc_config: {
-            iceTransportPolicy: 'all',
             iceServers: [
                 {
                     urls: `stun:${address}:${turn.port}`
@@ -443,7 +440,6 @@ export function ParseRequest(
             ? `https://${address}/handshake/client?token=${thinkmay.videoToken}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.videoToken}`,
         rtc_config: {
-            iceTransportPolicy: 'all',
             iceServers: [
                 {
                     urls: `stun:${address}:${turn.port}`
@@ -479,7 +475,6 @@ export function ParseVMRequest(
             ? `https://${address}/handshake/client?token=${thinkmay.videoToken}&target=${target}`
             : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.videoToken}&target=${target}`,
         rtc_config: {
-            iceTransportPolicy: 'all',
             iceServers: [
                 {
                     urls: `stun:${address}:${turn.port}`

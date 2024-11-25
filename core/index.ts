@@ -108,7 +108,7 @@ class RemoteDesktopClient {
         this.closed = false;
         this.video = vid;
         this.audio = audio;
-        this.Metrics = initialMetric;
+        this.Metrics = structuredClone(initialMetric);
 
         const handleHID = (data: string) =>
             !this.closed ? this.hid?.handleIncomingData(data) : null;
@@ -163,7 +163,6 @@ class RemoteDesktopClient {
         };
 
         const audioEstablishmentLoop = async () => {
-            this.Metrics.audio = initialMetric.audio;
             if (this.closed) return;
 
             this.audioConn = new WebRTC(
@@ -178,6 +177,7 @@ class RemoteDesktopClient {
             );
 
             const start = RemoteDesktopClient.Now();
+            this.Metrics.audio = structuredClone(initialMetric.audio);
             this.Metrics.audio.status = 'connecting';
             while (!this.audioConn.connected) {
                 if (RemoteDesktopClient.Now() - start > 30 * 1000)
@@ -191,7 +191,6 @@ class RemoteDesktopClient {
         };
 
         const videoEstablishmentLoop = async () => {
-            this.Metrics.video = initialMetric.video;
             if (this.closed) return;
 
             this.videoConn = new WebRTC(
@@ -206,12 +205,13 @@ class RemoteDesktopClient {
             );
 
             const start = RemoteDesktopClient.Now();
+            this.Metrics.video = structuredClone(initialMetric.video);
             this.Metrics.video.status = 'connecting';
             while (
                 !this.videoConn.connected ||
-                this.Metrics.video.frame.total == 0
+                this.Metrics.video.frame.total <= 60
             ) {
-                if (RemoteDesktopClient.Now() - start > 30 * 1000)
+                if (RemoteDesktopClient.Now() - start > 10 * 1000)
                     return this.videoConn.Close();
                 else if (this.videoConn.closed) return;
                 else {
@@ -370,7 +370,7 @@ class RemoteDesktopClient {
             })
         );
 
-        Log(LogLevel.Infor, `gen I frame`);
+        Log(LogLevel.Debug, `gen I frame`);
     }
 
     public async HardReset() {
@@ -478,8 +478,8 @@ export {
     AudioWrapper,
     ConnectionEvent,
     EventCode,
-    RemoteDesktopClient,
-    VideoWrapper,
     isMobile,
-    useShift
+    RemoteDesktopClient,
+    useShift,
+    VideoWrapper
 };

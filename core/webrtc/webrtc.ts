@@ -71,6 +71,7 @@ export class WebRTC {
     private rtrackHandler: (a: RTCTrackEvent) => any;
     private ltrackHandler: () => Promise<MediaStream | null>;
     private channelHandler: (a: RTCDataChannelEvent) => any;
+    private metricHandler: (val: RTCMetric) => void;
     private closeHandler: () => void;
 
     constructor(
@@ -85,6 +86,7 @@ export class WebRTC {
     ) {
         this.closed = false;
         this.connected = false;
+        this.metricHandler = MetricsHandler;
         this.closeHandler = CloseHandler;
         this.rtrackHandler = TrackHandler;
         this.ltrackHandler = localTrack;
@@ -118,7 +120,7 @@ export class WebRTC {
                 this.Conn?.getStats().then((stats) =>
                     stats.forEach((val) =>
                         val.type == 'inbound-rtp'
-                            ? MetricsHandler(val)
+                            ? this.metricHandler(val)
                             : () => {}
                     )
                 ),
@@ -134,12 +136,14 @@ export class WebRTC {
 
     public Close() {
         Log(LogLevel.Infor, `Closed webrtc connection ${this.id}`);
+
+        this.metricHandler = () => {};
+        this.rtrackHandler = () => {};
+        this.channelHandler = () => {};
         this.connected = false;
         this.closed = true;
         this.Conn?.close();
         this.DoneHandshake();
-        this.rtrackHandler = () => {};
-        this.channelHandler = () => {};
         clearInterval(this.watch_loop);
         const close = this.closeHandler;
         this.closeHandler = () => {};
@@ -185,6 +189,9 @@ export class WebRTC {
     public SetupConnection(config: RTCConfiguration) {
         this.Conn = new RTCPeerConnection({
             ...config,
+            // bundlePolicy: 'max-bundle',
+            iceTransportPolicy: 'all',
+            // rtcpMuxPolicy: 'negotiate',
             encodedInsertableStreams: getBrowser() != 'Safari'
         } as any);
         this.Conn.ondatachannel = this.channelHandler;
