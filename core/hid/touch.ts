@@ -7,6 +7,7 @@ const MOUSE_SPEED = 3.5;
 export class TouchHandler {
     private onGoingTouchs: Map<number, TouchData>;
     public mode: 'trackpad' | 'none';
+    public touch_callback: () => Promise<void>;
 
     private last_interact: Date;
     public last_active(): number {
@@ -22,6 +23,7 @@ export class TouchHandler {
     ) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
+        this.touch_callback = async () => { }
 
         this.mode = 'trackpad';
         this.video = video;
@@ -72,6 +74,7 @@ export class TouchHandler {
     private handleStart = (evt: TouchEvent) => {
         evt.preventDefault();
         this.last_interact = new Date();
+        this.touch_callback();
 
         const touches = evt.changedTouches;
         for (let i = 0; i < touches.length; i++)
