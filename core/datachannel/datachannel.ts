@@ -4,7 +4,7 @@ export class DataChannel {
 
     constructor(handler?: (data: string) => void) {
         this.channel = new Map<number, RTCDataChannel>();
-        this.handler = handler ?? (() => { });
+        this.handler = handler ?? (() => {});
     }
 
     public async sendMessage(message: string) {
@@ -13,7 +13,7 @@ export class DataChannel {
         )) {
             if (value.readyState != 'open') continue;
             value.send(message);
-            break
+            break;
         }
     }
 

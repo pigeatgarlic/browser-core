@@ -23,7 +23,7 @@ export class TouchHandler {
     ) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
-        this.touch_callback = async () => { }
+        this.touch_callback = async () => {};
 
         this.mode = 'trackpad';
         this.video = video;
@@ -92,19 +92,19 @@ export class TouchHandler {
             const touch = this.onGoingTouchs.get(key);
 
             const validtouch = () => {
-                return new Date().getTime() - touch.startTime.getTime() < 150 && // quick touch
+                return (
+                    new Date().getTime() - touch.startTime.getTime() < 150 && // quick touch
                     Math.sqrt(
                         (touch.clientX - touch.touchStart.clientX) ** 2 +
-                        (touch.clientY - touch.touchStart.clientY) ** 2
+                            (touch.clientY - touch.touchStart.clientY) ** 2
                     ) < 10
-            }
+                );
+            };
 
             if (touch == undefined) continue;
             if (this.mode == 'trackpad' && validtouch())
                 await this.ListenEvents(
-                    this.isTouchRight(touch)
-                        ? 'short_right'
-                        : 'short_left'
+                    this.isTouchRight(touch) ? 'short_right' : 'short_left'
                 );
 
             this.onGoingTouchs.delete(key);

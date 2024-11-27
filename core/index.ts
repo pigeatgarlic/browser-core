@@ -11,7 +11,41 @@ import { AddNotifier, ConnectionEvent, Log, LogLevel } from './utils/log';
 import { getBrowser, isMobile } from './utils/platform';
 import { RTCMetric, WebRTC } from './webrtc/webrtc';
 
-const initialMetric = {
+type Metric = {
+    video: {
+        status: 'close' | 'connecting' | 'connected';
+        timestamp: Date;
+        idrcount: {
+            last: number;
+            current: number;
+        };
+        packetloss: {
+            last: number;
+            current: number;
+        };
+        bitrate: {
+            total: number;
+            persecond: number;
+        };
+        frame: {
+            totalframes: number;
+            totalframedelay: number;
+            totaldecodetime: number;
+
+            persecond: number;
+            decodetime: number;
+            delay: number;
+        };
+    };
+    audio: {
+        status: 'close' | 'connecting' | 'connected';
+
+        sample: {
+            received: number;
+        };
+    };
+};
+const initialMetric: Metric = {
     audio: {
         status: 'close' as 'close' | 'connecting' | 'connected',
 
@@ -31,8 +65,12 @@ const initialMetric = {
             total: 0
         },
         frame: {
+            totaldecodetime: 0,
+            totalframes: 0,
+            totalframedelay: 0,
             persecond: 0,
-            total: 0
+            delay: 0,
+            decodetime: 0
         },
         packetloss: {
             current: 0,
@@ -47,35 +85,7 @@ class RemoteDesktopClient {
     public touch: TouchHandler;
     public video: VideoWrapper;
     public audio: AudioWrapper;
-    public Metrics: {
-        video: {
-            status: 'close' | 'connecting' | 'connected';
-            timestamp: Date;
-            idrcount: {
-                last: number;
-                current: number;
-            };
-            packetloss: {
-                last: number;
-                current: number;
-            };
-            bitrate: {
-                total: number;
-                persecond: number;
-            };
-            frame: {
-                total: number;
-                persecond: number;
-            };
-        };
-        audio: {
-            status: 'close' | 'connecting' | 'connected';
-
-            sample: {
-                received: number;
-            };
-        };
-    };
+    public Metrics: Metric;
 
     private static Now = () => new Date().getTime();
     private missing_frame: any;
@@ -125,12 +135,31 @@ class RemoteDesktopClient {
             switch (val.kind) {
                 case 'video':
                     this.Metrics.video.frame.persecond = Math.round(
-                        (val.framesDecoded - this.Metrics.video.frame.total) /
+                        (val.framesDecoded -
+                            this.Metrics.video.frame.totalframes) /
                             ((now.getTime() -
                                 this.Metrics.video.timestamp.getTime()) /
                                 1000)
                     );
-                    this.Metrics.video.frame.total = val.framesDecoded;
+                    this.Metrics.video.frame.decodetime =
+                        ((val.totalDecodeTime +
+                            val.totalAssemblyTime -
+                            this.Metrics.video.frame.totaldecodetime) /
+                            (val.framesDecoded -
+                                this.Metrics.video.frame.totalframes)) *
+                        1000;
+                    this.Metrics.video.frame.delay =
+                        ((val.totalInterFrameDelay -
+                            this.Metrics.video.frame.totalframedelay) /
+                            (val.framesDecoded -
+                                this.Metrics.video.frame.totalframes)) *
+                        1000;
+
+                    this.Metrics.video.frame.totalframes = val.framesDecoded;
+                    this.Metrics.video.frame.totalframedelay =
+                        val.totalInterFrameDelay;
+                    this.Metrics.video.frame.totaldecodetime =
+                        val.totalDecodeTime + val.totalAssemblyTime;
 
                     this.Metrics.video.bitrate.persecond = Math.round(
                         (((val.bytesReceived -
@@ -216,7 +245,7 @@ class RemoteDesktopClient {
             }
 
             start = RemoteDesktopClient.Now();
-            while (this.Metrics.video.frame.total == 0) {
+            while (this.Metrics.video.frame.totalframes == 0) {
                 if (RemoteDesktopClient.Now() - start > 5 * 1000)
                     return this.videoConn.Close();
                 else if (this.videoConn.closed) return;
