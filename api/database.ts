@@ -32,12 +32,12 @@ export const GLOBAL = () =>
 
 export function getDomainURL(): string {
     return !window.location.origin.includes(THINKMAY_DOMAIN)
-        ? 'https://play.0.thinkmay.net'
+        ? 'https://play.thinkmay.net'
         : window.location.origin;
 }
 export function getDomain(): string {
     return !window.location.origin.includes(THINKMAY_DOMAIN)
-        ? 'play.0.thinkmay.net'
+        ? 'play.thinkmay.net'
         : window.location.hostname;
 }
 
