@@ -160,6 +160,11 @@ export type StartRequest = {
         ScreenWidth: number;
         ScreenHeight: number;
     };
+    app?: {
+        AppID: string;
+        Username: string;
+        Credential: string;
+    };
     vm?: Computer;
 };
 
@@ -308,6 +313,40 @@ export async function StartThinkmayOnVM(
             ]
         }
     };
+}
+export async function LoginSteamOnVM(
+    computer: Computer,
+    target: string,
+    username: string,
+    password: string
+): Promise<StartRequest | Error> {
+    const { address } = computer;
+    if (address == undefined) return new Error('address is not defined');
+
+    const id = uuidv4();
+    const appid = uuidv4();
+    const req: StartRequest = {
+        id,
+        target,
+        app: {
+            AppID: appid,
+            Username: username,
+            Credential: password
+        }
+    };
+
+    const resp = await internalFetch<StartRequest>(address, 'new', req);
+    if (resp instanceof Error) throw resp;
+    return req;
+}
+export async function LogoutSteamOnVM(
+    computer: Computer,
+    req: StartRequest
+): Promise<'SUCCESS' | Error> {
+    const { address } = computer;
+    if (address == undefined) return new Error('address is not defined');
+    const resp = await internalFetch<StartRequest>(address, 'closed', req);
+    return resp instanceof Error ? resp : 'SUCCESS';
 }
 export async function StartThinkmayOnPeer(
     computer: Computer,
