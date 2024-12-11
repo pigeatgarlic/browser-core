@@ -200,6 +200,7 @@ export async function StartVirtdaemon(
     volume_id?: string,
     ram?: string,
     vcpu?: string,
+    hidevm?: boolean,
     query_position?: (position: number) => Promise<void>
 ): Promise<Error | StartRequest> {
     const { address } = computer;
@@ -212,7 +213,8 @@ export async function StartVirtdaemon(
             GPUs: ['GA104 [GeForce RTX 3060 Ti Lite Hash Rate]'],
             Volumes: volume_id != undefined ? [volume_id] : [],
             CPU: vcpu ?? '12',
-            RAM: ram ?? '16'
+            RAM: ram ?? '16',
+            HideVM: hidevm ?? true,
         }
     };
 
