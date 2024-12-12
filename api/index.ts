@@ -214,7 +214,7 @@ export async function StartVirtdaemon(
             Volumes: volume_id != undefined ? [volume_id] : [],
             CPU: vcpu ?? '12',
             RAM: ram ?? '16',
-            HideVM: hidevm ?? true,
+            HideVM: hidevm ?? true
         }
     };
 
