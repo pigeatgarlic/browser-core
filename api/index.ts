@@ -117,6 +117,7 @@ type Computer = {
     address?: string; // private
     available?: 'not_ready' | 'ready' | 'started'; // private
     steam?: boolean; // private
+    storage?: boolean; // private
 
     Hostname?: string;
     CPU?: string;
@@ -165,6 +166,12 @@ export type StartRequest = {
         AppID: string;
         Username: string;
         Credential: string;
+    };
+    s3bucket?: {
+        BucketName: string;
+        S3AccessId?: string;
+        S3AccessKey?: string;
+        Endpoint?: string;
     };
     vm?: Computer;
 };
@@ -351,6 +358,38 @@ export async function LogoutSteamOnVM(
     const resp = await internalFetch<StartRequest>(address, 'closed', req);
     return resp instanceof Error ? resp : 'SUCCESS';
 }
+
+export async function MountOnVM(
+    computer: Computer,
+    target: string,
+    bucket_name: string
+): Promise<StartRequest | Error> {
+    const { address } = computer;
+    if (address == undefined) return new Error('address is not defined');
+
+    const id = uuidv4();
+    const req: StartRequest = {
+        id,
+        target,
+        s3bucket: {
+            BucketName: bucket_name
+        }
+    };
+
+    const resp = await internalFetch<StartRequest>(address, 'new', req);
+    if (resp instanceof Error) throw resp;
+    return req;
+}
+export async function UnmountOnVM(
+    computer: Computer,
+    req: StartRequest
+): Promise<'SUCCESS' | Error> {
+    const { address } = computer;
+    if (address == undefined) return new Error('address is not defined');
+    const resp = await internalFetch<StartRequest>(address, 'closed', req);
+    return resp instanceof Error ? resp : 'SUCCESS';
+}
+
 export async function StartThinkmayOnPeer(
     computer: Computer,
     target: string
