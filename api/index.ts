@@ -17,9 +17,6 @@ import { fromComputer, NodeType, RenderNode } from './tree';
 const WS_PORT = 60000;
 const TurnCredential = () => {
     return {
-        port: 3478,
-        maxPort: 65535,
-        minPort: 10000,
         username: uuidv4(),
         password: uuidv4()
     };
@@ -31,8 +28,8 @@ const http_available = () =>
 export function ValidateIPaddress(ipaddress: string) {
     return ipaddress != undefined
         ? /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-              ipaddress
-          )
+            ipaddress
+        )
         : false;
 }
 const userHttp = (addr: string): boolean =>
@@ -139,12 +136,6 @@ export async function GetInfo(ip: string): Promise<Computer | Error> {
 export type StartRequest = {
     id: string;
     target?: string;
-
-    turn?: {
-        port: number;
-        username: string;
-        password: string;
-    };
     sunshine?: {
         username: string;
         password: string;
@@ -157,10 +148,6 @@ export type StartRequest = {
         password: string;
         audioToken?: string;
         videoToken?: string;
-    };
-    display?: {
-        ScreenWidth: number;
-        ScreenHeight: number;
     };
     app?: {
         AppID: string;
@@ -214,9 +201,19 @@ export async function StartVirtdaemon(
     const { address } = computer;
     if (address == undefined) return new Error('address is not defined');
 
+    const turn = TurnCredential();
+    const thinkmay = {
+        stunAddress: `stun:${address}:3478`,
+        turnAddress: `turn:${address}:3478`,
+        username: turn.username,
+        password: turn.password,
+        displayRequired: true
+    };
+
     const id = uuidv4();
     const req = {
         id,
+        thinkmay,
         vm: {
             GPUs: ['GA104 [GeForce RTX 3060 Ti Lite Hash Rate]'],
             Volumes: volume_id != undefined ? [volume_id] : [],
@@ -270,17 +267,12 @@ export async function StartThinkmayOnVM(
     if (address == undefined) return new Error('address is not defined');
 
     const turn = TurnCredential();
-
     const thinkmay = {
-        stunAddress: `stun:${address}:${turn.port}`,
-        turnAddress: `turn:${address}:${turn.port}`,
+        stunAddress: `stun:${address}:3478`,
+        turnAddress: `turn:${address}:3478`,
         username: turn.username,
-        password: turn.password
-    };
-
-    const display = {
-        ScreenWidth: 1920,
-        ScreenHeight: 1080
+        password: turn.password,
+        displayRequired: true
     };
 
     const id = uuidv4();
@@ -288,8 +280,6 @@ export async function StartThinkmayOnVM(
         id,
         target,
         thinkmay,
-        turn,
-        display
     };
 
     const resp = await internalFetch<StartRequest>(address, 'new', req);
@@ -310,10 +300,10 @@ export async function StartThinkmayOnVM(
         rtc_config: {
             iceServers: [
                 {
-                    urls: `stun:${address}:${turn.port}`
+                    urls: `stun:${address}:3478`
                 },
                 {
-                    urls: `turn:${address}:${turn.port}`,
+                    urls: `turn:${address}:3478`,
                     username: turn.username,
                     credential: turn.password
                 }
@@ -395,17 +385,12 @@ export async function StartThinkmayOnPeer(
     if (address == undefined) return new Error('address is not defined');
 
     const turn = TurnCredential();
-
     const thinkmay = {
-        stunAddress: `stun:${address}:${turn.port}`,
-        turnAddress: `turn:${address}:${turn.port}`,
+        stunAddress: `stun:${address}:3478`,
+        turnAddress: `turn:${address}:3478`,
         username: turn.username,
-        password: turn.password
-    };
-
-    const display = {
-        ScreenWidth: 1920,
-        ScreenHeight: 1080
+        password: turn.password,
+        displayRequired: true
     };
 
     const id = uuidv4();
@@ -413,8 +398,6 @@ export async function StartThinkmayOnPeer(
         id,
         target,
         thinkmay,
-        turn,
-        display
     };
 
     const resp = await internalFetch<StartRequest>(address, 'new', req);
@@ -435,10 +418,10 @@ export async function StartThinkmayOnPeer(
         rtc_config: {
             iceServers: [
                 {
-                    urls: `stun:${address}:${turn.port}`
+                    urls: `stun:${address}:3478`
                 },
                 {
-                    urls: `turn:${address}:${turn.port}`,
+                    urls: `turn:${address}:3478`,
                     username: turn.username,
                     credential: turn.password
                 }
@@ -453,25 +436,18 @@ export async function StartThinkmay(
     if (address == undefined) return new Error('address is not defined');
 
     const turn = TurnCredential();
-
     const thinkmay = {
-        stunAddress: `stun:${address}:${turn.port}`,
-        turnAddress: `turn:${address}:${turn.port}`,
+        stunAddress: `stun:${address}:3478`,
+        turnAddress: `turn:${address}:3478`,
         username: turn.username,
-        password: turn.password
-    };
-
-    const display = {
-        ScreenWidth: 1920,
-        ScreenHeight: 1080
+        password: turn.password,
+        displayRequired: true
     };
 
     const id = uuidv4();
     const req: StartRequest = {
         id,
         thinkmay,
-        turn,
-        display
     };
 
     const resp = await internalFetch<StartRequest>(address, 'new', req);
@@ -489,10 +465,10 @@ export async function StartThinkmay(
         rtc_config: {
             iceServers: [
                 {
-                    urls: `stun:${address}:${turn.port}`
+                    urls: `stun:${address}:3478`
                 },
                 {
-                    urls: `turn:${address}:${turn.port}`,
+                    urls: `turn:${address}:3478`,
                     username: turn.username,
                     credential: turn.password
                 }
@@ -505,9 +481,8 @@ export function ParseRequest(
     session: StartRequest
 ): Session | Error {
     const { address } = computer;
-    const { turn, thinkmay } = session;
+    const { thinkmay } = session;
     if (address == undefined) throw new Error('address is not defined');
-    else if (turn == undefined) throw new Error('turn is not defined');
     else if (thinkmay == undefined) throw new Error('thinkmay is not defined');
 
     return {
@@ -520,12 +495,12 @@ export function ParseRequest(
         rtc_config: {
             iceServers: [
                 {
-                    urls: `stun:${address}:${turn.port}`
+                    urls: `stun:${address}:3478`
                 },
                 {
-                    urls: `turn:${address}:${turn.port}`,
-                    username: turn.username,
-                    credential: turn.password
+                    urls: `turn:${address}:3478`,
+                    username: thinkmay.username,
+                    credential: thinkmay.password
                 }
             ]
         }
@@ -537,9 +512,8 @@ export function ParseVMRequest(
     session: StartRequest
 ): Session {
     const { address } = computer;
-    const { turn, thinkmay, target } = session;
+    const { thinkmay, target } = session;
     if (address == undefined) throw new Error('address is not defined');
-    else if (turn == undefined) throw new Error('turn is not defined');
     else if (thinkmay == undefined) throw new Error('thinkmay is not defined');
 
     return {
@@ -555,12 +529,12 @@ export function ParseVMRequest(
         rtc_config: {
             iceServers: [
                 {
-                    urls: `stun:${address}:${turn.port}`
+                    urls: `stun:${address}:3478`
                 },
                 {
-                    urls: `turn:${address}:${turn.port}`,
-                    username: turn.username,
-                    credential: turn.password
+                    urls: `turn:${address}:3478`,
+                    username: thinkmay.username,
+                    credential: thinkmay.password
                 }
             ]
         }
@@ -587,17 +561,11 @@ export async function StartMoonlight(
         port: PORT.toString()
     };
 
-    const display = {
-        ScreenWidth: 1920,
-        ScreenHeight: 1080
-    };
 
-    const id = getRandomInt(0, 100);
+    const id = uuidv4();
     const req = {
         id,
-        timestamp: new Date().toISOString(),
         sunshine,
-        display
     };
 
     const resp = await internalFetch<StartRequest>(address, 'new', req);
@@ -681,3 +649,4 @@ export {
     UserSession
 };
 export type { Computer, NodeType };
+
