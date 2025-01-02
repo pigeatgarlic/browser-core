@@ -150,15 +150,13 @@ export type StartRequest = {
         videoToken?: string;
     };
     app?: {
-        AppID: string;
+        Type: string;
         Username: string;
         Credential: string;
     };
     s3bucket?: {
-        BucketName: string;
-        S3AccessId?: string;
-        S3AccessKey?: string;
-        Endpoint?: string;
+        bucket: string;
+        mountPath: string
     };
     vm?: Computer;
 };
@@ -321,12 +319,11 @@ export async function LoginSteamOnVM(
     if (address == undefined) return new Error('address is not defined');
 
     const id = uuidv4();
-    const appid = uuidv4();
     const req: StartRequest = {
         id,
         target,
         app: {
-            AppID: appid,
+            Type: 'steam',
             Username: username,
             Credential: password
         }
@@ -359,7 +356,8 @@ export async function MountOnVM(
         id,
         target,
         s3bucket: {
-            BucketName: bucket_name
+            bucket: bucket_name,
+            mountPath: `C:/${uuidv4()}`
         }
     };
 
