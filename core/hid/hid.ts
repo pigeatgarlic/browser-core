@@ -36,7 +36,6 @@ export class HID {
     private video: HTMLVideoElement;
     constructor(
         Sendfunc: (...data: HIDMsg[]) => Promise<void>,
-        scancode?: boolean,
         video?: HTMLVideoElement
     ) {
         this.disable = false;
@@ -49,7 +48,7 @@ export class HID {
         this.prev_sliders = new Map<number, number>();
         this.prev_axis = new Map<number, number>();
 
-        this.scancode = scancode ?? false;
+        this.scancode = false;
         this.last_interact = new Date();
 
         this.intervals = [];

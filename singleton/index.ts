@@ -2,7 +2,8 @@ import { EventCode, RemoteDesktopClient } from '../core';
 
 export const SIZE = () =>
     CLIENT != null
-        ? CLIENT.video.video.videoHeight * CLIENT.video.video.videoWidth
+        ? CLIENT.video.internal().videoHeight *
+          CLIENT.video.internal().videoWidth
         : 1920 * 1080;
 let HQ = false;
 export const set_hq = (val: boolean) => (HQ = val);

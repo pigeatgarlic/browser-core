@@ -5,11 +5,11 @@ import { AxisType } from './models/hid.model';
 import { EventCode, HIDMsg } from './models/keys.model';
 import { AudioWrapper } from './pipeline/sink/audio/wrapper';
 import { VideoWrapper } from './pipeline/sink/video/wrapper';
-import { SignalingConfig } from './signaling/config';
 import { convertJSKey, useShift } from './utils/convert';
 import { AddNotifier, ConnectionEvent, Log, LogLevel } from './utils/log';
 import { getBrowser, isMobile } from './utils/platform';
-import { RTCMetric, WebRTC } from './webrtc/webrtc';
+import { DataRTC } from './webrtc/data';
+import { MediaRTC, RTCMetric } from './webrtc/media';
 
 type Metric = {
     video: {
@@ -37,6 +37,9 @@ type Metric = {
             delay: number;
         };
     };
+    data: {
+        status: 'close' | 'connecting' | 'connected';
+    };
     audio: {
         status: 'close' | 'connecting' | 'connected';
 
@@ -46,6 +49,9 @@ type Metric = {
     };
 };
 const initialMetric: Metric = {
+    data: {
+        status: 'close' as 'close' | 'connecting' | 'connected'
+    },
     audio: {
         status: 'close' as 'close' | 'connecting' | 'connected',
 
@@ -95,26 +101,16 @@ class RemoteDesktopClient {
         this.missing_frame = setTimeout(this.ResetVideo.bind(this), 1000);
     }
 
-    private videoConn: WebRTC;
-    private audioConn: WebRTC;
-    private datachannels: Map<channelName, DataChannel>;
+    private videoConn: MediaRTC;
+    private audioConn: MediaRTC;
+    private dataConn: DataRTC;
 
     public ready(): boolean {
         return this.Metrics.video.status == 'connected';
     }
 
     private closed: boolean;
-    constructor(
-        vid: VideoWrapper,
-        audio: AudioWrapper,
-        signalingConfig: SignalingConfig,
-        WebRTCConfig: RTCConfiguration,
-        {
-            scancode
-        }: {
-            scancode?: boolean;
-        }
-    ) {
+    constructor(vid: VideoWrapper, audio: AudioWrapper) {
         this.closed = false;
         this.video = vid;
         this.audio = audio;
@@ -122,13 +118,10 @@ class RemoteDesktopClient {
 
         const handleHID = (data: string) =>
             !this.closed ? this.hid?.handleIncomingData(data) : null;
-        this.datachannels = new Map<channelName, DataChannel>();
-        this.datachannels.set('manual', new DataChannel());
-        this.datachannels.set('hid', new DataChannel(handleHID.bind(this)));
 
         const send = async (...val: HIDMsg[]) => await this.SendRawHID(...val);
-        this.hid = new HID(send.bind(this), scancode, vid.video);
-        this.touch = new TouchHandler(vid.video, send.bind(this));
+        this.hid = new HID(send.bind(this), vid.internal());
+        this.touch = new TouchHandler(vid.internal(), send.bind(this));
 
         const handle_metrics = (val: RTCMetric) => {
             const now = new Date();
@@ -194,13 +187,9 @@ class RemoteDesktopClient {
         const audioEstablishmentLoop = async () => {
             if (this.closed) return;
 
-            this.audioConn = new WebRTC(
-                'audio',
-                signalingConfig.audioUrl,
-                WebRTCConfig,
-                async () => null,
+            this.audioConn = new MediaRTC(
+                this.audio.url,
                 this.handleIncomingAudio.bind(this),
-                this.handleIncomingDataChannel.bind(this),
                 handle_metrics.bind(this),
                 audioEstablishmentLoop
             );
@@ -216,19 +205,14 @@ class RemoteDesktopClient {
             }
 
             this.Metrics.audio.status = 'connected';
-            setTimeout(this.audioConn.DoneHandshake.bind(this.audioConn), 5000);
         };
 
         const videoEstablishmentLoop = async () => {
             if (this.closed) return;
 
-            this.videoConn = new WebRTC(
-                'video',
-                signalingConfig.videoUrl,
-                WebRTCConfig,
-                async () => null,
+            this.videoConn = new MediaRTC(
+                this.video.url,
                 this.handleIncomingVideo.bind(this),
-                async () => null,
                 handle_metrics.bind(this),
                 videoEstablishmentLoop
             );
@@ -254,22 +238,21 @@ class RemoteDesktopClient {
             }
 
             this.Metrics.video.status = 'connected';
-            this.videoConn.DoneHandshake();
+            await this.video.play();
+        };
+
+        const dataEstablishmentLoop = async () => {
+            if (this.closed) return;
+
+            this.dataConn = new DataRTC(this.video.url, videoEstablishmentLoop);
+
+            this.Metrics.video.status = 'connected';
             await this.video.play();
         };
 
         Log(LogLevel.Infor, `Started remote desktop connection`);
         audioEstablishmentLoop();
         videoEstablishmentLoop();
-    }
-
-    private async handleIncomingDataChannel(
-        a: RTCDataChannelEvent
-    ): Promise<void> {
-        if (this.closed) return;
-        this.datachannels
-            .get(a.channel.label as channelName)
-            .SetSender(a.channel);
     }
 
     private async audioTransform(
@@ -363,47 +346,23 @@ class RemoteDesktopClient {
 
     public async ChangeFramerate(framerate: number) {
         if (this.closed) return;
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'framerate',
-                value: framerate
-            })
-        );
-
+        this.dataConn.Send(``); // TODO
         Log(LogLevel.Infor, `changing framerate to ${framerate}`);
     }
     public async ChangeBitrate(bitrate: number) {
         if (this.closed) return;
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'bitrate',
-                value: bitrate
-            })
-        );
-
+        this.dataConn.Send(``); // TODO
         Log(LogLevel.Infor, `changing bitrate to ${bitrate}`);
     }
 
     public async PointerVisible(enable: boolean) {
         if (this.closed) return;
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'pointer',
-                value: enable ? 1 : 0
-            })
-        );
+        this.dataConn.Send(``); // TODO
     }
 
     public async ResetVideo() {
         if (this.closed) return;
-        await this.datachannels.get('manual').sendMessage(
-            JSON.stringify({
-                type: 'reset',
-                value: 1
-            })
-        );
-
-        Log(LogLevel.Debug, `gen I frame`);
+        this.dataConn.Send(``); // TODO
     }
 
     public async HardReset() {
@@ -416,10 +375,7 @@ class RemoteDesktopClient {
 
     async SendRawHID(...data: HIDMsg[]) {
         if (this.closed) return;
-
-        const hid = this.datachannels.get('hid');
-        for (let index = 0; index < data.length; index++)
-            await hid.sendMessage(data[index].ToString());
+        this.dataConn.Send(``); // TODO
     }
     public async SetClipboard(val: string) {
         if (this.closed) return;
@@ -499,9 +455,8 @@ class RemoteDesktopClient {
         this.touch?.Close();
         this.videoConn?.Close();
         this.audioConn?.Close();
-        this.video.video.srcObject = null;
+        this.video.internal().srcObject = null;
         this.audio.internal().srcObject = null;
-        this.datachannels = new Map<channelName, DataChannel>();
         Log(LogLevel.Infor, `Closed remote desktop connection`);
     }
 }

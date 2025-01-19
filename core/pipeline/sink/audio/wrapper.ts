@@ -2,9 +2,11 @@ import { Log, LogLevel } from '../../../utils/log';
 
 export class AudioWrapper {
     private audio: HTMLAudioElement;
+    public url: string;
 
-    constructor(vid: HTMLAudioElement) {
+    constructor(vid: HTMLAudioElement, url?: string) {
         this.audio = vid;
+        this.url = url;
     }
 
     // Play audio function

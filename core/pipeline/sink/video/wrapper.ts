@@ -1,10 +1,12 @@
 import { Log, LogLevel } from '../../../utils/log';
 
 export class VideoWrapper {
-    public video: HTMLVideoElement;
+    private video: HTMLVideoElement;
+    public url: string;
 
-    constructor(vid: HTMLVideoElement) {
+    constructor(vid: HTMLVideoElement, url: string) {
         this.video = vid;
+        this.url = url;
     }
 
     // Play video function
