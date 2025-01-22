@@ -1,4 +1,3 @@
-import { DataChannel } from './datachannel/datachannel';
 import { HID } from './hid/hid';
 import { TouchHandler } from './hid/touch';
 import { AxisType } from './models/hid.model';
@@ -85,13 +84,32 @@ const initialMetric: Metric = {
     }
 };
 
-type channelName = 'hid' | 'manual';
-class RemoteDesktopClient {
+class Thinkmay {
     public hid: HID;
     public touch: TouchHandler;
     public video: VideoWrapper;
     public audio: AudioWrapper;
     public Metrics: Metric;
+    public dataUrl: string;
+    public ready(): boolean {
+        return this.Metrics.video.status == 'connected';
+    }
+
+    constructor(vid: VideoWrapper, audio: AudioWrapper, dataUrl: string) {
+        this.closed = false;
+        this.video = vid;
+        this.audio = audio;
+        this.dataUrl = dataUrl;
+        this.Metrics = structuredClone(initialMetric);
+
+        this.hid = new HID(this.send.bind(this), vid.internal());
+        this.touch = new TouchHandler(vid.internal(), this.send.bind(this));
+
+        Log(LogLevel.Infor, `Started remote desktop connection`);
+        this.audioEstablishmentLoop();
+        this.videoEstablishmentLoop();
+        this.dataEstablishmentLoop();
+    }
 
     private static Now = () => new Date().getTime();
     private missing_frame: any;
@@ -104,156 +122,7 @@ class RemoteDesktopClient {
     private videoConn: MediaRTC;
     private audioConn: MediaRTC;
     private dataConn: DataRTC;
-
-    public ready(): boolean {
-        return this.Metrics.video.status == 'connected';
-    }
-
     private closed: boolean;
-    constructor(vid: VideoWrapper, audio: AudioWrapper) {
-        this.closed = false;
-        this.video = vid;
-        this.audio = audio;
-        this.Metrics = structuredClone(initialMetric);
-
-        const handleHID = (data: string) =>
-            !this.closed ? this.hid?.handleIncomingData(data) : null;
-
-        const send = async (...val: HIDMsg[]) => await this.SendRawHID(...val);
-        this.hid = new HID(send.bind(this), vid.internal());
-        this.touch = new TouchHandler(vid.internal(), send.bind(this));
-
-        const handle_metrics = (val: RTCMetric) => {
-            const now = new Date();
-            switch (val.kind) {
-                case 'video':
-                    this.Metrics.video.frame.persecond = Math.round(
-                        (val.framesDecoded -
-                            this.Metrics.video.frame.totalframes) /
-                            ((now.getTime() -
-                                this.Metrics.video.timestamp.getTime()) /
-                                1000)
-                    );
-                    this.Metrics.video.frame.decodetime =
-                        ((val.totalDecodeTime +
-                            val.totalAssemblyTime -
-                            this.Metrics.video.frame.totaldecodetime) /
-                            (val.framesDecoded -
-                                this.Metrics.video.frame.totalframes)) *
-                        1000;
-                    this.Metrics.video.frame.delay =
-                        ((val.totalInterFrameDelay -
-                            this.Metrics.video.frame.totalframedelay) /
-                            (val.framesDecoded -
-                                this.Metrics.video.frame.totalframes)) *
-                        1000;
-
-                    this.Metrics.video.frame.totalframes = val.framesDecoded;
-                    this.Metrics.video.frame.totalframedelay =
-                        val.totalInterFrameDelay;
-                    this.Metrics.video.frame.totaldecodetime =
-                        val.totalDecodeTime + val.totalAssemblyTime;
-
-                    this.Metrics.video.bitrate.persecond = Math.round(
-                        (((val.bytesReceived -
-                            this.Metrics.video.bitrate.total) /
-                            ((now.getTime() -
-                                this.Metrics.video.timestamp.getTime()) /
-                                1000)) *
-                            8) /
-                            1024
-                    );
-                    this.Metrics.video.bitrate.total = val.bytesReceived;
-
-                    this.Metrics.video.packetloss.current =
-                        val.packetsLost - this.Metrics.video.packetloss.last;
-                    this.Metrics.video.packetloss.last = val.packetsLost;
-
-                    this.Metrics.video.idrcount.current =
-                        val.keyFramesDecoded - this.Metrics.video.idrcount.last;
-                    this.Metrics.video.idrcount.last = val.keyFramesDecoded;
-
-                    this.Metrics.video.timestamp = now;
-                    break;
-                case 'audio':
-                    this.Metrics.audio.sample.received =
-                        val.totalSamplesReceived;
-                    break;
-                default:
-                    break;
-            }
-        };
-
-        const audioEstablishmentLoop = async () => {
-            if (this.closed) return;
-
-            this.audioConn = new MediaRTC(
-                this.audio.url,
-                this.handleIncomingAudio.bind(this),
-                handle_metrics.bind(this),
-                audioEstablishmentLoop
-            );
-
-            const start = RemoteDesktopClient.Now();
-            this.Metrics.audio = structuredClone(initialMetric.audio);
-            this.Metrics.audio.status = 'connecting';
-            while (!this.audioConn.connected) {
-                if (RemoteDesktopClient.Now() - start > 30 * 1000)
-                    return this.audioConn.Close();
-                else if (this.audioConn.closed) return;
-                else await new Promise((r) => setTimeout(r, 1000));
-            }
-
-            this.Metrics.audio.status = 'connected';
-        };
-
-        const videoEstablishmentLoop = async () => {
-            if (this.closed) return;
-
-            this.videoConn = new MediaRTC(
-                this.video.url,
-                this.handleIncomingVideo.bind(this),
-                handle_metrics.bind(this),
-                videoEstablishmentLoop
-            );
-
-            this.Metrics.video = structuredClone(initialMetric.video);
-            this.Metrics.video.status = 'connecting';
-
-            let start = RemoteDesktopClient.Now();
-            while (!this.videoConn.connected) {
-                if (RemoteDesktopClient.Now() - start > 30 * 1000)
-                    return this.videoConn.Close();
-                else if (this.videoConn.closed) return;
-                else await new Promise((r) => setTimeout(r, 100));
-            }
-
-            start = RemoteDesktopClient.Now();
-            while (this.Metrics.video.frame.totalframes == 0) {
-                if (RemoteDesktopClient.Now() - start > 5 * 1000)
-                    return this.videoConn.Close();
-                else if (this.videoConn.closed) return;
-                await this.ResetVideo();
-                await new Promise((r) => setTimeout(r, 300));
-            }
-
-            this.Metrics.video.status = 'connected';
-            await this.video.play();
-        };
-
-        const dataEstablishmentLoop = async () => {
-            if (this.closed) return;
-
-            this.dataConn = new DataRTC(this.video.url, videoEstablishmentLoop);
-
-            this.Metrics.video.status = 'connected';
-            await this.video.play();
-        };
-
-        Log(LogLevel.Infor, `Started remote desktop connection`);
-        audioEstablishmentLoop();
-        videoEstablishmentLoop();
-    }
 
     private async audioTransform(
         encodedFrame: RTCEncodedAudioFrame,
@@ -447,6 +316,132 @@ class RemoteDesktopClient {
         }
     }
 
+    private handleHID = (data: string) =>
+        !this.closed ? this.hid?.handleIncomingData(data) : null;
+
+    private send = async (...val: HIDMsg[]) => await this.SendRawHID(...val);
+
+    private handle_metrics = (val: RTCMetric) => {
+        const now = new Date();
+        switch (val.kind) {
+            case 'video':
+                this.Metrics.video.frame.persecond = Math.round(
+                    (val.framesDecoded - this.Metrics.video.frame.totalframes) /
+                        ((now.getTime() -
+                            this.Metrics.video.timestamp.getTime()) /
+                            1000)
+                );
+                this.Metrics.video.frame.decodetime =
+                    ((val.totalDecodeTime +
+                        val.totalAssemblyTime -
+                        this.Metrics.video.frame.totaldecodetime) /
+                        (val.framesDecoded -
+                            this.Metrics.video.frame.totalframes)) *
+                    1000;
+                this.Metrics.video.frame.delay =
+                    ((val.totalInterFrameDelay -
+                        this.Metrics.video.frame.totalframedelay) /
+                        (val.framesDecoded -
+                            this.Metrics.video.frame.totalframes)) *
+                    1000;
+
+                this.Metrics.video.frame.totalframes = val.framesDecoded;
+                this.Metrics.video.frame.totalframedelay =
+                    val.totalInterFrameDelay;
+                this.Metrics.video.frame.totaldecodetime =
+                    val.totalDecodeTime + val.totalAssemblyTime;
+
+                this.Metrics.video.bitrate.persecond = Math.round(
+                    (((val.bytesReceived - this.Metrics.video.bitrate.total) /
+                        ((now.getTime() -
+                            this.Metrics.video.timestamp.getTime()) /
+                            1000)) *
+                        8) /
+                        1024
+                );
+                this.Metrics.video.bitrate.total = val.bytesReceived;
+
+                this.Metrics.video.packetloss.current =
+                    val.packetsLost - this.Metrics.video.packetloss.last;
+                this.Metrics.video.packetloss.last = val.packetsLost;
+
+                this.Metrics.video.idrcount.current =
+                    val.keyFramesDecoded - this.Metrics.video.idrcount.last;
+                this.Metrics.video.idrcount.last = val.keyFramesDecoded;
+
+                this.Metrics.video.timestamp = now;
+                break;
+            case 'audio':
+                this.Metrics.audio.sample.received = val.totalSamplesReceived;
+                break;
+            default:
+                break;
+        }
+    };
+
+    private audioEstablishmentLoop = async () => {
+        if (this.closed) return;
+
+        this.audioConn = new MediaRTC(
+            this.audio.url,
+            this.handleIncomingAudio.bind(this),
+            this.handle_metrics.bind(this),
+            this.audioEstablishmentLoop
+        );
+
+        const start = Thinkmay.Now();
+        this.Metrics.audio = structuredClone(initialMetric.audio);
+        this.Metrics.audio.status = 'connecting';
+        while (!this.audioConn.connected) {
+            if (Thinkmay.Now() - start > 30 * 1000)
+                return this.audioConn.Close();
+            else if (this.audioConn.closed) return;
+            else await new Promise((r) => setTimeout(r, 1000));
+        }
+
+        this.Metrics.audio.status = 'connected';
+    };
+
+    private videoEstablishmentLoop = async () => {
+        if (this.closed) return;
+
+        this.videoConn = new MediaRTC(
+            this.video.url,
+            this.handleIncomingVideo.bind(this),
+            this.handle_metrics.bind(this),
+            this.videoEstablishmentLoop
+        );
+
+        this.Metrics.video = structuredClone(initialMetric.video);
+        this.Metrics.video.status = 'connecting';
+
+        let start = Thinkmay.Now();
+        while (!this.videoConn.connected) {
+            if (Thinkmay.Now() - start > 30 * 1000)
+                return this.videoConn.Close();
+            else if (this.videoConn.closed) return;
+            else await new Promise((r) => setTimeout(r, 100));
+        }
+
+        start = Thinkmay.Now();
+        while (this.Metrics.video.frame.totalframes == 0) {
+            if (Thinkmay.Now() - start > 5 * 1000)
+                return this.videoConn.Close();
+            else if (this.videoConn.closed) return;
+            await this.ResetVideo();
+            await new Promise((r) => setTimeout(r, 300));
+        }
+
+        this.Metrics.video.status = 'connected';
+        await this.video.play();
+    };
+
+    private dataEstablishmentLoop = async () => {
+        if (this.closed) return;
+
+        this.dataConn = new DataRTC(this.dataUrl, this.dataEstablishmentLoop);
+    };
+
     public Close() {
         this.closed = true;
         clearTimeout(this.missing_frame);
@@ -467,7 +462,7 @@ export {
     ConnectionEvent,
     EventCode,
     isMobile,
-    RemoteDesktopClient,
+    Thinkmay as RemoteDesktopClient,
     useShift,
     VideoWrapper
 };

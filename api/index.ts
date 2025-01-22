@@ -12,15 +12,8 @@ import {
     UserEvents,
     UserSession
 } from './database';
-import { fromComputer, NodeType, RenderNode } from './tree';
 
 const WS_PORT = 60000;
-const TurnCredential = () => {
-    return {
-        username: uuidv4(),
-        password: uuidv4()
-    };
-};
 
 let client: Client | null = null;
 const http_available = () =>
@@ -28,8 +21,8 @@ const http_available = () =>
 export function ValidateIPaddress(ipaddress: string) {
     return ipaddress != undefined
         ? /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-              ipaddress
-          )
+            ipaddress
+        )
         : false;
 }
 const userHttp = (addr: string): boolean =>
@@ -110,44 +103,57 @@ async function internalFetch<T>(
     }
 }
 
-type Computer = {
-    address?: string; // private
-    available?: 'not_ready' | 'ready' | 'started'; // private
-    steam?: boolean; // private
-    storage?: boolean; // private
+async function GetInfo(ip: string): Promise<Computer | Error> {
+    return await internalFetch<Computer>(ip, 'info');
+}
 
+type Computer = {
     Hostname?: string;
     CPU?: string;
     RAM?: string;
     BIOS?: string;
-    PublicIP?: string;
-    PrivateIP?: string;
-    MacAddr?: string;
+    HideVM: boolean;
 
-    GPUs: string[];
-    Sessions?: StartRequest[];
+    Sessions?: Session[];
+    Interfaces?: {
+        publicIp?: string;
+        privateIp?: string;
+        name: string;
+    }[];
+    GPUs?: {
+        Inuse: boolean;
+        Tained: boolean;
+        Type: string;
+        Id: string;
+    }[];
     Volumes?: string[];
 };
 
-export async function GetInfo(ip: string): Promise<Computer | Error> {
-    return await internalFetch<Computer>(ip, 'info');
-}
+type ProxyChain = {
+    child?: ProxyChain;
+    token?: string;
+    sendaddress?: string;
+    recvaddress: string;
+};
 
-export type StartRequest = {
+type RemoteReqeust = {
+    requestedCodec: string;
+    requestedProtocol: string;
+    displayRequired: boolean;
+
+    audio: ProxyChain;
+    video: ProxyChain;
+    data: ProxyChain;
+};
+
+type Session = {
     id: string;
     target?: string;
+
     sunshine?: {
         username: string;
         password: string;
         port: string;
-    };
-    thinkmay?: {
-        stunAddress: string;
-        turnAddress: string;
-        username: string;
-        password: string;
-        audioToken?: string;
-        videoToken?: string;
     };
     app?: {
         Type: string;
@@ -158,16 +164,25 @@ export type StartRequest = {
         bucket: string;
         mountPath: string;
     };
+
+    thinkmay?: RemoteReqeust;
     vm?: Computer;
+};
+
+type RemoteCredential = {
+    id: string;
+    audioUrl: string;
+    videoUrl: string;
+    dataUrl: string;
+    logUrl: string;
 };
 
 type callback = () => Promise<number>;
 export function KeepaliveVolume(
-    computer: Computer,
+    address: string,
     volume_id: string,
     total_time_callback?: (time_in_second: number) => Promise<void>
 ): callback {
-    const { address } = computer;
     if (address == undefined) throw new Error('address is not defined');
 
     const now = () => new Date().getTime() / 1000;
@@ -188,43 +203,24 @@ export function KeepaliveVolume(
     };
 }
 
-export async function StartVirtdaemon(
-    computer: Computer,
-    volume_id?: string,
-    ram?: string,
-    vcpu?: string,
-    hidevm?: boolean,
+export async function StartThinkmay(
+    address: string,
+    vm_request?: Computer,
     showStatus?: (status: string) => Promise<void>
-): Promise<Error | StartRequest> {
-    const { address } = computer;
-    if (address == undefined) return new Error('address is not defined');
-
-    const turn = TurnCredential();
-    const thinkmay = {
-        stunAddress: `stun:${address}:3478`,
-        turnAddress: `turn:${address}:3478`,
-        username: turn.username,
-        password: turn.password,
-        displayRequired: true
-    };
-
-    const id = uuidv4();
+): Promise<Error | Session> {
     const req = {
-        id,
-        thinkmay,
-        vm: {
-            GPUs: ['GA104 [GeForce RTX 3060 Ti Lite Hash Rate]'],
-            Volumes: volume_id != undefined ? [volume_id] : [],
-            CPU: vcpu ?? '12',
-            RAM: ram ?? '16',
-            HideVM: hidevm ?? true
-        }
-    };
+        id: uuidv4(),
+        thinkmay: {
+            displayRequired: true,
+            requestedCodec: 'h264',
+            requestedProtocol: 'webrtc'
+        },
+        vm: vm_request
+    } as Session;
 
     type deployment_status = { status: string };
-
     let running = true;
-    (async (_req: StartRequest) => {
+    (async (_req: Session) => {
         await new Promise((r) => setTimeout(r, 3000));
         while (running) {
             const request_new = await internalFetch<deployment_status>(
@@ -239,9 +235,9 @@ export async function StartVirtdaemon(
         }
     })(req);
 
-    let resp: Error | StartRequest = new Error('unable to request');
+    let resp: Error | Session = new Error('unable to request');
     try {
-        resp = await internalFetch<StartRequest>(address, 'new', req);
+        resp = await internalFetch<Session>(address, 'new', req);
     } catch (err) {
         running = false;
         return new Error(JSON.stringify(err));
@@ -250,76 +246,14 @@ export async function StartVirtdaemon(
     return resp;
 }
 
-export type Session = {
-    audioUrl: string;
-    videoUrl: string;
-    logUrl?: string;
-    rtc_config: RTCConfiguration;
-};
-
-export async function StartThinkmayOnVM(
-    computer: Computer,
-    target: string
-): Promise<Session | Error> {
-    const { address } = computer;
-    if (address == undefined) return new Error('address is not defined');
-
-    const turn = TurnCredential();
-    const thinkmay = {
-        stunAddress: `stun:${address}:3478`,
-        turnAddress: `turn:${address}:3478`,
-        username: turn.username,
-        password: turn.password,
-        displayRequired: true
-    };
-
-    const id = uuidv4();
-    const req: StartRequest = {
-        id,
-        target,
-        thinkmay
-    };
-
-    const resp = await internalFetch<StartRequest>(address, 'new', req);
-    if (resp instanceof Error) throw resp;
-    else if (resp.thinkmay == undefined)
-        return new Error('address is not defined');
-
-    return {
-        logUrl: !userHttp(address)
-            ? `https://${address}/log?target=${target}`
-            : `http://${address}:${WS_PORT}/log?target=${target}`,
-        audioUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`,
-        videoUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`,
-        rtc_config: {
-            iceServers: [
-                {
-                    urls: `stun:${address}:3478`
-                },
-                {
-                    urls: `turn:${address}:3478`,
-                    username: turn.username,
-                    credential: turn.password
-                }
-            ]
-        }
-    };
-}
 export async function LoginSteamOnVM(
-    computer: Computer,
+    address: string,
     target: string,
     username: string,
     password: string
-): Promise<StartRequest | Error> {
-    const { address } = computer;
-    if (address == undefined) return new Error('address is not defined');
-
+): Promise<Session | Error> {
     const id = uuidv4();
-    const req: StartRequest = {
+    const req: Session = {
         id,
         target,
         app: {
@@ -329,30 +263,25 @@ export async function LoginSteamOnVM(
         }
     };
 
-    const resp = await internalFetch<StartRequest>(address, 'new', req);
+    const resp = await internalFetch<Session>(address, 'new', req);
     if (resp instanceof Error) throw resp;
     return req;
 }
 export async function LogoutSteamOnVM(
-    computer: Computer,
-    req: StartRequest
+    address: string,
+    req: Session
 ): Promise<'SUCCESS' | Error> {
-    const { address } = computer;
-    if (address == undefined) return new Error('address is not defined');
-    const resp = await internalFetch<StartRequest>(address, 'closed', req);
+    const resp = await internalFetch<Session>(address, 'closed', req);
     return resp instanceof Error ? resp : 'SUCCESS';
 }
 
 export async function MountOnVM(
-    computer: Computer,
+    address: string,
     target: string,
     bucket_name: string
-): Promise<StartRequest | Error> {
-    const { address } = computer;
-    if (address == undefined) return new Error('address is not defined');
-
+): Promise<Session | Error> {
     const id = uuidv4();
-    const req: StartRequest = {
+    const req: Session = {
         id,
         target,
         s3bucket: {
@@ -361,182 +290,26 @@ export async function MountOnVM(
         }
     };
 
-    const resp = await internalFetch<StartRequest>(address, 'new', req);
+    const resp = await internalFetch<Session>(address, 'new', req);
     if (resp instanceof Error) throw resp;
     return req;
 }
 export async function UnmountOnVM(
-    computer: Computer,
-    req: StartRequest
+    address: string,
+    req: Session
 ): Promise<'SUCCESS' | Error> {
-    const { address } = computer;
     if (address == undefined) return new Error('address is not defined');
-    const resp = await internalFetch<StartRequest>(address, 'closed', req);
+    const resp = await internalFetch<Session>(address, 'closed', req);
     return resp instanceof Error ? resp : 'SUCCESS';
 }
 
-export async function StartThinkmayOnPeer(
-    computer: Computer,
-    target: string
-): Promise<Session | Error> {
-    const { address } = computer;
-    if (address == undefined) return new Error('address is not defined');
-
-    const turn = TurnCredential();
-    const thinkmay = {
-        stunAddress: `stun:${address}:3478`,
-        turnAddress: `turn:${address}:3478`,
-        username: turn.username,
-        password: turn.password,
-        displayRequired: true
-    };
-
-    const id = uuidv4();
-    const req: StartRequest = {
-        id,
-        target,
-        thinkmay
-    };
-
-    const resp = await internalFetch<StartRequest>(address, 'new', req);
-    if (resp instanceof Error) throw resp;
-    else if (resp.thinkmay == undefined)
-        return new Error('address is not defined');
-
-    return {
-        logUrl: !userHttp(address)
-            ? `https://${address}/log?target=${target}`
-            : `http://${address}:${WS_PORT}/log?target=${target}`,
-        audioUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.audioToken}&target=${target}`,
-        videoUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}&target=${target}`,
-        rtc_config: {
-            iceServers: [
-                {
-                    urls: `stun:${address}:3478`
-                },
-                {
-                    urls: `turn:${address}:3478`,
-                    username: turn.username,
-                    credential: turn.password
-                }
-            ]
-        }
-    };
-}
-export async function StartThinkmay(
-    computer: Computer
-): Promise<Session | Error> {
-    const { address } = computer;
-    if (address == undefined) return new Error('address is not defined');
-
-    const turn = TurnCredential();
-    const thinkmay = {
-        stunAddress: `stun:${address}:3478`,
-        turnAddress: `turn:${address}:3478`,
-        username: turn.username,
-        password: turn.password,
-        displayRequired: true
-    };
-
-    const id = uuidv4();
-    const req: StartRequest = {
-        id,
-        thinkmay
-    };
-
-    const resp = await internalFetch<StartRequest>(address, 'new', req);
-    if (resp instanceof Error) throw resp;
-    else if (resp.thinkmay == undefined)
-        return new Error(`thinkmay is not defined`);
-
-    return {
-        audioUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${resp.thinkmay.audioToken}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.audioToken}`,
-        videoUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${resp.thinkmay.videoToken}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${resp.thinkmay.videoToken}`,
-        rtc_config: {
-            iceServers: [
-                {
-                    urls: `stun:${address}:3478`
-                },
-                {
-                    urls: `turn:${address}:3478`,
-                    username: turn.username,
-                    credential: turn.password
-                }
-            ]
-        }
-    };
-}
 export function ParseRequest(
-    computer: Computer,
-    session: StartRequest
-): Session | Error {
-    const { address } = computer;
+    address: string,
+    session: Session
+): RemoteCredential | Error {
     const { thinkmay } = session;
-    if (address == undefined) throw new Error('address is not defined');
-    else if (thinkmay == undefined) throw new Error('thinkmay is not defined');
-
-    return {
-        audioUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${thinkmay.audioToken}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.audioToken}`,
-        videoUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${thinkmay.videoToken}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.videoToken}`,
-        rtc_config: {
-            iceServers: [
-                {
-                    urls: `stun:${address}:3478`
-                },
-                {
-                    urls: `turn:${address}:3478`,
-                    username: thinkmay.username,
-                    credential: thinkmay.password
-                }
-            ]
-        }
-    };
-}
-
-export function ParseVMRequest(
-    computer: Computer,
-    session: StartRequest
-): Session {
-    const { address } = computer;
-    const { thinkmay, target } = session;
-    if (address == undefined) throw new Error('address is not defined');
-    else if (thinkmay == undefined) throw new Error('thinkmay is not defined');
-
-    return {
-        logUrl: !userHttp(address)
-            ? `https://${address}/log?target=${target}`
-            : `http://${address}:${WS_PORT}/log?target=${target}`,
-        audioUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${thinkmay.audioToken}&target=${target}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.audioToken}&target=${target}`,
-        videoUrl: !userHttp(address)
-            ? `https://${address}/handshake/client?token=${thinkmay.videoToken}&target=${target}`
-            : `http://${address}:${WS_PORT}/handshake/client?token=${thinkmay.videoToken}&target=${target}`,
-        rtc_config: {
-            iceServers: [
-                {
-                    urls: `stun:${address}:3478`
-                },
-                {
-                    urls: `turn:${address}:3478`,
-                    username: thinkmay.username,
-                    credential: thinkmay.password
-                }
-            ]
-        }
-    };
+    if (thinkmay == undefined) throw new Error('thinkmay is not defined');
+    return {};
 }
 
 type MoonlightStreamConfig = {
@@ -545,13 +318,10 @@ type MoonlightStreamConfig = {
     height?: number;
 };
 export async function StartMoonlight(
-    computer: Computer,
+    address: string,
     options?: MoonlightStreamConfig,
     callback?: (type: 'stdout' | 'stderr', log: string) => void
 ): Promise<Child> {
-    const { address } = computer;
-    if (address == undefined) throw new Error('address is not defined');
-
     const PORT = getRandomInt(60000, 65530);
     const sunshine = {
         username: getRandomInt(0, 9999).toString(),
@@ -565,7 +335,7 @@ export async function StartMoonlight(
         sunshine
     };
 
-    const resp = await internalFetch<StartRequest>(address, 'new', req);
+    const resp = await internalFetch<Session>(address, 'new', req);
     if (resp instanceof Error) throw resp;
 
     const { username, password } = sunshine;
@@ -585,9 +355,8 @@ export async function StartMoonlight(
         '--password',
         password
     ];
-    console.log(`starting moonlight with ${cmds}`);
-    const command = new Command('Moonlight', cmds);
 
+    const command = new Command('Moonlight', cmds);
     command.stderr.addListener('data', (data) =>
         callback != undefined ? callback('stderr', data) : console.log(data)
     );
@@ -599,11 +368,9 @@ export async function StartMoonlight(
 }
 
 export async function CloseSession(
-    computer: Computer,
-    req: StartRequest
+    address: string,
+    req: Session
 ): Promise<Error | 'SUCCESS'> {
-    const { address } = computer;
-    if (address == undefined) throw new Error('address is not defined');
     const resp = await internalFetch(address, 'closed', req);
     return resp instanceof Error ? resp : 'SUCCESS';
 }
@@ -634,15 +401,14 @@ async function DiscordRichPresence(app_id: string): Promise<string> {
 
 export {
     CAUSE,
-    fromComputer,
     getDomain,
-    getDomainURL,
-    GLOBAL,
+    getDomainURL, GetInfo, GLOBAL,
     LOCAL,
-    PingSession,
-    POCKETBASE,
-    RenderNode,
+    PingSession, POCKETBASE,
     UserEvents,
     UserSession
 };
-export type { Computer, NodeType };
+export type {
+    Computer, RemoteCredential, Session
+};
+
