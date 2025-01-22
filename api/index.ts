@@ -21,8 +21,8 @@ const http_available = () =>
 export function ValidateIPaddress(ipaddress: string) {
     return ipaddress != undefined
         ? /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(
-            ipaddress
-        )
+              ipaddress
+          )
         : false;
 }
 const userHttp = (addr: string): boolean =>
@@ -170,7 +170,6 @@ type Session = {
 };
 
 type RemoteCredential = {
-    id: string;
     audioUrl: string;
     videoUrl: string;
     dataUrl: string;
@@ -309,7 +308,18 @@ export function ParseRequest(
 ): RemoteCredential | Error {
     const { thinkmay } = session;
     if (thinkmay == undefined) throw new Error('thinkmay is not defined');
-    return {};
+    return {
+        logUrl: `https://${address}/log?target=${session.id}`,
+        videoUrl: `wss://${address}/broadcasters/webrtc?cred=${
+            session.vm.Sessions.at(0).thinkmay.video.token
+        }`,
+        audioUrl: `wss://${address}/broadcasters/webrtc?cred=${
+            session.vm.Sessions.at(0).thinkmay.audio.token
+        }`,
+        dataUrl: `wss://${address}/broadcasters/webrtc?cred=${
+            session.vm.Sessions.at(0).thinkmay.data.token
+        }`
+    };
 }
 
 type MoonlightStreamConfig = {
@@ -402,13 +412,13 @@ async function DiscordRichPresence(app_id: string): Promise<string> {
 export {
     CAUSE,
     getDomain,
-    getDomainURL, GetInfo, GLOBAL,
+    getDomainURL,
+    GetInfo,
+    GLOBAL,
     LOCAL,
-    PingSession, POCKETBASE,
+    PingSession,
+    POCKETBASE,
     UserEvents,
     UserSession
 };
-export type {
-    Computer, RemoteCredential, Session
-};
-
+export type { Computer, RemoteCredential, Session };
