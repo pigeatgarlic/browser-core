@@ -114,6 +114,9 @@ type Computer = {
     BIOS?: string;
     HideVM: boolean;
 
+    remoteReady?: boolean;
+    virtReady?: boolean;
+    Volumes?: string[];
     Sessions?: Session[];
     Interfaces?: {
         publicIp?: string;
@@ -126,7 +129,6 @@ type Computer = {
         Type: string;
         Id: string;
     }[];
-    Volumes?: string[];
 };
 
 type ProxyChain = {
