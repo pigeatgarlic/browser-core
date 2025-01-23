@@ -282,20 +282,24 @@ export function ParseRequest(
     address: string,
     session: Session
 ): RemoteCredential | Error {
-    const { thinkmay } = session;
-    if (thinkmay == undefined) throw new Error('thinkmay is not defined');
-    return {
-        logUrl: `https://${address}/log?target=${session.id}`,
-        videoUrl: `wss://${address}/broadcasters/webrtc?cred=${
-            session.vm.Sessions.at(0).thinkmay.video.token
-        }`,
-        audioUrl: `wss://${address}/broadcasters/webrtc?cred=${
-            session.vm.Sessions.at(0).thinkmay.audio.token
-        }`,
-        dataUrl: `wss://${address}/broadcasters/webrtc?cred=${
-            session.vm.Sessions.at(0).thinkmay.data.token
-        }`
-    };
+    const {
+        id,
+        thinkmay: { audio, video, data }
+    } = session;
+    if (userHttp(address))
+        return {
+            logUrl: `http://${address}:60001/log?target=${id}`,
+            videoUrl: `ws://${address}:60001/broadcasters/webrtc?token=${video.token}`,
+            audioUrl: `ws://${address}:60001/broadcasters/webrtc?token=${audio.token}`,
+            dataUrl: `ws://${address}:60001/broadcasters/websocket?token=${data.token}`
+        };
+    else
+        return {
+            logUrl: `https://${address}/log?target=${id}`,
+            videoUrl: `wss://${address}/broadcasters/webrtc?token=${video.token}`,
+            audioUrl: `wss://${address}/broadcasters/webrtc?token=${audio.token}`,
+            dataUrl: `wss://${address}/broadcasters/websocket?token=${data.token}`
+        };
 }
 
 type MoonlightStreamConfig = {
