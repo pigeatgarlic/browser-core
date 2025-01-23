@@ -7,7 +7,6 @@ import {
     getDomainURL,
     GLOBAL,
     LOCAL,
-    PingSession,
     POCKETBASE,
     UserEvents,
     UserSession
@@ -178,32 +177,6 @@ type RemoteCredential = {
     logUrl: string;
 };
 
-type callback = () => Promise<number>;
-export function KeepaliveVolume(
-    address: string,
-    volume_id: string,
-    total_time_callback?: (time_in_second: number) => Promise<void>
-): callback {
-    if (address == undefined) throw new Error('address is not defined');
-
-    const now = () => new Date().getTime() / 1000;
-    const start = now();
-    let last_ping = now();
-
-    return async (): Promise<number> => {
-        total_time_callback ? total_time_callback(now() - start) : null;
-        if (
-            !(
-                (await internalFetch<{}>(address, '_use', volume_id)) instanceof
-                Error
-            )
-        )
-            last_ping = now();
-
-        return now() - last_ping;
-    };
-}
-
 export async function StartThinkmay(
     address: string,
     vm_request?: Computer,
@@ -219,22 +192,23 @@ export async function StartThinkmay(
         vm: vm_request
     } as Session;
 
-    type deployment_status = { status: string };
     let running = true;
-    (async (_req: Session) => {
-        await new Promise((r) => setTimeout(r, 3000));
-        while (running) {
-            const request_new = await internalFetch<deployment_status>(
-                address,
-                '_new',
-                _req
-            );
-            if (!(request_new instanceof Error)) {
-                showStatus(request_new.status);
-                await new Promise((r) => setTimeout(r, 1000));
+    type deployment_status = { status: string };
+    if (vm_request != undefined)
+        (async (_req: Session) => {
+            await new Promise((r) => setTimeout(r, 3000));
+            while (running) {
+                const request_new = await internalFetch<deployment_status>(
+                    address,
+                    '_new',
+                    _req
+                );
+                if (!(request_new instanceof Error)) {
+                    showStatus(request_new.status);
+                    await new Promise((r) => setTimeout(r, 1000));
+                }
             }
-        }
-    })(req);
+        })(req);
 
     let resp: Error | Session = new Error('unable to request');
     try {
@@ -418,7 +392,6 @@ export {
     GetInfo,
     GLOBAL,
     LOCAL,
-    PingSession,
     POCKETBASE,
     UserEvents,
     UserSession

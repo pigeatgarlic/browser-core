@@ -60,16 +60,6 @@ export function UserEvents(content: { type: string; payload: any }) {
     });
 }
 
-export const PingSession = async (total: number) => {
-    UserEvents({
-        type: 'remote/session',
-        payload: {
-            timestamp: new Date(),
-            total
-        }
-    });
-};
-
 export const DevEnv =
     window.location.href.includes('localhost') ||
     ValidateIPaddress(window.location.host.split(':')[0]);
