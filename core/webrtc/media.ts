@@ -56,8 +56,8 @@ export class MediaRTC {
     public connected: boolean;
     public closed: boolean;
 
+    private ws: WebSocket;
     private Conn: RTCPeerConnection;
-    private webrtcConfig: RTCConfiguration;
     private watch_loop?: any;
 
     private rtrackHandler: (a: RTCTrackEvent) => any;
@@ -77,16 +77,18 @@ export class MediaRTC {
         this.closeHandler = CloseHandler;
         this.rtrackHandler = TrackHandler;
 
-        const ws = new WebSocket(url);
-        this.sendHandler = (data) => ws.send(JSON.stringify(data));
-        ws.onerror = this.Close.bind(this);
-        ws.onclose = this.Close.bind(this);
-        ws.onmessage = this.handleIncomingPacket.bind(this);
+        this.ws = new WebSocket(url);
+        this.sendHandler = (data) => this.ws?.send(JSON.stringify(data));
+        this.ws.onerror = this.Close.bind(this);
+        this.ws.onclose = this.Close.bind(this);
+        this.ws.onmessage = this.handleIncomingPacket.bind(this);
     }
 
     public Close() {
         this.metricHandler = () => {};
         this.rtrackHandler = () => {};
+        this.ws.close();
+        this.ws = undefined;
         this.connected = false;
         this.closed = true;
         this.Conn?.close();
@@ -97,7 +99,7 @@ export class MediaRTC {
     }
 
     private async handleIncomingPacket(ev: MessageEvent) {
-        const { event, data } = ev.data as {
+        const { event, data } = JSON.parse(ev.data) as {
             event: string;
             data: any;
         };
@@ -106,13 +108,25 @@ export class MediaRTC {
             switch (event) {
                 case 'sdp':
                     const ans = await this.onIncomingSDP(data);
-                    this.sendHandler({ event: 'answer', data: ans });
+                    this.sendHandler({ event: 'sdp', data: ans });
                     break;
                 case 'ice':
                     await this.onIncomingICE(data);
                     break;
                 case 'open':
-                    await this.setupConnection(this.webrtcConfig);
+                    const { username, password } = data;
+                    await this.setupConnection({
+                        iceServers: [
+                            {
+                                urls: ['turn:127.0.0.1:3478'],
+                                credential: password,
+                                username
+                            },
+                            {
+                                urls: ['stun:127.0.0.1:3478']
+                            }
+                        ]
+                    });
                     break;
                 case 'close':
                     this.Close();
@@ -135,8 +149,9 @@ export class MediaRTC {
         } as any);
 
         this.Conn.ontrack = this.rtrackHandler;
-        this.Conn.onicecandidate = this.onICECandidates;
-        this.Conn.onconnectionstatechange = this.onConnectionStateChange;
+        this.Conn.onicecandidate = this.onICECandidates.bind(this);
+        this.Conn.onconnectionstatechange =
+            this.onConnectionStateChange.bind(this);
         this.watch_loop = setInterval(
             () =>
                 this.Conn?.getStats().then((stats) =>
@@ -191,7 +206,7 @@ export class MediaRTC {
     private onICECandidates(event: RTCPeerConnectionIceEvent) {
         if (event.candidate == null) return;
         this.sendHandler({
-            event: 'candidate',
+            event: 'ice',
             data: event.candidate.toJSON()
         });
     }

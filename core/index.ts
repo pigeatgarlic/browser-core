@@ -386,7 +386,7 @@ class Thinkmay {
             this.audio.url,
             this.handleIncomingAudio.bind(this),
             this.handle_metrics.bind(this),
-            this.audioEstablishmentLoop
+            () => setTimeout(this.audioEstablishmentLoop.bind(this), 1000)
         );
 
         const start = Thinkmay.Now();
@@ -409,7 +409,7 @@ class Thinkmay {
             this.video.url,
             this.handleIncomingVideo.bind(this),
             this.handle_metrics.bind(this),
-            this.videoEstablishmentLoop
+            () => setTimeout(this.videoEstablishmentLoop.bind(this), 1000)
         );
 
         this.Metrics.video = structuredClone(initialMetric.video);
