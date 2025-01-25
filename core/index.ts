@@ -8,7 +8,7 @@ import { convertJSKey, useShift } from './utils/convert';
 import { AddNotifier, ConnectionEvent, Log, LogLevel } from './utils/log';
 import { getBrowser, isMobile } from './utils/platform';
 import { DataRTC } from './webrtc/data';
-import { MediaRTC, RTCMetric } from './webrtc/media';
+import { MediaRTC, MessageType, RTCMetric } from './webrtc/media';
 
 type Metric = {
     video: {
@@ -95,6 +95,7 @@ class Thinkmay {
         return this.Metrics.video.status == 'connected';
     }
 
+
     constructor(vid: VideoWrapper, audio: AudioWrapper, dataUrl: string) {
         this.closed = false;
         this.video = vid;
@@ -164,7 +165,7 @@ class Thinkmay {
                     .pipeTo(frameStreams.writable);
 
                 this.waitForNewFrame();
-            } catch {}
+            } catch { }
         }
         await this.video.assign(stream);
     }
@@ -191,7 +192,7 @@ class Thinkmay {
                         })
                     )
                     .pipeTo(frameStreams.writable);
-            } catch {}
+            } catch { }
         }
         await this.audio.assign(stream);
         await this.audio.play();
@@ -215,41 +216,48 @@ class Thinkmay {
 
     public async ChangeFramerate(framerate: number) {
         if (this.closed) return;
-        this.dataConn.Send(``); // TODO
+        else if (!this.videoConn.connected) setTimeout(() => this.ChangeFramerate(framerate),1000)
+        this.videoConn.Send(MessageType.Framerate, framerate);
         Log(LogLevel.Infor, `changing framerate to ${framerate}`);
     }
     public async ChangeBitrate(bitrate: number) {
         if (this.closed) return;
-        this.dataConn.Send(``); // TODO
+        else if (!this.videoConn.connected) setTimeout(() => this.ChangeBitrate(bitrate),1000)
+        this.videoConn.Send(MessageType.Bitrate, Math.round(bitrate / 1000));
         Log(LogLevel.Infor, `changing bitrate to ${bitrate}`);
     }
 
     public async PointerVisible(enable: boolean) {
         if (this.closed) return;
-        this.dataConn.Send(``); // TODO
+        else if (!this.videoConn.connected) setTimeout(() => this.PointerVisible(enable),1000)
+        this.videoConn.Send(MessageType.Pointer, enable ? 1 : 0);
     }
 
     public async ResetVideo() {
         if (this.closed) return;
-        this.dataConn.Send(``); // TODO
+        else if (!this.videoConn.connected) return
+        this.videoConn.Send(MessageType.Idr, 1);
     }
 
     public async HardReset() {
         if (this.closed) return;
         this.videoConn?.Close();
         this.audioConn?.Close();
+        this.dataConn?.Close();
         this.Metrics.audio.status = 'close';
         this.Metrics.video.status = 'close';
     }
 
     async SendRawHID(...data: HIDMsg[]) {
         if (this.closed) return;
-        this.dataConn.Send(``); // TODO
+        for (const element of data) {
+            this.dataConn.Send(element.convertType(), element.buffer())
+        }
     }
     public async SetClipboard(val: string) {
         if (this.closed) return;
         await this.SendRawHID(
-            new HIDMsg(EventCode.ClipboardSet, {
+            new HIDMsg(EventCode.cs, {
                 val: btoa(val)
             })
         );
@@ -260,20 +268,17 @@ class Thinkmay {
         await this.SendRawHID(
             new HIDMsg(
                 is_slider
-                    ? EventCode.GamepadSlide
-                    : !isDown
-                      ? EventCode.GamepadButtonDown
-                      : EventCode.GamepadButtonUp,
+                    ? EventCode.gs
+                    : EventCode.gb,
                 is_slider
                     ? {
-                          gamepad_id: 0,
-                          index: index,
-                          val: !isDown ? 0 : 1
-                      }
+                        index: index,
+                        val: !isDown ? 0 : 1
+                    }
                     : {
-                          gamepad_id: 0,
-                          index: index
-                      }
+                        index: index,
+                        val: !isDown ? 0 : 1
+                    }
             )
         );
     }
@@ -292,13 +297,11 @@ class Thinkmay {
         }
 
         await this.SendRawHID(
-            new HIDMsg(EventCode.GamepadAxis, {
-                gamepad_id: 0,
+            new HIDMsg(EventCode.ga, {
                 index: axisx,
                 val: x
             }),
-            new HIDMsg(EventCode.GamepadAxis, {
-                gamepad_id: 0,
+            new HIDMsg(EventCode.ga, {
                 index: axisy,
                 val: y
             })
@@ -327,9 +330,9 @@ class Thinkmay {
             case 'video':
                 this.Metrics.video.frame.persecond = Math.round(
                     (val.framesDecoded - this.Metrics.video.frame.totalframes) /
-                        ((now.getTime() -
-                            this.Metrics.video.timestamp.getTime()) /
-                            1000)
+                    ((now.getTime() -
+                        this.Metrics.video.timestamp.getTime()) /
+                        1000)
                 );
                 this.Metrics.video.frame.decodetime =
                     ((val.totalDecodeTime +
@@ -357,7 +360,7 @@ class Thinkmay {
                             this.Metrics.video.timestamp.getTime()) /
                             1000)) *
                         8) /
-                        1024
+                    1024
                 );
                 this.Metrics.video.bitrate.total = val.bytesReceived;
 
@@ -460,9 +463,6 @@ export {
     AddNotifier,
     AudioWrapper,
     ConnectionEvent,
-    EventCode,
-    isMobile,
-    Thinkmay as RemoteDesktopClient,
-    useShift,
-    VideoWrapper
+    EventCode, Thinkmay as RemoteDesktopClient, VideoWrapper, isMobile, useShift
 };
+

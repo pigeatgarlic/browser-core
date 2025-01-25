@@ -1,34 +1,25 @@
 import { Log, LogLevel } from '../utils/log';
 
 export enum EventCode {
-    MouseWheel,
-    MouseUp,
-    MouseDown,
-
-    MouseMoveRel,
-    MouseMoveAbs,
-
-    KeyUp,
-    KeyDown,
-    KeyUpScan,
-    KeyDownScan,
-    KeyPress,
-    KeyReset,
-
-    GamepadConnect,
-    GamepadDisconnect,
-    GamepadSlide,
-    GamepadAxis,
-    GamepadButtonUp,
-    GamepadButtonDown,
-    GamepadRumble,
-
-    RelativeMouseOff,
-    RelativeMouseOn,
-
-    ClipboardSet,
-    ClipboardPaste
+    mma,
+    mmr,
+    mw,
+    mu,
+    md,
+    ku,
+    kd,
+    kus,
+    kds,
+    kr,
+    gs,
+    ga,
+    gb,
+    cs,
+    grum,
 }
+
+
+
 
 export enum ShortcutCode {
     Fullscreen
@@ -94,51 +85,47 @@ export class HIDMsg {
         this.data = data;
     }
 
-    public ToString(): string {
+    public convertType(): HIDMessageType {
+        return this.code
+    }
+
+    public buffer(): number[] {
         switch (this.code) {
-            case EventCode.KeyUp:
-                return `ku|${this.data.key}`;
-            case EventCode.KeyDown:
-                return `kd|${this.data.key}`;
-            case EventCode.KeyUpScan:
-                return `kus|${this.data.key}`;
-            case EventCode.KeyDownScan:
-                return `kds|${this.data.key}`;
-            case EventCode.KeyReset:
-                return `kr`;
+            case EventCode.ku:
+                return this.data.key;
+            case EventCode.kd:
+                return this.data.key;
+            case EventCode.kus:
+                return this.data.key;
+            case EventCode.kds:
+                return this.data.key;
+            case EventCode.kus:
+                return this.data.key;
 
-            case EventCode.MouseUp:
-                return `mu|${this.data.button}`;
-            case EventCode.MouseDown:
-                return `md|${this.data.button}`;
+            case EventCode.mu:
+                return this.data.button;
+            case EventCode.md:
+                return this.data.button;
 
-            case EventCode.MouseMoveRel:
-                return `mmr|${this.data.dX}|${this.data.dY}`;
-            case EventCode.MouseMoveAbs:
-                return `mma|${this.data.dX}|${this.data.dY}`;
-            case EventCode.MouseWheel:
-                return `mw|${this.data.deltaY}`;
+            case EventCode.mmr:
+                return [this.data.dX, this.data.dY]
+            case EventCode.mma:
+                return [this.data.dX, this.data.dY]
+            case EventCode.mw:
+                return this.data.deltaY;
 
-            case EventCode.GamepadConnect:
-                return `gcon|${this.data.gamepad_id}`;
-            case EventCode.GamepadDisconnect:
-                return `gdis|${this.data.gamepad_id}`;
+            case EventCode.gb:
+                return [this.data.index, this.data.val];
+            case EventCode.ga:
+                return [this.data.index, this.data.val];
+            case EventCode.gs:
+                return [this.data.index, this.data.val];
 
-            case EventCode.GamepadButtonUp:
-                return `gb|${this.data.gamepad_id}|${this.data.index}|1`;
-            case EventCode.GamepadButtonDown:
-                return `gb|${this.data.gamepad_id}|${this.data.index}|0`;
-            case EventCode.GamepadAxis:
-                return `ga|${this.data.gamepad_id}|${this.data.index}|${this.data.val}`;
-            case EventCode.GamepadSlide:
-                return `gs|${this.data.gamepad_id}|${this.data.index}|${this.data.val}`;
-
-            case EventCode.ClipboardSet:
-                return `cs|${this.data.val}`;
-            case EventCode.ClipboardPaste:
-                return `cp`;
+            // case EventCode.ClipboardSet:
+            //     return 
+            // case EventCode.ClipboardPaste:
             default:
-                return '';
+                return [];
         }
     }
 }

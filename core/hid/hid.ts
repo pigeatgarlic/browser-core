@@ -101,7 +101,7 @@ export class HID {
                 let wait_period = 10;
                 try {
                     wait_period = await this.runGamepad();
-                } catch {}
+                } catch { }
                 if (wait_period > 0)
                     await new Promise((r) => setTimeout(r, wait_period));
             }
@@ -109,10 +109,10 @@ export class HID {
         this.intervals.push(
             setInterval(
                 () =>
-                    (this.relativeMouse =
-                        document.pointerLockElement != null ||
-                        (document as any).mozPointerLockElement != null ||
-                        (document as any).webkitPointerLockElement != null),
+                (this.relativeMouse =
+                    document.pointerLockElement != null ||
+                    (document as any).mozPointerLockElement != null ||
+                    (document as any).webkitPointerLockElement != null),
                 100
             )
         );
@@ -176,8 +176,7 @@ export class HID {
                     )
                         continue;
                     await this.SendFunc(
-                        new HIDMsg(EventCode.GamepadSlide, {
-                            gamepad_id: gamepad_id,
+                        new HIDMsg(EventCode.gs, {
                             index: index,
                             val: value
                         })
@@ -188,14 +187,10 @@ export class HID {
                 } else {
                     if (this.prev_buttons.get(index) == pressed) continue;
                     await this.SendFunc(
-                        new HIDMsg(
-                            pressed
-                                ? EventCode.GamepadButtonUp
-                                : EventCode.GamepadButtonDown,
-                            {
-                                gamepad_id: gamepad_id,
-                                index: index
-                            }
+                        new HIDMsg(EventCode.gb, {
+                            index: index,
+                            val: pressed ? 1 : 0
+                        }
                         )
                     );
 
@@ -209,8 +204,7 @@ export class HID {
                     continue;
 
                 await this.SendFunc(
-                    new HIDMsg(EventCode.GamepadAxis, {
-                        gamepad_id: gamepad_id,
+                    new HIDMsg(EventCode.ga, {
                         index: index,
                         val: value
                     })
@@ -225,7 +219,7 @@ export class HID {
     }
 
     public async ResetKeyStuck() {
-        await this.SendFunc(new HIDMsg(EventCode.KeyReset, {}));
+        await this.SendFunc(new HIDMsg(EventCode.kus, {}));
     }
 
     private async keydown(event: KeyboardEvent) {
@@ -245,7 +239,7 @@ export class HID {
         const key = convertJSKey(event.key, event.location);
         if (key == undefined) return;
 
-        let code = EventCode.KeyDown;
+        let code = EventCode.kd;
         if (this.scancode) code += 2;
         await this.SendFunc(new HIDMsg(code, { key }));
         this.pressing_keys.push(key);
@@ -266,7 +260,7 @@ export class HID {
         );
     }
     private async mouseWheel(event: WheelEvent) {
-        const code = EventCode.MouseWheel;
+        const code = EventCode.mw;
         await this.SendFunc(
             new HIDMsg(code, {
                 deltaY: -Math.round(event.deltaY)
@@ -274,7 +268,7 @@ export class HID {
         );
     }
     public async mouseMoveRel(event: { movementX: number; movementY: number }) {
-        const code = EventCode.MouseMoveRel;
+        const code = EventCode.mmr;
         await this.SendFunc(
             new HIDMsg(code, {
                 dX: event.movementX,
@@ -288,14 +282,14 @@ export class HID {
 
         if (!this.relativeMouse) {
             await this.SendFunc(
-                new HIDMsg(EventCode.MouseMoveAbs, {
+                new HIDMsg(EventCode.mma, {
                     dX: this.clientToServerX(event.clientX),
                     dY: this.clientToServerY(event.clientY)
                 })
             );
         } else {
             await this.SendFunc(
-                new HIDMsg(EventCode.MouseMoveRel, {
+                new HIDMsg(EventCode.mmr, {
                     dX: event.movementX * MOUSE_SPEED,
                     dY: event.movementY * MOUSE_SPEED
                 })
@@ -310,7 +304,7 @@ export class HID {
     }
 
     public async MouseButtonDown(event: { button: number }) {
-        const code = EventCode.MouseDown;
+        const code = EventCode.md;
         await this.SendFunc(
             new HIDMsg(code, {
                 button: event.button
@@ -318,7 +312,7 @@ export class HID {
         );
     }
     public async MouseButtonUp(event: { button: number }) {
-        const code = EventCode.MouseUp;
+        const code = EventCode.mu;
         await this.SendFunc(
             new HIDMsg(code, {
                 button: event.button
@@ -348,6 +342,6 @@ export class HID {
             if ('keyboard' in navigator && 'lock' in navigator.keyboard)
                 document.onfullscreenchange = block;
             else document.onfullscreenchange = null;
-        } catch {}
+        } catch { }
     }
 }

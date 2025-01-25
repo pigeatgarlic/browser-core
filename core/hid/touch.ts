@@ -23,7 +23,7 @@ export class TouchHandler {
     ) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
-        this.touch_callback = async () => {};
+        this.touch_callback = async () => { };
 
         this.mode = 'trackpad';
         this.video = video;
@@ -48,20 +48,20 @@ export class TouchHandler {
         switch (events) {
             case 'short_right':
                 await this.SendFunc(
-                    new HIDMsg(EventCode.MouseDown, {
+                    new HIDMsg(EventCode.md, {
                         button: '2'
                     }),
-                    new HIDMsg(EventCode.MouseUp, {
+                    new HIDMsg(EventCode.mu, {
                         button: '2'
                     })
                 );
                 break;
             case 'short_left':
                 await this.SendFunc(
-                    new HIDMsg(EventCode.MouseDown, {
+                    new HIDMsg(EventCode.md, {
                         button: '0'
                     }),
-                    new HIDMsg(EventCode.MouseUp, {
+                    new HIDMsg(EventCode.mu, {
                         button: '0'
                     })
                 );
@@ -96,7 +96,7 @@ export class TouchHandler {
                     new Date().getTime() - touch.startTime.getTime() < 150 && // quick touch
                     Math.sqrt(
                         (touch.clientX - touch.touchStart.clientX) ** 2 +
-                            (touch.clientY - touch.touchStart.clientY) ** 2
+                        (touch.clientY - touch.touchStart.clientY) ** 2
                     ) < 10
                 );
             };
@@ -122,7 +122,7 @@ export class TouchHandler {
             if (prev_touch == undefined) continue;
             else if (this.mode == 'trackpad')
                 await this.SendFunc(
-                    new HIDMsg(EventCode.MouseMoveRel, {
+                    new HIDMsg(EventCode.mmr, {
                         dX:
                             MOUSE_SPEED *
                             Math.round(curr_touch.clientX - prev_touch.clientX),

@@ -27,12 +27,12 @@ export class DataRTC {
         this.closed = true;
 
         const close = this.closeHandler;
-        this.closeHandler = () => {};
+        this.closeHandler = () => { };
         close();
     }
 
-    public async Send(data: string) {
-        this.ws.send(data);
+    public Send(type: HIDMessageType, arr: number[]) {
+        this.ws?.send(new Uint8Array([type, ...arr]).buffer)
     }
 
     public async Recv(): Promise<string | Error> {
