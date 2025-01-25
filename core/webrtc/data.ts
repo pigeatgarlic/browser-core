@@ -1,3 +1,5 @@
+import { EventCode } from '..';
+
 export class DataRTC {
     public connected: boolean;
     public closed: boolean;
@@ -27,12 +29,12 @@ export class DataRTC {
         this.closed = true;
 
         const close = this.closeHandler;
-        this.closeHandler = () => { };
+        this.closeHandler = () => {};
         close();
     }
 
-    public Send(type: HIDMessageType, arr: number[]) {
-        this.ws?.send(new Uint8Array([type, ...arr]).buffer)
+    public Send(type: EventCode, arr: number[]) {
+        this.ws?.send(new Uint8Array([type, ...arr]).buffer);
     }
 
     public async Recv(): Promise<string | Error> {

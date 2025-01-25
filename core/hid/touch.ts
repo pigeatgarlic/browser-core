@@ -23,7 +23,7 @@ export class TouchHandler {
     ) {
         this.onGoingTouchs = new Map<number, TouchData>();
         this.SendFunc = Sendfunc;
-        this.touch_callback = async () => { };
+        this.touch_callback = async () => {};
 
         this.mode = 'trackpad';
         this.video = video;
@@ -96,7 +96,7 @@ export class TouchHandler {
                     new Date().getTime() - touch.startTime.getTime() < 150 && // quick touch
                     Math.sqrt(
                         (touch.clientX - touch.touchStart.clientX) ** 2 +
-                        (touch.clientY - touch.touchStart.clientY) ** 2
+                            (touch.clientY - touch.touchStart.clientY) ** 2
                     ) < 10
                 );
             };

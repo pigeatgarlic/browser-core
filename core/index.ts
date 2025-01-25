@@ -95,7 +95,6 @@ class Thinkmay {
         return this.Metrics.video.status == 'connected';
     }
 
-
     constructor(vid: VideoWrapper, audio: AudioWrapper, dataUrl: string) {
         this.closed = false;
         this.video = vid;
@@ -165,7 +164,7 @@ class Thinkmay {
                     .pipeTo(frameStreams.writable);
 
                 this.waitForNewFrame();
-            } catch { }
+            } catch {}
         }
         await this.video.assign(stream);
     }
@@ -192,7 +191,7 @@ class Thinkmay {
                         })
                     )
                     .pipeTo(frameStreams.writable);
-            } catch { }
+            } catch {}
         }
         await this.audio.assign(stream);
         await this.audio.play();
@@ -216,26 +215,29 @@ class Thinkmay {
 
     public async ChangeFramerate(framerate: number) {
         if (this.closed) return;
-        else if (!this.videoConn.connected) setTimeout(() => this.ChangeFramerate(framerate),1000)
+        else if (!this.videoConn.connected)
+            setTimeout(() => this.ChangeFramerate(framerate), 1000);
         this.videoConn.Send(MessageType.Framerate, framerate);
         Log(LogLevel.Infor, `changing framerate to ${framerate}`);
     }
     public async ChangeBitrate(bitrate: number) {
         if (this.closed) return;
-        else if (!this.videoConn.connected) setTimeout(() => this.ChangeBitrate(bitrate),1000)
+        else if (!this.videoConn.connected)
+            setTimeout(() => this.ChangeBitrate(bitrate), 1000);
         this.videoConn.Send(MessageType.Bitrate, Math.round(bitrate / 1000));
         Log(LogLevel.Infor, `changing bitrate to ${bitrate}`);
     }
 
     public async PointerVisible(enable: boolean) {
         if (this.closed) return;
-        else if (!this.videoConn.connected) setTimeout(() => this.PointerVisible(enable),1000)
+        else if (!this.videoConn.connected)
+            setTimeout(() => this.PointerVisible(enable), 1000);
         this.videoConn.Send(MessageType.Pointer, enable ? 1 : 0);
     }
 
     public async ResetVideo() {
         if (this.closed) return;
-        else if (!this.videoConn.connected) return
+        else if (!this.videoConn.connected) return;
         this.videoConn.Send(MessageType.Idr, 1);
     }
 
@@ -251,7 +253,7 @@ class Thinkmay {
     async SendRawHID(...data: HIDMsg[]) {
         if (this.closed) return;
         for (const element of data) {
-            this.dataConn.Send(element.convertType(), element.buffer())
+            this.dataConn.Send(element.convertType(), element.buffer());
         }
     }
     public async SetClipboard(val: string) {
@@ -267,18 +269,16 @@ class Thinkmay {
         const is_slider = index == 6 || index == 7;
         await this.SendRawHID(
             new HIDMsg(
-                is_slider
-                    ? EventCode.gs
-                    : EventCode.gb,
+                is_slider ? EventCode.gs : EventCode.gb,
                 is_slider
                     ? {
-                        index: index,
-                        val: !isDown ? 0 : 1
-                    }
+                          index: index,
+                          val: !isDown ? 0 : 1
+                      }
                     : {
-                        index: index,
-                        val: !isDown ? 0 : 1
-                    }
+                          index: index,
+                          val: !isDown ? 0 : 1
+                      }
             )
         );
     }
@@ -330,9 +330,9 @@ class Thinkmay {
             case 'video':
                 this.Metrics.video.frame.persecond = Math.round(
                     (val.framesDecoded - this.Metrics.video.frame.totalframes) /
-                    ((now.getTime() -
-                        this.Metrics.video.timestamp.getTime()) /
-                        1000)
+                        ((now.getTime() -
+                            this.Metrics.video.timestamp.getTime()) /
+                            1000)
                 );
                 this.Metrics.video.frame.decodetime =
                     ((val.totalDecodeTime +
@@ -360,7 +360,7 @@ class Thinkmay {
                             this.Metrics.video.timestamp.getTime()) /
                             1000)) *
                         8) /
-                    1024
+                        1024
                 );
                 this.Metrics.video.bitrate.total = val.bytesReceived;
 
@@ -463,6 +463,9 @@ export {
     AddNotifier,
     AudioWrapper,
     ConnectionEvent,
-    EventCode, Thinkmay as RemoteDesktopClient, VideoWrapper, isMobile, useShift
+    EventCode,
+    Thinkmay as RemoteDesktopClient,
+    VideoWrapper,
+    isMobile,
+    useShift
 };
-

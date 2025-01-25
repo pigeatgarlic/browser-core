@@ -15,11 +15,8 @@ export enum EventCode {
     ga,
     gb,
     cs,
-    grum,
+    grum
 }
-
-
-
 
 export enum ShortcutCode {
     Fullscreen
@@ -85,8 +82,8 @@ export class HIDMsg {
         this.data = data;
     }
 
-    public convertType(): HIDMessageType {
-        return this.code
+    public convertType(): EventCode {
+        return this.code;
     }
 
     public buffer(): number[] {
@@ -108,9 +105,9 @@ export class HIDMsg {
                 return this.data.button;
 
             case EventCode.mmr:
-                return [this.data.dX, this.data.dY]
+                return [this.data.dX, this.data.dY];
             case EventCode.mma:
-                return [this.data.dX, this.data.dY]
+                return [this.data.dX, this.data.dY];
             case EventCode.mw:
                 return this.data.deltaY;
 
@@ -122,7 +119,7 @@ export class HIDMsg {
                 return [this.data.index, this.data.val];
 
             // case EventCode.ClipboardSet:
-            //     return 
+            //     return
             // case EventCode.ClipboardPaste:
             default:
                 return [];

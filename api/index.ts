@@ -12,8 +12,6 @@ import {
     UserSession
 } from './database';
 
-const WS_PORT = 60000;
-
 let client: Client | null = null;
 const http_available = () =>
     client != null || new URL(window.location.href).protocol == 'http:';
@@ -42,7 +40,7 @@ async function internalFetch<T>(
     const token = POCKETBASE.authStore.token;
     const user = POCKETBASE.authStore.model?.id;
     const url = userHttp(address)
-        ? `http://${address}:${WS_PORT}/${command}`
+        ? `http://${address}/${command}`
         : `https://${address}/${command}`;
 
     if (client != null) {
@@ -288,7 +286,7 @@ export function ParseRequest(
     } = session;
     if (userHttp(address))
         return {
-            logUrl: `http://${address}:60001/log?target=${id}`,
+            logUrl: `http://${address}/log?target=${id}`,
             videoUrl: `ws://${address}:60001/broadcasters/webrtc?token=${video.token}`,
             audioUrl: `ws://${address}:60001/broadcasters/webrtc?token=${audio.token}`,
             dataUrl: `ws://${address}:60001/broadcasters/websocket?token=${data.token}`

@@ -101,7 +101,7 @@ export class HID {
                 let wait_period = 10;
                 try {
                     wait_period = await this.runGamepad();
-                } catch { }
+                } catch {}
                 if (wait_period > 0)
                     await new Promise((r) => setTimeout(r, wait_period));
             }
@@ -109,10 +109,10 @@ export class HID {
         this.intervals.push(
             setInterval(
                 () =>
-                (this.relativeMouse =
-                    document.pointerLockElement != null ||
-                    (document as any).mozPointerLockElement != null ||
-                    (document as any).webkitPointerLockElement != null),
+                    (this.relativeMouse =
+                        document.pointerLockElement != null ||
+                        (document as any).mozPointerLockElement != null ||
+                        (document as any).webkitPointerLockElement != null),
                 100
             )
         );
@@ -131,7 +131,7 @@ export class HID {
     }
 
     public async PasteClipboard() {
-        const code = EventCode.ClipboardPaste;
+        const code = EventCode.cs;
         await this.SendFunc(new HIDMsg(code, {}));
     }
 
@@ -190,8 +190,7 @@ export class HID {
                         new HIDMsg(EventCode.gb, {
                             index: index,
                             val: pressed ? 1 : 0
-                        }
-                        )
+                        })
                     );
 
                     this.prev_buttons.set(index, pressed);
@@ -252,7 +251,7 @@ export class HID {
         const key = convertJSKey(event.key, event.location);
         if (key == undefined) return;
 
-        let code = EventCode.KeyUp;
+        let code = EventCode.ku;
         if (this.scancode) code += 2;
         await this.SendFunc(new HIDMsg(code, { key }));
         this.pressing_keys.splice(
@@ -342,6 +341,6 @@ export class HID {
             if ('keyboard' in navigator && 'lock' in navigator.keyboard)
                 document.onfullscreenchange = block;
             else document.onfullscreenchange = null;
-        } catch { }
+        } catch {}
     }
 }

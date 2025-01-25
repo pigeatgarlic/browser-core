@@ -9,58 +9,58 @@ export enum MessageType {
     Hdr,
     Stop,
     EventMax
-};
+}
 
 export type RTCMetric =
     | {
-        codecId: string;
-        mediaType: string;
-        id: string;
-        remoteId: string;
-        kind: 'video';
-        mid: string;
-        trackIdentifier: string;
-        transportId: string;
-        type: string;
+          codecId: string;
+          mediaType: string;
+          id: string;
+          remoteId: string;
+          kind: 'video';
+          mid: string;
+          trackIdentifier: string;
+          transportId: string;
+          type: string;
 
-        bytesReceived: number;
-        firCount: number;
-        frameHeight: number;
-        frameWidth: number;
-        framesAssembledFromMultiplePackets: number;
-        framesDecoded: number;
-        framesDropped: number;
-        framesPerSecond: number;
-        framesReceived: number;
-        freezeCount: number;
-        headerBytesReceived: number;
-        jitter: number;
-        jitterBufferDelay: number;
-        jitterBufferEmittedCount: number;
-        jitterBufferMinimumDelay: number;
-        jitterBufferTargetDelay: number;
-        keyFramesDecoded: number;
-        lastPacketReceivedTimestamp: number;
-        nackCount: number;
-        packetsLost: number;
-        packetsReceived: number;
-        pauseCount: number;
-        pliCount: number;
-        ssrc: number;
-        timestamp: number;
-        totalAssemblyTime: number;
-        totalDecodeTime: number;
-        totalFreezesDuration: number;
-        totalInterFrameDelay: number;
-        totalPausesDuration: number;
-        totalProcessingDelay: number;
-        totalSquaredInterFrameDelay: number;
-    }
+          bytesReceived: number;
+          firCount: number;
+          frameHeight: number;
+          frameWidth: number;
+          framesAssembledFromMultiplePackets: number;
+          framesDecoded: number;
+          framesDropped: number;
+          framesPerSecond: number;
+          framesReceived: number;
+          freezeCount: number;
+          headerBytesReceived: number;
+          jitter: number;
+          jitterBufferDelay: number;
+          jitterBufferEmittedCount: number;
+          jitterBufferMinimumDelay: number;
+          jitterBufferTargetDelay: number;
+          keyFramesDecoded: number;
+          lastPacketReceivedTimestamp: number;
+          nackCount: number;
+          packetsLost: number;
+          packetsReceived: number;
+          pauseCount: number;
+          pliCount: number;
+          ssrc: number;
+          timestamp: number;
+          totalAssemblyTime: number;
+          totalDecodeTime: number;
+          totalFreezesDuration: number;
+          totalInterFrameDelay: number;
+          totalPausesDuration: number;
+          totalProcessingDelay: number;
+          totalSquaredInterFrameDelay: number;
+      }
     | {
-        kind: 'audio';
+          kind: 'audio';
 
-        totalSamplesReceived: number;
-    };
+          totalSamplesReceived: number;
+      };
 
 export class MediaRTC {
     public connected: boolean;
@@ -95,12 +95,12 @@ export class MediaRTC {
     }
 
     public Send(type: MessageType, ...arr: number[]) {
-        this.ws?.send(new Uint8Array([type, ...arr]).buffer)
+        this.ws?.send(new Uint8Array([type, ...arr]).buffer);
     }
 
     public Close() {
-        this.metricHandler = () => { };
-        this.rtrackHandler = () => { };
+        this.metricHandler = () => {};
+        this.rtrackHandler = () => {};
         this.ws.close();
         this.ws = undefined;
         this.connected = false;
@@ -108,7 +108,7 @@ export class MediaRTC {
         this.Conn?.close();
         if (this.watch_loop != undefined) clearInterval(this.watch_loop);
         const close = this.closeHandler;
-        this.closeHandler = () => { };
+        this.closeHandler = () => {};
         close();
     }
 
@@ -172,7 +172,7 @@ export class MediaRTC {
                     stats.forEach((val) =>
                         val.type == 'inbound-rtp'
                             ? this.metricHandler(val)
-                            : () => { }
+                            : () => {}
                     )
                 ),
             2000
@@ -181,8 +181,8 @@ export class MediaRTC {
 
     private onConnectionStateChange(eve: Event) {
         switch (
-        (eve.target as RTCPeerConnection)
-            .connectionState as RTCPeerConnectionState
+            (eve.target as RTCPeerConnection)
+                .connectionState as RTCPeerConnectionState
         ) {
             case 'connected':
                 this.connected = true;

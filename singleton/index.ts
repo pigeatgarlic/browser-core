@@ -3,7 +3,7 @@ import { EventCode, RemoteDesktopClient } from '../core';
 export const SIZE = () =>
     CLIENT != null
         ? CLIENT.video.internal().videoHeight *
-        CLIENT.video.internal().videoWidth
+          CLIENT.video.internal().videoWidth
         : 1920 * 1080;
 let HQ = false;
 export const set_hq = (val: boolean) => (HQ = val);
@@ -42,7 +42,7 @@ export async function keyboard(
 ) {
     await CLIENT?.VirtualKeyboard(
         ...vals.map(({ action, val }) => ({
-            code: action == 'up' ? EventCode.KeyUp : EventCode.kd,
+            code: action == 'up' ? EventCode.ku : EventCode.kd,
             jsKey: val
         }))
     );
