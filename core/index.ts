@@ -137,9 +137,9 @@ class RemoteDesktopClient {
                     this.Metrics.video.frame.persecond = Math.round(
                         (val.framesDecoded -
                             this.Metrics.video.frame.totalframes) /
-                            ((now.getTime() -
-                                this.Metrics.video.timestamp.getTime()) /
-                                1000)
+                        ((now.getTime() -
+                            this.Metrics.video.timestamp.getTime()) /
+                            1000)
                     );
                     this.Metrics.video.frame.decodetime =
                         ((val.totalDecodeTime +
@@ -168,7 +168,7 @@ class RemoteDesktopClient {
                                 this.Metrics.video.timestamp.getTime()) /
                                 1000)) *
                             8) /
-                            1024
+                        1024
                     );
                     this.Metrics.video.bitrate.total = val.bytesReceived;
 
@@ -312,7 +312,7 @@ class RemoteDesktopClient {
                     .pipeTo(frameStreams.writable);
 
                 this.waitForNewFrame();
-            } catch {}
+            } catch { }
         }
         await this.video.assign(stream);
     }
@@ -339,7 +339,7 @@ class RemoteDesktopClient {
                         })
                     )
                     .pipeTo(frameStreams.writable);
-            } catch {}
+            } catch { }
         }
         await this.audio.assign(stream);
         await this.audio.play();
@@ -437,18 +437,18 @@ class RemoteDesktopClient {
                 is_slider
                     ? EventCode.GamepadSlide
                     : !isDown
-                      ? EventCode.GamepadButtonDown
-                      : EventCode.GamepadButtonUp,
+                        ? EventCode.GamepadButtonDown
+                        : EventCode.GamepadButtonUp,
                 is_slider
                     ? {
-                          gamepad_id: 0,
-                          index: index,
-                          val: !isDown ? 0 : 1
-                      }
+                        gamepad_id: 0,
+                        index: index,
+                        val: !isDown ? 0 : 1
+                    }
                     : {
-                          gamepad_id: 0,
-                          index: index
-                      }
+                        gamepad_id: 0,
+                        index: index
+                    }
             )
         );
     }
@@ -484,13 +484,31 @@ class RemoteDesktopClient {
         ...keys: { code: EventCode; jsKey: string }[]
     ) {
         for (let index = 0; index < keys.length; index++) {
-            const { jsKey, code } = keys[index];
+            let { jsKey, code } = keys[index];
             const key = convertJSKey(jsKey, 0);
             if (key == undefined) return;
+            if (this?.hid?.scancode) code += 2;
             await this.SendRawHID(new HIDMsg(code, { key }));
         }
     }
 
+
+    public async MouseButtonDown(event: { button: number }) {
+        const code = EventCode.MouseDown;
+        await this.SendRawHID(
+            new HIDMsg(code, {
+                button: event.button
+            })
+        );
+    }
+    public async MouseButtonUp(event: { button: number }) {
+        const code = EventCode.MouseUp;
+        await this.SendRawHID(
+            new HIDMsg(code, {
+                button: event.button
+            })
+        );
+    }
     public Close() {
         this.closed = true;
         clearTimeout(this.missing_frame);
