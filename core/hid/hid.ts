@@ -218,7 +218,7 @@ export class HID {
     }
 
     public async ResetKeyStuck() {
-        await this.SendFunc(new HIDMsg(EventCode.kus, {}));
+        await this.SendFunc(new HIDMsg(EventCode.kr, {}));
     }
 
     private async keydown(event: KeyboardEvent) {

@@ -89,20 +89,20 @@ export class HIDMsg {
     public buffer(): number[] {
         switch (this.code) {
             case EventCode.ku:
-                return this.data.key;
+                return [this.data.key];
             case EventCode.kd:
-                return this.data.key;
+                return [this.data.key];
             case EventCode.kus:
-                return this.data.key;
+                return [this.data.key];
             case EventCode.kds:
-                return this.data.key;
-            case EventCode.kus:
-                return this.data.key;
+                return [this.data.key];
+            case EventCode.kr:
+                return [];
 
             case EventCode.mu:
-                return this.data.button;
+                return [this.data.button];
             case EventCode.md:
-                return this.data.button;
+                return [this.data.button];
 
             case EventCode.mmr:
                 return [this.data.dX, this.data.dY];
