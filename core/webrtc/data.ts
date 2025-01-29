@@ -14,10 +14,13 @@ export class DataRTC {
         this.closeHandler = CloseHandler;
         this.recv = [];
 
-        this.ws = new WebSocket(url);
-        this.ws.onerror = this.Close.bind(this);
-        this.ws.onclose = this.Close.bind(this);
-        this.ws.onmessage = this.onMessage.bind(this);
+        const ws = new WebSocket(url);
+        ws.onopen = () => {
+            this.ws = ws;
+            this.ws.onerror = this.Close.bind(this);
+            this.ws.onclose = this.Close.bind(this);
+            this.ws.onmessage = this.onMessage.bind(this);
+        };
     }
 
     private onMessage(data: MessageEvent) {
@@ -33,7 +36,7 @@ export class DataRTC {
         close();
     }
 
-    public Send(type: EventCode, arr: number[]) {
+    public Send(type: EventCode, ...arr: number[]) {
         this.ws?.send(new Uint8Array([type, ...arr]).buffer);
     }
 

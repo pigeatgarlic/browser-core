@@ -117,10 +117,6 @@ export class HIDMsg {
                 return [this.data.index, this.data.val];
             case EventCode.gs:
                 return [this.data.index, this.data.val];
-
-            // case EventCode.ClipboardSet:
-            //     return
-            // case EventCode.ClipboardPaste:
             default:
                 return [];
         }

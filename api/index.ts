@@ -43,60 +43,72 @@ async function internalFetch<T>(
         ? `http://${address}/${command}`
         : `https://${address}/${command}`;
 
-    if (client != null) {
-        if (command == 'info') {
-            const { data, ok } = await client.get<T>(url, {
-                timeout: { secs: 3, nanos: 0 },
-                headers: { Authorization: token, User: user },
-                responseType: ResponseType.JSON
-            });
+    try {
+        if (client != null) {
+            if (command == 'info') {
+                const { data, ok } = await client.get<T>(url, {
+                    timeout: { secs: 3, nanos: 0 },
+                    headers: { Authorization: token, User: user },
+                    responseType: ResponseType.JSON
+                });
 
-            if (!ok) return new Error('fail to request');
+                if (!ok) return new Error('fail to request');
 
-            return data;
-        } else {
-            const { data, ok } = await client.post<T>(url, Body.json(body), {
-                timeout: { secs: 60 * 60 * 24, nanos: 0 },
-                headers: { Authorization: token, User: user },
-                responseType: ResponseType.JSON
-            });
-
-            if (!ok)
-                return new Error(`${JSON.stringify(data)}. Send it to admin!`);
-
-            return data;
-        }
-    } else {
-        if (command == 'info') {
-            const resp = await fetch(url, {
-                method: 'GET',
-                headers: { Authorization: token, User: user }
-            });
-            if (!resp.ok)
-                return new Error(
-                    `${JSON.stringify(await resp.text())}. Send it to admin! `
+                return data;
+            } else {
+                const { data, ok } = await client.post<T>(
+                    url,
+                    Body.json(body),
+                    {
+                        timeout: { secs: 60 * 60 * 24, nanos: 0 },
+                        headers: { Authorization: token, User: user },
+                        responseType: ResponseType.JSON
+                    }
                 );
 
-            return await resp.json();
-        } else {
-            const resp = await fetch(url, {
-                method: 'POST',
-                headers: { Authorization: token, User: user },
-                body: JSON.stringify(body)
-            });
+                if (!ok)
+                    return new Error(
+                        `${JSON.stringify(data)}. Send it to admin!`
+                    );
 
-            if (!resp.ok) {
-                const msg = JSON.stringify(await resp.text());
-                return new Error(`${msg}. Send it to admin!`);
+                return data;
             }
-            const clonedResponse = resp.clone();
+        } else {
+            if (command == 'info') {
+                const resp = await fetch(url, {
+                    method: 'GET',
+                    headers: { Authorization: token, User: user }
+                });
+                if (!resp.ok)
+                    return new Error(
+                        `${JSON.stringify(
+                            await resp.text()
+                        )}. Send it to admin! `
+                    );
 
-            try {
-                return await clonedResponse.json();
-            } catch (error) {
-                return new Error(await resp.text());
+                return await resp.json();
+            } else {
+                const resp = await fetch(url, {
+                    method: 'POST',
+                    headers: { Authorization: token, User: user },
+                    body: JSON.stringify(body)
+                });
+
+                if (!resp.ok) {
+                    const msg = JSON.stringify(await resp.text());
+                    return new Error(`${msg}. Send it to admin!`);
+                }
+                const clonedResponse = resp.clone();
+
+                try {
+                    return await clonedResponse.json();
+                } catch (error) {
+                    return new Error(await resp.text());
+                }
             }
         }
+    } catch (err) {
+        return new Error(err);
     }
 }
 
@@ -109,7 +121,7 @@ type Computer = {
     CPU?: string;
     RAM?: string;
     BIOS?: string;
-    HideVM: boolean;
+    HideVM?: boolean;
     remoteReady?: boolean;
     virtReady?: boolean;
 

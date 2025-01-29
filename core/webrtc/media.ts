@@ -86,12 +86,16 @@ export class MediaRTC {
         this.metricHandler = MetricsHandler;
         this.closeHandler = CloseHandler;
         this.rtrackHandler = TrackHandler;
+        this.sendHandler = () => {};
 
-        this.ws = new WebSocket(url);
-        this.sendHandler = (data) => this.ws?.send(JSON.stringify(data));
-        this.ws.onerror = this.Close.bind(this);
-        this.ws.onclose = this.Close.bind(this);
-        this.ws.onmessage = this.handleIncomingPacket.bind(this);
+        const ws = new WebSocket(url);
+        ws.onopen = () => {
+            this.ws = ws;
+            this.sendHandler = (data) => this.ws.send(JSON.stringify(data));
+            this.ws.onerror = this.Close.bind(this);
+            this.ws.onclose = this.Close.bind(this);
+            this.ws.onmessage = this.handleIncomingPacket.bind(this);
+        };
     }
 
     public Send(type: MessageType, ...arr: number[]) {
@@ -101,7 +105,7 @@ export class MediaRTC {
     public Close() {
         this.metricHandler = () => {};
         this.rtrackHandler = () => {};
-        this.ws.close();
+        this.ws?.close();
         this.ws = undefined;
         this.connected = false;
         this.closed = true;

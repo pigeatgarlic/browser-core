@@ -253,7 +253,7 @@ class Thinkmay {
     async SendRawHID(...data: HIDMsg[]) {
         if (this.closed) return;
         for (const element of data) {
-            this.dataConn.Send(element.convertType(), element.buffer());
+            this.dataConn.Send(element.convertType(), ...element.buffer());
         }
     }
     public async SetClipboard(val: string) {
@@ -318,9 +318,6 @@ class Thinkmay {
             await this.SendRawHID(new HIDMsg(code, { key }));
         }
     }
-
-    private handleHID = (data: string) =>
-        !this.closed ? this.hid?.handleIncomingData(data) : null;
 
     private send = async (...val: HIDMsg[]) => await this.SendRawHID(...val);
 
