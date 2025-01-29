@@ -440,7 +440,7 @@ class Thinkmay {
         if (this.closed) return;
 
         this.dataConn = new DataRTC(this.dataUrl, () =>
-            setTimeout(this.dataEstablishmentLoop.bind(this),1000)
+            setTimeout(this.dataEstablishmentLoop.bind(this), 1000)
         );
     };
 
