@@ -37,7 +37,7 @@ export class DataRTC {
     }
 
     public Send(type: EventCode, ...arr: number[]) {
-        this.ws?.send(new Uint8Array([type, ...arr]).buffer);
+        this.ws?.send(new Uint32Array([type, ...arr]).buffer);
     }
 
     public async Recv(): Promise<string | Error> {
