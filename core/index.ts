@@ -162,8 +162,6 @@ class Thinkmay {
                         })
                     )
                     .pipeTo(frameStreams.writable);
-
-                this.waitForNewFrame();
             } catch {}
         }
         await this.video.assign(stream);
@@ -428,8 +426,7 @@ class Thinkmay {
             if (Thinkmay.Now() - start > 3 * 1000)
                 return this.videoConn.Close();
             else if (this.videoConn.closed) return;
-            await this.ResetVideo();
-            await new Promise((r) => setTimeout(r, 300));
+            else await new Promise((r) => setTimeout(r, 300));
         }
 
         this.Metrics.video.status = 'connected';

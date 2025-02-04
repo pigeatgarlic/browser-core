@@ -106,13 +106,13 @@ export class HIDMsg {
 
             case EventCode.mmr:
                 return [
-                    Math.round(this.data.dX * (2 ** 32)),
-                    Math.round(this.data.dY * (2 ** 32))
+                    Math.round(this.data.dX * 2 ** 32),
+                    Math.round(this.data.dY * 2 ** 32)
                 ];
             case EventCode.mma:
                 return [
-                    Math.round(this.data.dX * (2 ** 32)),
-                    Math.round(this.data.dY * (2 ** 32))
+                    Math.round(this.data.dX * 2 ** 32),
+                    Math.round(this.data.dY * 2 ** 32)
                 ];
             case EventCode.mw:
                 return this.data.deltaY;
